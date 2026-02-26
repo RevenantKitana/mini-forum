@@ -1,0 +1,389 @@
+import { useSearchParams, Link } from 'react-router-dom';
+import { usePosts } from '@/hooks/usePosts';
+import { useCategoryBySlug } from '@/hooks/useCategories';
+import { PostCard } from '@/components/PostCard';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
+import { Calendar } from '@/app/components/ui/calendar';
+import { Folder, CalendarDays, X, ArrowUpDown, Flame, Clock, TrendingUp, MessageSquare } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState, useMemo } from 'react';
+import { format, subDays, subMonths, startOfDay, endOfDay } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { PostListSkeleton } from '@/components/common/LoadingStates';
+import { RestrictedContent } from '@/components/common/RestrictedContent';
+import { PostFormDialog } from '@/components/common/PostFormDialog';
+import { cn } from '@/lib/utils';
+
+// Sort options with reverse capability
+type SortOption = 'latest' | 'popular' | 'trending' | 'oldest_first' | 'unpopular' | 'least_trending';
+
+const SORT_CONFIG: Record<string, { label: string; reverse: SortOption; isReverse: boolean; icon: React.ReactNode }> = {
+  latest: { label: 'Mới nhất', reverse: 'oldest_first', isReverse: false, icon: <Clock className="h-3.5 w-3.5" /> },
+  oldest_first: { label: 'Cũ nhất', reverse: 'latest', isReverse: true, icon: <Clock className="h-3.5 w-3.5" /> },
+  popular: { label: 'Phổ biến', reverse: 'unpopular', isReverse: false, icon: <Flame className="h-3.5 w-3.5" /> },
+  unpopular: { label: 'Ít phổ biến', reverse: 'popular', isReverse: true, icon: <Flame className="h-3.5 w-3.5" /> },
+  trending: { label: 'Xu hướng', reverse: 'least_trending', isReverse: false, icon: <TrendingUp className="h-3.5 w-3.5" /> },
+  least_trending: { label: 'Ít xu hướng', reverse: 'trending', isReverse: true, icon: <TrendingUp className="h-3.5 w-3.5" /> },
+};
+
+// Fixed width for tab buttons to prevent layout shift
+const TAB_MIN_WIDTH = '100px';
+
+// Quick date range presets
+const DATE_PRESETS = [
+  { label: 'Hôm nay', getValue: () => ({ from: startOfDay(new Date()), to: endOfDay(new Date()) }) },
+  { label: '7 ngày qua', getValue: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()) }) },
+  { label: '30 ngày qua', getValue: () => ({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(new Date()) }) },
+  { label: '3 tháng qua', getValue: () => ({ from: startOfDay(subMonths(new Date(), 3)), to: endOfDay(new Date()) }) },
+];
+
+export function HomePage() {
+  const { isAuthenticated, user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  const page = parseInt(searchParams.get('page') || '1');
+  const categorySlug = searchParams.get('category') || undefined;
+  const tagSlug = searchParams.get('tag') || undefined;
+  const tagsParam = searchParams.get('tags') || undefined;
+  const sortParam = (searchParams.get('sort') || 'latest') as SortOption;
+  const dateFromParam = searchParams.get('dateFrom') || undefined;
+  const dateToParam = searchParams.get('dateTo') || undefined;
+
+  // Get category details if a category is selected
+  const { data: selectedCategory } = useCategoryBySlug(categorySlug || '');
+
+  // Check if user has permission to view the category
+  const canViewCategory = useMemo(() => {
+    if (!selectedCategory) return true; // No category selected, can view all
+    
+    const viewPermission = selectedCategory.viewPermission || 'ALL';
+    
+    if (viewPermission === 'ALL') return true;
+    if (!isAuthenticated) return false;
+    if (!user) return false;
+    
+    const userRole = user.role;
+    if (viewPermission === 'MEMBER') return true; // All logged-in users are at least MEMBER
+    if (viewPermission === 'MODERATOR') return userRole === 'MODERATOR' || userRole === 'ADMIN';
+    if (viewPermission === 'ADMIN') return userRole === 'ADMIN';
+    
+    return true;
+  }, [selectedCategory, isAuthenticated, user]);
+
+  // Only fetch posts if user can view the category
+  const { data, isLoading } = usePosts(canViewCategory ? {
+    page,
+    limit: 10,
+    category: categorySlug,
+    tag: tagSlug,
+    tags: tagsParam,
+    sort: sortParam,
+    dateFrom: dateFromParam,
+    dateTo: dateToParam,
+  } : { page: 1, limit: 0 }); // Empty query when user cannot view
+
+  // Get header content based on selected category
+  const getHeaderContent = () => {
+    if (categorySlug && selectedCategory) {
+      return {
+        title: selectedCategory.name,
+        description: selectedCategory.description || `Khám phá các bài viết trong danh mục ${selectedCategory.name}`,
+        icon: selectedCategory.icon,
+        color: selectedCategory.color,
+      };
+    }
+    return {
+      title: 'Thảo luận',
+      description: 'Tham gia cuộc trò chuyện và chia sẻ suy nghĩ của bạn',
+      icon: null,
+      color: null,
+    };
+  };
+
+  // Toggle sort between normal and reverse
+  const handleSortClick = (baseSort: 'latest' | 'popular' | 'trending') => {
+    const currentConfig = SORT_CONFIG[sortParam];
+    const newParams = new URLSearchParams(searchParams);
+    
+    // If clicking on the same base sort, toggle between normal and reverse
+    if (sortParam === baseSort || SORT_CONFIG[sortParam]?.reverse === baseSort) {
+      newParams.set('sort', currentConfig.reverse);
+    } else {
+      // Clicking on different sort, use normal version
+      newParams.set('sort', baseSort);
+    }
+    
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
+
+  // Apply date range filter
+  const applyDateFilter = (from?: Date, to?: Date) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (from) {
+      newParams.set('dateFrom', from.toISOString());
+    } else {
+      newParams.delete('dateFrom');
+    }
+    if (to) {
+      newParams.set('dateTo', to.toISOString());
+    } else {
+      newParams.delete('dateTo');
+    }
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+    setIsCalendarOpen(false);
+  };
+
+  const clearDateFilter = () => {
+    setDateRange({});
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('dateFrom');
+    newParams.delete('dateTo');
+    setSearchParams(newParams);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', newPage.toString());
+    setSearchParams(newParams);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Check if a base sort is currently active (either normal or reversed)
+  const isSortActive = (baseSort: 'latest' | 'popular' | 'trending') => {
+    return sortParam === baseSort || SORT_CONFIG[sortParam]?.reverse === baseSort;
+  };
+
+  const headerContent = getHeaderContent();
+  const hasDateFilter = dateFromParam || dateToParam;
+
+  return (
+    <div className="flex flex-col h-full animate-fade-in-up">
+      {/* Sticky Header Section - full width, positioned at container top */}
+      <div className="sticky top-0 z-10 bg-background pb-4 -mx-4 px-responsive pt-0 -mt-4 mb-0" style={{ top: '-16px' }}>
+        {/* Header - Dynamic based on selected category */}
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-responsive-sm">
+              {headerContent.icon ? (
+                <span className="text-responsive-2xl">{headerContent.icon}</span>
+              ) : categorySlug ? (
+                <Folder className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+              ) : (
+                <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float flex-shrink-0" />
+              )}
+              <h1 className="text-responsive-2xl font-bold truncate">{headerContent.title}</h1>
+            </div>
+            <p className="text-muted-foreground mt-1 text-responsive-sm line-clamp-2">
+              {headerContent.description}
+            </p>
+            {categorySlug && selectedCategory && (
+              <div className="mt-2 text-responsive-sm text-muted-foreground">
+                {selectedCategory.postCount} bài viết trong danh mục này
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sort Tabs with Toggle + Date Filter */}
+        <div className="flex items-center gap-responsive flex-wrap">
+          {/* Sort buttons with toggle functionality - fixed width */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
+              const isActive = isSortActive(baseSort);
+              const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
+              const config = SORT_CONFIG[isReversed ? SORT_CONFIG[baseSort].reverse : baseSort];
+              
+              return (
+                <Button
+                  key={baseSort}
+                  variant={isActive ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleSortClick(baseSort)}
+                  className={cn(
+                    "gap-1.5 btn-press transition-all duration-200",
+                    isActive && "animate-tab-slide"
+                  )}
+                  style={{ minWidth: TAB_MIN_WIDTH }}
+                >
+                  {SORT_CONFIG[baseSort].icon}
+                  <span className="hidden sm:inline">{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  {isActive && (
+                    <ArrowUpDown className="h-3 w-3 ml-0.5 opacity-70" />
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+
+          {/* Date Range Filter */}
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {hasDateFilter ? (
+                  <span className="text-xs">
+                    {dateFromParam && format(new Date(dateFromParam), 'dd/MM/yy', { locale: vi })}
+                    {' - '}
+                    {dateToParam && format(new Date(dateToParam), 'dd/MM/yy', { locale: vi })}
+                  </span>
+                ) : (
+                  'Khoảng thời gian'
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="start">
+              <div className="space-y-4">
+                {/* Quick presets */}
+                <div className="flex flex-wrap gap-2">
+                  {DATE_PRESETS.map((preset) => (
+                    <Badge
+                      key={preset.label}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press"
+                      onClick={() => {
+                        const range = preset.getValue();
+                        setDateRange(range);
+                        applyDateFilter(range.from, range.to);
+                      }}
+                    >
+                      {preset.label}
+                    </Badge>
+                  ))}
+                </div>
+                
+                {/* Calendar picker */}
+                <Calendar
+                  mode="range"
+                  selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
+                  onSelect={(range) => {
+                    if (range) {
+                      setDateRange({ from: range.from, to: range.to });
+                    }
+                  }}
+                  locale={vi}
+                  numberOfMonths={1}
+                />
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="btn-interactive"
+                    onClick={() => applyDateFilter(dateRange.from, dateRange.to)}
+                    disabled={!dateRange.from}
+                  >
+                    Áp dụng
+                  </Button>
+                  <Button size="sm" variant="outline" className="btn-press" onClick={clearDateFilter}>
+                    Xóa bộ lọc
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Active date filter badge */}
+          {hasDateFilter && (
+            <Badge variant="secondary" className="gap-1 animate-pop-in">
+              <CalendarDays className="h-3 w-3" />
+              Đang lọc theo thời gian
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors duration-200" 
+                onClick={clearDateFilter}
+              />
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable Posts List */}
+      <div className="flex-1 overflow-y-auto pt-4">
+        {/* Show restricted content message if user cannot view category */}
+        {!canViewCategory && selectedCategory ? (
+          <RestrictedContent
+            title={`Nội dung "${selectedCategory.name}" bị giới hạn`}
+            requiredPermission={selectedCategory.viewPermission as 'MEMBER' | 'MODERATOR' | 'ADMIN'}
+            type="category"
+          />
+        ) : isLoading ? (
+          <PostListSkeleton count={5} />
+        ) : data?.data && data.data.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.data.map((post, index) => (
+                <div 
+                  key={post.id} 
+                  className="animate-stagger"
+                  style={{ '--stagger-index': index } as React.CSSProperties}
+                >
+                  <PostCard post={post} />
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {data.pagination && data.pagination.totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-8 pb-4">
+                <Button
+                  variant="outline"
+                  className="btn-press"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-2">
+                  {[...Array(data.pagination.totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === data.pagination.totalPages ||
+                      (pageNum >= page - 1 && pageNum <= page + 1)
+                    ) {
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? 'default' : 'outline'}
+                          className="btn-press"
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    } else if (pageNum === page - 2 || pageNum === page + 2) {
+                      return <span key={pageNum}>...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  className="btn-press"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === data.pagination.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12 animate-fade-in-up">
+            <p className="text-muted-foreground">No posts found</p>
+            {isAuthenticated && (
+              <PostFormDialog
+                mode="create"
+                trigger={<Button className="mt-4 btn-interactive">Create the first post</Button>}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

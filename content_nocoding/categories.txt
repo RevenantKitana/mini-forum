@@ -1,0 +1,55 @@
+1. category
+Bắt buộc có: 
+- Thông báo & Hướng dẫn
+- Góp ý & Phản hồi
+
+
+
+- Chia sẻ & đúc kết
+(đọc để học)
+Ngầm hiểu: có thứ đã xử lý rồi mới đăng.
+Tôi rút ra được gì
+Hơi cá nhân, nhưng rất rõ bản chất.
+
+- Kể chuyện
+(đọc để hiểu)
+Chuyện đã xảy ra
+Nhấn vào diễn tiến, không ép kết luận.
+
+
+- Cần lời khuyên
+(đọc để hỏi)
+Rõ ý định, giảm bài hỏi vòng vo.
+Tôi đang băn khoăn
+Khuyến khích hỏi thật, không cần hoàn hảo.
+
+
+- Bàn luận & góc nhìn
+(đọc để bàn)
+Mời gọi tranh luận nhưng không hiếu chiến.
+Nói thử xem sao
+Mở tranh luận, không áp đặt đúng sai.
+
+
+- Tán gẫu
+(đọc cho vui)
+Không giả vờ có chiều sâu.
+Nói linh tinh
+Tên xấu có chủ đích, giữ sạch khu khác.
+
+2. Rule đặt tag
+
+Tag nói “bài nói về gì”, không nói “bài để làm gì”.
+Việc “để làm gì” là của category.
+
+Tag trung tính, không phán xét.
+Không dùng tag mang giá trị hay cảm xúc.
+
+Tag là danh từ hoặc cụm danh từ.
+Không dùng câu hỏi, không dùng động từ.
+
+Một tag dùng được cho nhiều category.
+Chỉ hợp với một category → đặt sai.
+
+Ít nhưng đủ.
+Mỗi bài 2–5 tag

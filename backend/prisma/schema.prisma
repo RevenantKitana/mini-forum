@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model audit_logs {
+  id          Int         @id @default(autoincrement())
+  user_id     Int
+  action      AuditAction
+  targetType  AuditTarget
+  target_id   Int?
+  target_name String?
+  old_value   String?
+  new_value   String?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime    @default(now())
+  users       users       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([created_at])
+  @@index([targetType, target_id])
+  @@index([user_id])
+}
+
+model bookmarks {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model categories {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  slug               String          @unique
+  description        String?
+  color              String?
+  sort_order         Int             @default(0)
+  post_count         Int             @default(0)
+  is_active          Boolean         @default(true)
+  view_permission    PermissionLevel @default(ALL)
+  post_permission    PermissionLevel @default(MEMBER)
+  comment_permission PermissionLevel @default(MEMBER)
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+  posts              posts[]
+}
+
+model comments {
+  id                                                  Int           @id @default(autoincrement())
+  content                                             String
+  author_id                                           Int
+  post_id                                             Int
+  parent_id                                           Int?
+  quoted_comment_id                                   Int?
+  upvote_count                                        Int           @default(0)
+  downvote_count                                      Int           @default(0)
+  status                                              CommentStatus @default(VISIBLE)
+  is_edited                                           Boolean       @default(false)
+  is_content_masked                                   Boolean       @default(false)
+  created_at                                          DateTime      @default(now())
+  updated_at                                          DateTime      @updatedAt
+  users                                               users         @relation(fields: [author_id], references: [id])
+  comments_comments_parent_idTocomments               comments?     @relation("comments_parent_idTocomments", fields: [parent_id], references: [id])
+  other_comments_comments_parent_idTocomments         comments[]    @relation("comments_parent_idTocomments")
+  posts                                               posts         @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comments_comments_quoted_comment_idTocomments       comments?     @relation("comments_quoted_comment_idTocomments", fields: [quoted_comment_id], references: [id])
+  other_comments_comments_quoted_comment_idTocomments comments[]    @relation("comments_quoted_comment_idTocomments")
+
+  @@index([author_id])
+  @@index([parent_id])
+  @@index([post_id])
+}
+
+model notifications {
+  id          Int              @id @default(autoincrement())
+  userId      Int
+  type        NotificationType
+  title       String
+  content     String
+  relatedId   Int?
+  relatedType String?
+  isRead      Boolean          @default(false)
+  deleted_at  DateTime?
+  createdAt   DateTime         @default(now())
+  users       users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deleted_at])
+  @@index([userId, isRead])
+}
+
+model post_tags {
+  post_id Int
+  tag_id  Int
+  posts   posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  tags    tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([post_id, tag_id])
+}
+
+model posts {
+  id             Int         @id @default(autoincrement())
+  title          String
+  slug           String      @unique
+  content        String
+  excerpt        String?
+  author_id      Int
+  category_id    Int
+  view_count     Int         @default(0)
+  upvote_count   Int         @default(0)
+  downvote_count Int         @default(0)
+  comment_count  Int         @default(0)
+  status         PostStatus  @default(PUBLISHED)
+  is_pinned      Boolean     @default(false)
+  pin_type       PinType?
+  pin_order      Int         @default(0)
+  is_locked      Boolean     @default(false)
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  bookmarks      bookmarks[]
+  comments       comments[]
+  post_tags      post_tags[]
+  users          users       @relation(fields: [author_id], references: [id])
+  categories     categories  @relation(fields: [category_id], references: [id])
+
+  @@index([author_id])
+  @@index([category_id])
+  @@index([created_at])
+  @@index([is_pinned, pin_order])
+  @@index([status])
+}
+
+model refresh_tokens {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  user_id    Int
+  expires_at DateTime
+  created_at DateTime @default(now())
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([user_id])
+}
+
+model reports {
+  id                              Int          @id @default(autoincrement())
+  reporterId                      Int
+  targetType                      ReportTarget
+  targetId                        Int
+  reason                          String
+  description                     String?
+  status                          ReportStatus @default(PENDING)
+  reviewedBy                      Int?
+  reviewedAt                      DateTime?
+  reviewNote                      String?
+  createdAt                       DateTime     @default(now())
+  updatedAt                       DateTime
+  users_reports_reporterIdTousers users        @relation("reports_reporterIdTousers", fields: [reporterId], references: [id], onDelete: Cascade)
+  users_reports_reviewedByTousers users?       @relation("reports_reviewedByTousers", fields: [reviewedBy], references: [id])
+
+  @@index([reporterId])
+  @@index([status])
+  @@index([targetType, targetId])
+}
+
+model tags {
+  id             Int             @id @default(autoincrement())
+  name           String
+  slug           String          @unique
+  description    String?
+  usage_count    Int             @default(0)
+  use_permission PermissionLevel @default(ALL)
+  is_active      Boolean         @default(true)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  post_tags      post_tags[]
+}
+
+model user_blocks {
+  id                                 Int      @id @default(autoincrement())
+  blockerId                          Int
+  blockedId                          Int
+  createdAt                          DateTime @default(now())
+  users_user_blocks_blockedIdTousers users    @relation("user_blocks_blockedIdTousers", fields: [blockedId], references: [id], onDelete: Cascade)
+  users_user_blocks_blockerIdTousers users    @relation("user_blocks_blockerIdTousers", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+model users {
+  id                                       Int              @id @default(autoincrement())
+  email                                    String           @unique
+  username                                 String           @unique
+  password_hash                            String
+  display_name                             String?
+  avatar_url                               String?
+  bio                                      String?
+  date_of_birth                            DateTime?
+  gender                                   String?
+  role                                     Role             @default(MEMBER)
+  reputation                               Int              @default(0)
+  is_verified                              Boolean          @default(false)
+  is_active                                Boolean          @default(true)
+  last_active_at                           DateTime?
+  username_changed_at                      DateTime?
+  created_at                               DateTime         @default(now())
+  updated_at                               DateTime         @updatedAt
+  audit_logs                               audit_logs[]
+  bookmarks                                bookmarks[]
+  comments                                 comments[]
+  notifications                            notifications[]
+  posts                                    posts[]
+  refresh_tokens                           refresh_tokens[]
+  reports_reports_reporterIdTousers        reports[]        @relation("reports_reporterIdTousers")
+  reports_reports_reviewedByTousers        reports[]        @relation("reports_reviewedByTousers")
+  user_blocks_user_blocks_blockedIdTousers user_blocks[]    @relation("user_blocks_blockedIdTousers")
+  user_blocks_user_blocks_blockerIdTousers user_blocks[]    @relation("user_blocks_blockerIdTousers")
+  votes                                    votes[]
+}
+
+model votes {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  targetType VoteTarget
+  targetId   Int
+  value      Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime
+  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([userId])
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PIN
+  UNPIN
+  LOCK
+  UNLOCK
+  HIDE
+  SHOW
+  BAN
+  UNBAN
+  ROLE_CHANGE
+  VIEW_MASKED_CONTENT
+}
+
+enum AuditTarget {
+  USER
+  POST
+  COMMENT
+  CATEGORY
+  TAG
+  REPORT
+  SETTINGS
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+enum NotificationType {
+  COMMENT
+  REPLY
+  MENTION
+  UPVOTE
+  SYSTEM
+}
+
+enum PermissionLevel {
+  ALL
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum PinType {
+  GLOBAL
+  CATEGORY
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportTarget {
+  USER
+  POST
+  COMMENT
+}
+
+enum Role {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum VoteTarget {
+  POST
+  COMMENT
+}

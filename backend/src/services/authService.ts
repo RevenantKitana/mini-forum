@@ -1,0 +1,291 @@
+import bcrypt from 'bcrypt';
+import prisma from '../config/database.js';
+import { generateTokenPair, verifyRefreshToken, TokenPair, TokenPayload } from '../utils/jwt.js';
+import { BadRequestError, ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
+import { RegisterInput, LoginInput } from '../validations/authValidation.js';
+
+const SALT_ROUNDS = 12;
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  reputation: number;
+  is_verified: boolean;
+  is_active: boolean;
+  created_at: Date;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  tokens: TokenPair;
+}
+
+/**
+ * Register a new user
+ */
+export async function register(data: RegisterInput): Promise<AuthResponse> {
+  // Check if email already exists
+  const existingEmail = await prisma.users.findUnique({
+    where: { email: data.email },
+  });
+
+  if (existingEmail) {
+    throw new ConflictError('Email already registered');
+  }
+
+  // Check if username already exists
+  const existingUsername = await prisma.users.findUnique({
+    where: { username: data.username },
+  });
+
+  if (existingUsername) {
+    throw new ConflictError('Username already taken');
+  }
+
+  // Hash password
+  const password_hash = await bcrypt.hash(data.password, SALT_ROUNDS);
+
+  // Create user
+  const user = await prisma.users.create({
+    data: {
+      email: data.email,
+      username: data.username,
+      password_hash: password_hash,
+      display_name: data.display_name || null,
+    },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      display_name: true,
+      avatar_url: true,
+      role: true,
+      reputation: true,
+      is_verified: true,
+      is_active: true,
+      created_at: true,
+    },
+  });
+
+  // Generate tokens
+  const tokenPayload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+  const tokens = generateTokenPair(tokenPayload);
+
+  // Store refresh token
+  await prisma.refresh_tokens.create({
+    data: {
+      token: tokens.refreshToken,
+      user_id: user.id,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    },
+  });
+
+  return { user, tokens };
+}
+
+/**
+ * Check if email is available
+ */
+export async function checkEmailAvailability(email: string): Promise<boolean> {
+  const existingEmail = await prisma.users.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  return !existingEmail;
+}
+
+/**
+ * Check if username is available
+ */
+export async function checkUsernameAvailability(username: string): Promise<boolean> {
+  const existingUsername = await prisma.users.findUnique({
+    where: { username },
+    select: { id: true },
+  });
+  return !existingUsername;
+}
+
+/**
+ * Login user - supports login with email or username
+ */
+export async function login(data: LoginInput): Promise<AuthResponse> {
+  // Determine if identifier is email or username
+  const isEmail = data.identifier.includes('@');
+  
+  // Find user by email or username
+  const user = await prisma.users.findFirst({
+    where: isEmail 
+      ? { email: data.identifier }
+      : { username: data.identifier },
+  });
+
+  if (!user) {
+    throw new UnauthorizedError('Tên đăng nhập hoặc mật khẩu không đúng');
+  }
+
+  // Check if user is active
+  if (!user.is_active) {
+    throw new UnauthorizedError('Tài khoản đã bị vô hiệu hóa');
+  }
+
+  // Verify password
+  const isValidPassword = await bcrypt.compare(data.password, user.password_hash);
+  if (!isValidPassword) {
+    throw new UnauthorizedError('Tên đăng nhập hoặc mật khẩu không đúng');
+  }
+
+  // Update last active
+  await prisma.users.update({
+    where: { id: user.id },
+    data: { last_active_at: new Date() },
+  });
+
+  // Generate tokens
+  const tokenPayload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+  const tokens = generateTokenPair(tokenPayload);
+
+  // Store refresh token
+  await prisma.refresh_tokens.create({
+    data: {
+      token: tokens.refreshToken,
+      user_id: user.id,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    },
+  });
+
+  const authUser: AuthUser = {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    display_name: user.display_name,
+    avatar_url: user.avatar_url,
+    role: user.role,
+    reputation: user.reputation,
+    is_verified: user.is_verified,
+    is_active: user.is_active,
+    created_at: user.created_at,
+  };
+
+  return { user: authUser, tokens };
+}
+
+/**
+ * Refresh access token
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<TokenPair> {
+  // Verify the refresh token
+  const payload = verifyRefreshToken(refreshToken);
+  if (!payload) {
+    throw new UnauthorizedError('Invalid refresh token');
+  }
+
+  // Check if refresh token exists in database
+  const storedToken = await prisma.refresh_tokens.findFirst({
+    where: {
+      token: refreshToken,
+      user_id: payload.userId,
+      expires_at: { gt: new Date() },
+    },
+  });
+
+  if (!storedToken) {
+    throw new UnauthorizedError('Refresh token not found or expired');
+  }
+
+  // Get user
+  const user = await prisma.users.findUnique({
+    where: { id: payload.userId },
+  });
+
+  if (!user || !user.is_active) {
+    throw new UnauthorizedError('User not found or deactivated');
+  }
+
+  // Delete old refresh token
+  await prisma.refresh_tokens.delete({
+    where: { id: storedToken.id },
+  });
+
+  // Generate new tokens
+  const tokenPayload: TokenPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+  const tokens = generateTokenPair(tokenPayload);
+
+  // Store new refresh token
+  await prisma.refresh_tokens.create({
+    data: {
+      token: tokens.refreshToken,
+      user_id: user.id,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    },
+  });
+
+  return tokens;
+}
+
+/**
+ * Logout user (invalidate refresh token)
+ */
+export async function logout(refreshToken: string): Promise<void> {
+  await prisma.refresh_tokens.deleteMany({
+    where: { token: refreshToken },
+  });
+}
+
+/**
+ * Logout from all devices
+ */
+export async function logoutAll(userId: number): Promise<void> {
+  await prisma.refresh_tokens.deleteMany({
+    where: { user_id: userId },
+  });
+}
+
+/**
+ * Get current user by ID
+ */
+export async function getCurrentUser(userId: number): Promise<AuthUser> {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      display_name: true,
+      avatar_url: true,
+      role: true,
+      reputation: true,
+      is_verified: true,
+      is_active: true,
+      created_at: true,
+    },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  return user;
+}
+
+
+
+
+
+
+

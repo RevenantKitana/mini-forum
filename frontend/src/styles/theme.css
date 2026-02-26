@@ -1,0 +1,1314 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Responsive font size using clamp - scales with viewport width */
+  /* Minimum 14px, preferred 1vw (16px at 1600px viewport), maximum 18px */
+  --font-size: clamp(14px, 0.875rem + 0.125vw, 18px);
+  
+  /* Responsive spacing scale */
+  --spacing-unit: clamp(0.875rem, 0.75rem + 0.25vw, 1.125rem);
+  
+  /* Sidebar widths - responsive */
+  --sidebar-left-width: clamp(15rem, 18vw, 20rem);
+  --sidebar-right-width: clamp(14rem, 16vw, 18rem);
+  
+  /* Content max width */
+  --content-max-width: 1400px;
+  
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
+
+/* Custom Animations for Lucide Icons */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+/* Vote/Like animations */
+@keyframes vote-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes vote-up {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-4px) scale(1.2); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes vote-down {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(4px) scale(1.2); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Bookmark animations */
+@keyframes bookmark-save {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-5deg); }
+  50% { transform: scale(1.3) rotate(5deg); }
+  75% { transform: scale(1.1) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Bell shake animation for notifications */
+@keyframes bell-ring {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(6deg); }
+  60% { transform: rotate(-6deg); }
+  70% { transform: rotate(2deg); }
+  80% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Theme toggle sun/moon rotation */
+@keyframes theme-rotate {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(0.8); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Fade in animations for content loading */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes fade-in-scale {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Slide animations for sidebars/panels */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Skeleton loading pulse */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Tab indicator animation */
+@keyframes tab-slide {
+  from { 
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to { 
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+.animate-vote-pop {
+  animation: vote-pop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-vote-up {
+  animation: vote-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-vote-down {
+  animation: vote-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-bookmark-save {
+  animation: bookmark-save 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-bell-ring {
+  animation: bell-ring 0.8s ease-in-out;
+}
+
+.animate-theme-rotate {
+  animation: theme-rotate 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+.animate-tab-slide {
+  animation: tab-slide 0.2s ease-out;
+}
+
+/* Stagger animation for lists - use with data-index attribute or CSS variables */
+@keyframes stagger-fade-in {
+  from { 
+    opacity: 0; 
+    transform: translateY(8px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.animate-stagger {
+  animation: stagger-fade-in 0.3s ease-out backwards;
+  animation-delay: calc(var(--stagger-index, 0) * 50ms);
+}
+
+/* Stagger utility classes */
+.stagger-delay-1 { --stagger-index: 1; }
+.stagger-delay-2 { --stagger-index: 2; }
+.stagger-delay-3 { --stagger-index: 3; }
+.stagger-delay-4 { --stagger-index: 4; }
+.stagger-delay-5 { --stagger-index: 5; }
+.stagger-delay-6 { --stagger-index: 6; }
+.stagger-delay-7 { --stagger-index: 7; }
+.stagger-delay-8 { --stagger-index: 8; }
+.stagger-delay-9 { --stagger-index: 9; }
+.stagger-delay-10 { --stagger-index: 10; }
+
+/* Button interactive states */
+.btn-interactive {
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, background-color 0.15s ease-out;
+}
+
+.btn-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-interactive:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+}
+
+/* Pop-in animation for notifications, toasts */
+@keyframes pop-in {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.85) translateY(-8px); 
+  }
+  70% { 
+    opacity: 1;
+    transform: scale(1.02) translateY(0); 
+  }
+  100% { 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Subtle bounce effect for icons */
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 0.4s ease-in-out;
+}
+
+/* Smooth expand/collapse for accordions and collapsibles */
+@keyframes expand {
+  from { 
+    opacity: 0;
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to { 
+    opacity: 1;
+  }
+}
+
+.animate-expand {
+  animation: expand 0.25s ease-out;
+  overflow: hidden;
+}
+
+/* Glow effect for focused elements */
+.focus-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 
+              0 0 0 4px hsl(var(--primary) / 0.3);
+  transition: box-shadow 0.15s ease-out;
+}
+
+/* Smooth underline animation for links */
+.link-underline {
+  position: relative;
+  text-decoration: none;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.25s ease-out;
+}
+
+.link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Hover variants for animations */
+.hover\:animate-shake:hover {
+  animation: shake 0.5s ease-in-out;
+}
+
+.hover\:animate-wiggle:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.hover\:animate-float:hover {
+  animation: float 1s ease-in-out;
+}
+
+.hover\:animate-heartbeat:hover {
+  animation: heartbeat 0.6s ease-in-out;
+}
+
+.hover\:animate-vote-pop:hover {
+  animation: vote-pop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover\:animate-bell-ring:hover {
+  animation: bell-ring 0.6s ease-in-out;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+  /* Prevent layout shift when scrollbar appears */
+  scrollbar-gutter: stable;
+}
+
+/* Prevent layout shift from scrollbar */
+body {
+  overflow-y: scroll;
+  /* Prevent width changes when dialogs lock scroll */
+  width: 100%;
+}
+
+/* When dialog is open and body scroll is locked, preserve scrollbar space */
+body[data-scroll-locked] {
+  overflow: hidden;
+  padding-right: var(--removed-body-scroll-bar-size, 0px);
+}
+
+/* Ensure dialogs don't cause horizontal overflow */
+[data-radix-portal] {
+  position: fixed;
+  z-index: 9999;
+}
+
+/* Modern scrollbar styling - consistent width to prevent layout shift */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+  background-clip: content-box;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* Ensure consistent scrollbar for all scrollable containers */
+.overflow-y-auto,
+.overflow-x-auto,
+.scroll-smooth {
+  scrollbar-gutter: stable;
+}
+
+/* Page transition classes */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+}
+
+/* Card hover transition enhancement */
+.card-hover-lift {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Button press effect */
+.btn-press {
+  transition: transform 0.1s ease-out;
+}
+
+.btn-press:active {
+  transform: scale(0.95);
+}
+
+/* Utility class for stable scrollbar gutter */
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Prevent content jump on modal/dialog open */
+.prevent-scroll-shift {
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Handle long text without line breaks in inputs/textareas */
+textarea,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"] {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+textarea {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Aggressive text breaking for extreme small viewports */
+@media (max-width: 480px) {
+  body {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  h1, h2, h3, h4, h5, h6,
+  p, span, div, a {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Force truncate more aggressively */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 320px) {
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Dialog/Modal content overflow handling */
+[role="dialog"] {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+[role="dialog"] p,
+[role="dialog"] span,
+[role="dialog"] pre,
+[role="dialog"] code {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* =====================================================
+   RESPONSIVE & ZOOM OPTIMIZATION
+   Handles various viewport sizes and zoom levels
+   ===================================================== */
+
+/* Responsive container for main content */
+.responsive-container {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  padding-inline: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Sidebar responsive widths - use CSS variables */
+.sidebar-left {
+  width: var(--sidebar-left-width);
+  min-width: auto; /* Remove fixed min-width */
+  max-width: 22rem;
+  flex-shrink: 0;
+}
+
+.sidebar-right {
+  width: var(--sidebar-right-width);
+  min-width: auto; /* Remove fixed min-width */
+  max-width: 20rem;
+  flex-shrink: 0;
+}
+
+/* Responsive text utilities */
+.text-responsive-sm {
+  font-size: clamp(0.75rem, 0.7rem + 0.125vw, 0.875rem);
+}
+
+.text-responsive-base {
+  font-size: clamp(0.875rem, 0.8rem + 0.15vw, 1rem);
+}
+
+.text-responsive-lg {
+  font-size: clamp(1rem, 0.9rem + 0.2vw, 1.25rem);
+}
+
+.text-responsive-xl {
+  font-size: clamp(1.125rem, 1rem + 0.25vw, 1.5rem);
+}
+
+.text-responsive-2xl {
+  font-size: clamp(1.25rem, 1.125rem + 0.3vw, 1.875rem);
+}
+
+/* Responsive gap utilities */
+.gap-responsive {
+  gap: clamp(0.5rem, 0.5rem + 0.5vw, 1rem);
+}
+
+.gap-responsive-sm {
+  gap: clamp(0.25rem, 0.25rem + 0.25vw, 0.5rem);
+}
+
+.gap-responsive-lg {
+  gap: clamp(0.75rem, 0.75rem + 0.75vw, 1.5rem);
+}
+
+/* Responsive padding utilities */
+.p-responsive {
+  padding: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+}
+
+.px-responsive {
+  padding-inline: clamp(0.5rem, 0.5rem + 0.5vw, 1rem);
+}
+
+.py-responsive {
+  padding-block: clamp(0.5rem, 0.5rem + 0.5vw, 1rem);
+}
+
+/* Media queries for zoom-aware adjustments */
+
+/* Ultra-narrow viewport (1/4 screen, very high zoom, 50-300px) */
+@media (max-width: 320px) {
+  :root {
+    --font-size: 12px;
+    --sidebar-left-width: 100%;
+    --sidebar-right-width: 100%;
+    --spacing-unit: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  }
+  
+  .px-responsive {
+    padding-inline: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  }
+  
+  .py-responsive {
+    padding-block: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  }
+  
+  .gap-responsive {
+    gap: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  }
+  
+  /* Stack sidebars, hide non-essential elements */
+  .hide-on-thin {
+    display: none !important;
+  }
+  
+  h1, h2, h3 {
+    font-size: max(1rem, min(2vw, 1.5rem));
+    line-height: 1.2;
+  }
+}
+
+/* Very narrow viewport (300-480px, 1/2 screen width) */
+@media (min-width: 321px) and (max-width: 480px) {
+  :root {
+    --font-size: 13px;
+    --sidebar-left-width: clamp(12rem, 35vw, 14rem);
+    --sidebar-right-width: clamp(12rem, 35vw, 14rem);
+    --spacing-unit: clamp(0.375rem, 0.3rem + 0.25vw, 0.5rem);
+  }
+  
+  .px-responsive {
+    padding-inline: clamp(0.375rem, 0.3rem + 0.25vw, 0.5rem);
+  }
+  
+  .py-responsive {
+    padding-block: clamp(0.375rem, 0.3rem + 0.25vw, 0.5rem);
+  }
+  
+  .gap-responsive {
+    gap: clamp(0.375rem, 0.3rem + 0.25vw, 0.5rem);
+  }
+}
+
+/* Tablet portrait - medium screens (480-768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --font-size: 15px;
+    --sidebar-left-width: 16rem;
+    --sidebar-right-width: 14rem;
+    --spacing-unit: clamp(0.5rem, 0.375rem + 0.25vw, 0.75rem);
+  }
+}
+
+/* Desktop tablet (768-1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --font-size: 15px;
+    --sidebar-left-width: 17rem;
+    --sidebar-right-width: 14rem;
+  }
+}
+
+/* Large desktop (1024-1440px) */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  :root {
+    --font-size: 16px;
+    --sidebar-left-width: 18rem;
+    --sidebar-right-width: 16rem;
+  }
+}
+
+/* Extra large screens (1441px+) */
+@media (min-width: 1441px) {
+  :root {
+    --font-size: clamp(16px, 0.875rem + 0.125vw, 18px);
+    --sidebar-left-width: 20rem;
+    --sidebar-right-width: 17rem;
+  }
+}
+
+/* High DPI / Zoom handling */
+/* When user zooms in significantly, reduce some fixed sizes */
+@media (resolution >= 1.25dppx) {
+  :root {
+    --spacing-unit: clamp(0.75rem, 0.625rem + 0.25vw, 1rem);
+  }
+}
+
+@media (resolution >= 1.5dppx) {
+  :root {
+    --spacing-unit: clamp(0.625rem, 0.5rem + 0.25vw, 0.875rem);
+  }
+}
+
+/* Prefer reduced motion - disable animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ======================================
+   ENHANCED MICRO-INTERACTIONS v1.16.0
+   ====================================== */
+
+/* Score counter change animation */
+@keyframes count-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes count-down {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-count-up {
+  animation: count-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-count-down {
+  animation: count-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth expand/collapse for reply forms, edit areas */
+@keyframes slide-expand {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-collapse {
+  from {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.animate-slide-expand {
+  animation: slide-expand 0.3s ease-out forwards;
+  overflow: hidden;
+}
+
+/* Ripple effect on button press */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* Success checkmark animation */
+@keyframes check-draw {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Pulse glow for active elements */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primary), 0); }
+  50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Slide up for new items appearing in lists */
+@keyframes slide-up-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up-enter {
+  animation: slide-up-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fade out for deleted/removed items */
+@keyframes fade-out-shrink {
+  from {
+    opacity: 1;
+    transform: scale(1);
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+.animate-fade-out-shrink {
+  animation: fade-out-shrink 0.3s ease-in forwards;
+  overflow: hidden;
+}
+
+/* Typing indicator dots */
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+/* Icon spin-replace animation for toggle buttons */
+@keyframes icon-swap {
+  0% { transform: rotateY(0deg); opacity: 1; }
+  50% { transform: rotateY(90deg); opacity: 0; }
+  51% { transform: rotateY(-90deg); opacity: 0; }
+  100% { transform: rotateY(0deg); opacity: 1; }
+}
+
+.animate-icon-swap {
+  animation: icon-swap 0.3s ease-in-out;
+}
+
+/* Highlight flash for newly appeared content */
+@keyframes highlight-flash {
+  0% { background-color: rgba(59, 130, 246, 0.15); }
+  100% { background-color: transparent; }
+}
+
+.animate-highlight-flash {
+  animation: highlight-flash 1.5s ease-out;
+}
+
+/* Card entrance from different directions */
+@keyframes enter-from-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes enter-from-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-enter-left {
+  animation: enter-from-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-enter-right {
+  animation: enter-from-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Active category slide indicator */
+@keyframes active-indicator-slide {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.animate-active-indicator {
+  animation: active-indicator-slide 0.25s ease-out;
+}
+
+/* Form field focus animation */
+.input-focus-animate {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.input-focus-animate:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+}
+
+/* Error shake for validation */
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+
+.animate-error-shake {
+  animation: error-shake 0.4s ease-in-out;
+}
+
+/* Smooth number transition */
+.number-transition {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.3s ease;
+}
+
+/* Progress bar fill */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Step indicator connection line fill */
+@keyframes line-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.animate-line-fill {
+  animation: line-fill 0.4s ease-out;
+  transform-origin: left;
+}
+
+/* Hover lift for interactive list items */
+.item-hover-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.item-hover-lift:hover {
+  transform: translateX(2px);
+  /* subtle shadow for depth */
+}
+
+/* Comment thread connector line animation */
+@keyframes thread-grow {
+  from { height: 0; }
+  to { height: 100%; }
+}
+
+/* Container query support for modern browsers */
+@supports (container-type: inline-size) {
+  .container-query-parent {
+    container-type: inline-size;
+  }
+  
+  /* Adjust content based on container width */
+  @container (max-width: 300px) {
+    .container-responsive-text {
+      font-size: 0.75rem;
+    }
+  }
+  
+  @container (min-width: 301px) and (max-width: 500px) {
+    .container-responsive-text {
+      font-size: 0.875rem;
+    }
+  }
+  
+  @container (min-width: 501px) {
+    .container-responsive-text {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* Flexible grid utilities for adaptive layouts */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: clamp(0.75rem, 1vw, 1.25rem);
+}
+
+.grid-responsive-sm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: clamp(0.5rem, 0.75vw, 1rem);
+}
+
+/* Flex wrap utilities for responsive content */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 0.75vw, 1rem);
+}
+
+/* Aspect ratio containers for consistent sizing */
+.aspect-responsive {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* Responsive width constraints */
+.w-responsive-full {
+  width: 100%;
+  max-width: min(100%, var(--content-max-width));
+}
+
+/* Touch-friendly target sizes on mobile */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: max(16px, 1rem); /* Prevent iOS zoom on focus */
+  }
+}
+
+/* Ensure content stays visible when zoom is very high */
+@media (max-width: 320px) {
+  .hide-on-tiny {
+    display: none !important;
+  }
+  
+  .sidebar-left,
+  .sidebar-right {
+    display: none;
+  }
+  
+  /* Stack header vertically on extreme small */
+  header > div {
+    flex-direction: column;
+    height: auto;
+    min-height: 14px;
+  }
+  
+  header nav {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  /* Reduce header height for very small screens */
+  header {
+    min-height: 3.5rem;
+  }
+  
+  header > div {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Optimize header for very narrow viewports (1/2 screen) */
+@media (max-width: 480px) {
+  /* Hide less important nav items */
+  header nav button:nth-child(n+2) {
+    display: none;
+  }
+  
+  /* Compact search input on narrow screens */
+  input[type="search"] {
+    max-width: 100% !important;
+    width: auto !important;
+  }
+  
+  /* Stack header differently */
+  header > div {
+    gap: clamp(0.25rem, 0.2rem + 0.5vw, 0.5rem) !important;
+  }
+}
+
+/* Further optimize for ultra-small (1/4 screen) */
+@media (max-width: 320px) {
+  /* Hide all nav items except home */
+  header nav button {
+    display: none;
+  }
+  
+  header nav button:first-child {
+    display: inline-flex;
+  }
+  
+  /* Hide search form on ultra-small */
+  form {
+    display: none !important;
+  }
+  
+  /* Minimal spacing in header */
+  header > div {
+    gap: 0.25rem !important;
+    padding: 0.375rem !important;
+  }
+}

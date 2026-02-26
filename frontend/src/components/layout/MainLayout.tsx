@@ -1,0 +1,106 @@
+import { Outlet } from 'react-router-dom';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { RightSidebar } from './RightSidebar';
+import { PinnedPostsModal } from '@/components/common/PinnedPostsModal';
+import { useEffect, useState } from 'react';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { Button } from '@/app/components/ui/button';
+import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
+
+export function MainLayout() {
+  const { isLeftSidebarCollapsed, toggleLeftSidebar } = useSidebar();
+  
+  // Smart sidebar visibility based on actual viewport width
+  const [showLeftSidebar, setShowLeftSidebar] = useState(window.innerWidth >= 768);
+  const [showRightSidebar, setShowRightSidebar] = useState(window.innerWidth >= 1280);
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Show left sidebar at md breakpoint (768px)
+      setShowLeftSidebar(window.innerWidth >= 768);
+      
+      // Show right sidebar at xl breakpoint (1280px)
+      setShowRightSidebar(window.innerWidth >= 1280);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-muted/30">
+      <Header />
+      <div className="flex-1 overflow-hidden">
+        <div className="w-full h-full flex gap-responsive py-responsive px-responsive">
+          {/* Left Sidebar - responsive width using CSS variables, smart hiding with collapse support */}
+          {showLeftSidebar && (
+            <aside 
+              className={cn(
+                "h-full hidden md:block transition-all duration-300 ease-in-out",
+                isLeftSidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "sidebar-left opacity-100"
+              )}
+            >
+              <div className="h-full bg-background rounded-lg border shadow-sm overflow-hidden animate-fade-in relative">
+                <Sidebar />
+                {/* Collapse button inside sidebar */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-7 w-7 opacity-60 hover:opacity-100 transition-opacity"
+                      onClick={toggleLeftSidebar}
+                    >
+                      <PanelLeftClose className="h-4 w-4" />
+                      <span className="sr-only">Thu gọn sidebar</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Thu gọn sidebar</TooltipContent>
+                </Tooltip>
+              </div>
+            </aside>
+          )}
+          
+          {/* Expand button when sidebar is collapsed */}
+          {showLeftSidebar && isLeftSidebarCollapsed && (
+            <div className="hidden md:flex items-start pt-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shadow-sm animate-fade-in"
+                    onClick={toggleLeftSidebar}
+                  >
+                    <PanelLeftOpen className="h-4 w-4" />
+                    <span className="sr-only">Mở rộng sidebar</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Mở rộng sidebar</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+          
+          {/* Main content - scrolls independently with smooth transitions */}
+          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-responsive scroll-smooth scrollbar-gutter-stable">
+            <div className="animate-fade-in-up">
+              <Outlet />
+            </div>
+          </main>
+          {/* Right Sidebar - responsive width using CSS variables, smart hiding */}
+          {showRightSidebar && (
+            <aside className="sidebar-right h-full hidden xl:block">
+              <div className="h-full bg-background rounded-lg border shadow-sm overflow-hidden animate-fade-in">
+                <RightSidebar />
+              </div>
+            </aside>
+          )}
+        </div>
+      </div>
+      <PinnedPostsModal />
+    </div>
+  );
+}
