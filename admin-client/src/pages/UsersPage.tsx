@@ -210,17 +210,17 @@ export function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Người dùng</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead>Vai trò</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Bài viết</TableHead>
-              <TableHead className="text-right">Bình luận</TableHead>
-              <TableHead>Ngày tham gia</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Bài viết</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Bình luận</TableHead>
+              <TableHead className="hidden lg:table-cell">Ngày tham gia</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -250,12 +250,12 @@ export function UsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">{user.email}</TableCell>
+                  <TableCell className="text-sm hidden sm:table-cell">{user.email}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
                   <TableCell>{getStatusBadge(user.isActive, user.isVerified)}</TableCell>
-                  <TableCell className="text-right">{user._count?.posts || 0}</TableCell>
-                  <TableCell className="text-right">{user._count?.comments || 0}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-right hidden md:table-cell">{user._count?.posts || 0}</TableCell>
+                  <TableCell className="text-right hidden md:table-cell">{user._count?.comments || 0}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell>

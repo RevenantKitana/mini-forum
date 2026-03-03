@@ -19,6 +19,21 @@ interface Config {
   comment: {
     editTimeLimit: number; // Time limit in minutes for editing comments
   };
+  smtp: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    pass: string;
+    fromEmail: string;
+    fromName: string;
+  };
+  otp: {
+    length: number;
+    expirationMinutes: number;
+    maxAttempts: number;
+    resendDelaySeconds: number;
+  };
 }
 
 // Validate required environment variables at startup
@@ -45,6 +60,21 @@ const config: Config = {
   },
   comment: {
     editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT || '30', 10), // Default 30 minutes
+  },
+  smtp: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    fromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@example.com',
+    fromName: process.env.SMTP_FROM_NAME || 'Mini Forum',
+  },
+  otp: {
+    length: parseInt(process.env.OTP_LENGTH || '6', 10),
+    expirationMinutes: parseInt(process.env.OTP_EXPIRATION_MINUTES || '10', 10),
+    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS || '5', 10),
+    resendDelaySeconds: parseInt(process.env.OTP_RESEND_DELAY_SECONDS || '60', 10),
   },
 };
 

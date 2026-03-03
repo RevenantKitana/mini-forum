@@ -9,6 +9,13 @@ export const API_ENDPOINTS = {
     REFRESH: '/auth/refresh',
     ME: '/auth/me',
     LOGOUT_ALL: '/auth/logout-all',
+    CHECK_EMAIL: '/auth/check-email',
+    CHECK_USERNAME: '/auth/check-username',
+    SEND_OTP_REGISTER: '/auth/send-otp-register',
+    VERIFY_OTP_REGISTER: '/auth/verify-otp-register',
+    SEND_OTP_RESET: '/auth/send-otp-reset',
+    VERIFY_OTP_RESET: '/auth/verify-otp-reset',
+    RESET_PASSWORD: '/auth/reset-password',
   },
   
   // Users

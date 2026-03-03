@@ -2,43 +2,27 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { toast } from 'sonner';
-import { MessageSquare, Loader2, Eye, EyeOff, Check, X, ArrowRight, ArrowLeft, Mail, User, Lock, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { KeyRound, Loader2, Eye, EyeOff, Check, X, ArrowRight, ArrowLeft, Mail, Lock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import { AxiosError } from 'axios';
-import apiClient from '@/api/axios';
 import { cn } from '@/lib/utils';
-import { useMutation } from '@tanstack/react-query';
 import { OtpVerification } from '@/components/auth/OtpVerification';
-import { sendOtpRegister, verifyOtpRegister } from '@/api/services/authService';
+import { sendOtpReset, verifyOtpReset, resetPassword } from '@/api/services/authService';
 
-// Step 1: Email validation
+// Step 1: Email
 const emailSchema = z.object({
   email: z.string().email('Địa chỉ email không hợp lệ'),
 });
 
-// Step 2: Username and display name validation
-const usernameSchema = z.object({
-  username: z
-    .string()
-    .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
-    .max(50, 'Tên đăng nhập tối đa 50 ký tự')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Chỉ được sử dụng chữ, số và dấu gạch dưới'),
-  displayName: z
-    .string()
-    .max(100, 'Tên hiển thị tối đa 100 ký tự')
-    .optional(),
-});
-
-// Step 3: Password validation
+// Step 3: New password
 const passwordSchema = z
   .object({
-    password: z
+    newPassword: z
       .string()
       .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
       .regex(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
@@ -46,13 +30,12 @@ const passwordSchema = z
       .regex(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số'),
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Mật khẩu xác nhận không khớp',
     path: ['confirmPassword'],
   });
 
 type EmailFormData = z.infer<typeof emailSchema>;
-type UsernameFormData = z.infer<typeof usernameSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 // Password strength indicator
@@ -87,13 +70,12 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-// Step indicator component
+// Step indicator
 function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
   const steps = [
     { icon: Mail, label: 'Email' },
     { icon: ShieldCheck, label: 'Xác thực' },
-    { icon: User, label: 'Thông tin' },
-    { icon: Lock, label: 'Mật khẩu' },
+    { icon: Lock, label: 'Mật khẩu mới' },
   ];
 
   return (
@@ -134,59 +116,30 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   );
 }
 
-export function RegisterPage() {
-  const { register: registerUser, isAuthenticated } = useAuth();
+export function ForgotPasswordPage() {
   const navigate = useNavigate();
-  
+
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
-  
-  // Form data storage
-  const [formData, setFormData] = useState({
-    email: '',
-    username: '',
-    displayName: '',
-    password: '',
-  });
+  const totalSteps = 3;
 
-  // OTP state
+  // State
+  const [email, setEmail] = useState('');
   const [verificationToken, setVerificationToken] = useState('');
-  const [registrationToken, setRegistrationToken] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [otpExpiresIn, setOtpExpiresIn] = useState(300); // 5 minutes default
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResetSuccess, setIsResetSuccess] = useState(false);
 
-  // Password visibility toggles
+  // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Check email availability
-  const checkEmailMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const response = await apiClient.get(`/auth/check-email?email=${encodeURIComponent(email)}`);
-      return response.data.data;
-    },
-  });
-
-  // Check username availability
-  const checkUsernameMutation = useMutation({
-    mutationFn: async (username: string) => {
-      const response = await apiClient.get(`/auth/check-username?username=${encodeURIComponent(username)}`);
-      return response.data.data;
-    },
-  });
 
   // Step 1: Email form
   const emailForm = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
-    defaultValues: { email: formData.email },
-  });
-
-  // Step 2: Username form
-  const usernameForm = useForm<UsernameFormData>({
-    resolver: zodResolver(usernameSchema),
-    defaultValues: { username: formData.username, displayName: formData.displayName },
   });
 
   // Step 3: Password form
@@ -194,33 +147,21 @@ export function RegisterPage() {
     resolver: zodResolver(passwordSchema),
   });
 
-  const password = passwordForm.watch('password', '');
+  const newPassword = passwordForm.watch('newPassword', '');
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-
-  // Handle Step 1: Email submission - send OTP
+  // Handle Step 1: Send OTP
   const onSubmitEmail = async (data: EmailFormData) => {
+    setIsSendingOtp(true);
     try {
-      const result = await checkEmailMutation.mutateAsync(data.email);
-      if (!result.available) {
-        emailForm.setError('email', { message: 'Email này đã được sử dụng' });
-        return;
+      const result = await sendOtpReset(data.email);
+      setEmail(data.email);
+      setVerificationToken(result.verificationToken);
+      if (result.expiresIn) {
+        setOtpExpiresIn(result.expiresIn);
       }
-      // Send OTP
-      const otpResult = await sendOtpRegister(data.email);
-      setVerificationToken(otpResult.verificationToken);
-      if (otpResult.expiresIn) {
-        setOtpExpiresIn(otpResult.expiresIn);
-      }
-      setFormData((prev) => ({ ...prev, email: data.email }));
       setOtpError(null);
       setCurrentStep(2);
-      toast.success('Mã OTP đã được gửi đến email của bạn');
+      toast.success('Nếu email tồn tại, mã OTP đã được gửi');
     } catch (error) {
       if (error instanceof AxiosError) {
         const message = error.response?.data?.message || 'Không thể gửi mã OTP. Vui lòng thử lại.';
@@ -228,17 +169,19 @@ export function RegisterPage() {
       } else {
         toast.error('Không thể gửi mã OTP. Vui lòng thử lại.');
       }
+    } finally {
+      setIsSendingOtp(false);
     }
   };
 
-  // Handle Step 2: OTP verification
+  // Handle Step 2: Verify OTP
   const handleVerifyOtp = useCallback(async (otp: string) => {
     setIsVerifyingOtp(true);
     setOtpError(null);
     try {
-      const result = await verifyOtpRegister(formData.email, verificationToken, otp);
-      setRegistrationToken(result.registrationToken);
-      toast.success('Xác thực email thành công!');
+      const result = await verifyOtpReset(email, verificationToken, otp);
+      setResetToken(result.resetToken);
+      toast.success('Xác thực thành công! Hãy đặt mật khẩu mới');
       setCurrentStep(3);
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -255,12 +198,12 @@ export function RegisterPage() {
     } finally {
       setIsVerifyingOtp(false);
     }
-  }, [formData.email, verificationToken]);
+  }, [email, verificationToken]);
 
   // Handle OTP resend
   const handleResendOtp = useCallback(async () => {
     try {
-      const result = await sendOtpRegister(formData.email);
+      const result = await sendOtpReset(email);
       setVerificationToken(result.verificationToken);
       if (result.expiresIn) {
         setOtpExpiresIn(result.expiresIn);
@@ -274,55 +217,60 @@ export function RegisterPage() {
       } else {
         toast.error('Không thể gửi lại mã OTP');
       }
-      throw error; // Re-throw to let OtpVerification component handle state
+      throw error;
     }
-  }, [formData.email]);
+  }, [email]);
 
-  // Handle Step 3: Username submission
-  const onSubmitUsername = async (data: UsernameFormData) => {
-    try {
-      const result = await checkUsernameMutation.mutateAsync(data.username);
-      if (!result.available) {
-        usernameForm.setError('username', { message: 'Tên đăng nhập đã được sử dụng' });
-        return;
-      }
-      setFormData((prev) => ({ 
-        ...prev, 
-        username: data.username, 
-        displayName: data.displayName || data.username 
-      }));
-      setCurrentStep(4);
-    } catch (error) {
-      toast.error('Không thể kiểm tra tên đăng nhập. Vui lòng thử lại.');
-    }
-  };
-
-  // Handle Step 4: Password submission and final registration
+  // Handle Step 3: Reset password
   const onSubmitPassword = async (data: PasswordFormData) => {
     try {
-      await registerUser(formData.username, formData.email, data.password, formData.displayName, registrationToken);
-      navigate('/');
+      await resetPassword(email, resetToken, data.newPassword);
+      setIsResetSuccess(true);
+      toast.success('Đặt lại mật khẩu thành công!');
     } catch (error) {
       if (error instanceof AxiosError) {
-        const message = error.response?.data?.message || 'Đăng ký thất bại';
+        const message = error.response?.data?.message || 'Đặt lại mật khẩu thất bại';
         toast.error(message);
-      } else if (error instanceof Error) {
-        toast.error(error.message);
       } else {
-        toast.error('Đăng ký thất bại');
+        toast.error('Đặt lại mật khẩu thất bại');
       }
     }
   };
 
-  // Go back to previous step
+  // Go back
   const goBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  if (isAuthenticated) {
-    return null;
+  // Success screen
+  if (isResetSuccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center py-12 px-4">
+        <Card className="w-full max-w-md animate-fade-in-up">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-green-500 p-3 animate-fade-in-scale">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Đặt lại mật khẩu thành công!</CardTitle>
+            <CardDescription>
+              Bạn có thể đăng nhập bằng mật khẩu mới
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button
+              className="w-full btn-interactive"
+              onClick={() => navigate('/login')}
+            >
+              Đăng nhập ngay
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -331,15 +279,14 @@ export function RegisterPage() {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="rounded-full bg-primary p-3 animate-fade-in-scale">
-              <MessageSquare className="h-6 w-6 text-primary-foreground animate-float" />
+              <KeyRound className="h-6 w-6 text-primary-foreground animate-float" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Tạo tài khoản</CardTitle>
+          <CardTitle className="text-2xl">Quên mật khẩu</CardTitle>
           <CardDescription>
-            {currentStep === 1 && 'Bước 1: Nhập địa chỉ email của bạn'}
-            {currentStep === 2 && 'Bước 2: Xác thực email qua mã OTP'}
-            {currentStep === 3 && 'Bước 3: Chọn tên đăng nhập và tên hiển thị'}
-            {currentStep === 4 && 'Bước 4: Tạo mật khẩu an toàn'}
+            {currentStep === 1 && 'Nhập email để nhận mã xác thực'}
+            {currentStep === 2 && 'Nhập mã OTP đã gửi đến email'}
+            {currentStep === 3 && 'Tạo mật khẩu mới cho tài khoản'}
           </CardDescription>
         </CardHeader>
 
@@ -350,37 +297,39 @@ export function RegisterPage() {
           <form onSubmit={emailForm.handleSubmit(onSubmitEmail)} className="animate-fade-in-up">
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="reset-email">Email</Label>
                 <Input
-                  id="email"
+                  id="reset-email"
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="email@example.com"
                   autoComplete="email"
                   className="input-focus-animate"
-                  disabled={checkEmailMutation.isPending}
+                  disabled={isSendingOtp}
                   {...emailForm.register('email')}
                 />
                 {emailForm.formState.errors.email && (
-                  <p className="text-sm text-destructive animate-error-shake">{emailForm.formState.errors.email.message}</p>
+                  <p className="text-sm text-destructive animate-error-shake">
+                    {emailForm.formState.errors.email.message}
+                  </p>
                 )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full btn-interactive" disabled={checkEmailMutation.isPending}>
-                {checkEmailMutation.isPending ? (
+              <Button type="submit" className="w-full btn-interactive" disabled={isSendingOtp}>
+                {isSendingOtp ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang kiểm tra...
+                    Đang gửi mã OTP...
                   </>
                 ) : (
                   <>
-                    Tiếp tục
+                    Gửi mã xác thực
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
-                Đã có tài khoản?{' '}
+                Nhớ mật khẩu?{' '}
                 <Link to="/login" className="text-primary hover:underline">
                   Đăng nhập
                 </Link>
@@ -394,7 +343,7 @@ export function RegisterPage() {
           <div className="animate-fade-in-up">
             <CardContent>
               <OtpVerification
-                email={formData.email}
+                email={email}
                 onVerify={handleVerifyOtp}
                 onResend={handleResendOtp}
                 isVerifying={isVerifyingOtp}
@@ -412,102 +361,27 @@ export function RegisterPage() {
           </div>
         )}
 
-        {/* Step 3: Username and Display Name */}
+        {/* Step 3: New Password */}
         {currentStep === 3 && (
-          <form onSubmit={usernameForm.handleSubmit(onSubmitUsername)} className="animate-fade-in-up">
+          <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="animate-fade-in-up">
             <CardContent className="space-y-4">
               <div className="p-3 bg-muted rounded-lg text-sm animate-highlight-flash flex items-center gap-2">
                 <span className="text-muted-foreground">Email: </span>
-                <span className="font-medium">{formData.email}</span>
+                <span className="font-medium">{email}</span>
                 <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="username">Tên đăng nhập</Label>
-                <Input
-                  id="username"
-                  placeholder="johndoe"
-                  autoComplete="username"
-                  className="input-focus-animate"
-                  disabled={checkUsernameMutation.isPending}
-                  {...usernameForm.register('username')}
-                />
-                {usernameForm.formState.errors.username && (
-                  <p className="text-sm text-destructive animate-error-shake">{usernameForm.formState.errors.username.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Chỉ được sử dụng chữ, số và dấu gạch dưới (_)
-                </p>
-              </div>
 
               <div className="space-y-2">
-                <Label htmlFor="displayName">Tên hiển thị (không bắt buộc)</Label>
-                <Input
-                  id="displayName"
-                  placeholder="John Doe"
-                  className="input-focus-animate"
-                  disabled={checkUsernameMutation.isPending}
-                  {...usernameForm.register('displayName')}
-                />
-                {usernameForm.formState.errors.displayName && (
-                  <p className="text-sm text-destructive">{usernameForm.formState.errors.displayName.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Tên hiển thị sẽ được hiển thị công khai trên hồ sơ của bạn
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <div className="flex gap-3 w-full">
-                <Button type="button" variant="outline" onClick={goBack} className="flex-1 btn-press">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Quay lại
-                </Button>
-                <Button type="submit" className="flex-1 btn-interactive" disabled={checkUsernameMutation.isPending}>
-                  {checkUsernameMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang kiểm tra...
-                    </>
-                  ) : (
-                    <>
-                      Tiếp tục
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardFooter>
-          </form>
-        )}
-
-        {/* Step 4: Password */}
-        {currentStep === 4 && (
-          <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="animate-fade-in-up">
-            <CardContent className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg text-sm space-y-1 animate-highlight-flash">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Email: </span>
-                  <span className="font-medium">{formData.email}</span>
-                  <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Tên đăng nhập: </span>
-                  <span className="font-medium">@{formData.username}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <Label htmlFor="newPassword">Mật khẩu mới</Label>
                 <div className="relative">
                   <Input
-                    id="password"
+                    id="newPassword"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="new-password"
                     className="input-focus-animate"
                     disabled={passwordForm.formState.isSubmitting}
-                    {...passwordForm.register('password')}
+                    {...passwordForm.register('newPassword')}
                   />
                   <button
                     type="button"
@@ -517,14 +391,16 @@ export function RegisterPage() {
                     {showPassword ? <EyeOff className="h-4 w-4 animate-icon-swap" /> : <Eye className="h-4 w-4 animate-icon-swap" />}
                   </button>
                 </div>
-                {passwordForm.formState.errors.password && (
-                  <p className="text-sm text-destructive animate-error-shake">{passwordForm.formState.errors.password.message}</p>
+                {passwordForm.formState.errors.newPassword && (
+                  <p className="text-sm text-destructive animate-error-shake">
+                    {passwordForm.formState.errors.newPassword.message}
+                  </p>
                 )}
-                <PasswordStrength password={password} />
+                <PasswordStrength password={newPassword} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+                <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -544,30 +420,26 @@ export function RegisterPage() {
                   </button>
                 </div>
                 {passwordForm.formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive animate-error-shake">{passwordForm.formState.errors.confirmPassword.message}</p>
+                  <p className="text-sm text-destructive animate-error-shake">
+                    {passwordForm.formState.errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <div className="flex gap-3 w-full">
-                <Button type="button" variant="outline" onClick={goBack} className="flex-1 btn-press">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Quay lại
-                </Button>
-                <Button type="submit" className="flex-1 btn-interactive" disabled={passwordForm.formState.isSubmitting}>
-                  {passwordForm.formState.isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang tạo tài khoản...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Hoàn tất đăng ký
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button type="submit" className="w-full btn-interactive" disabled={passwordForm.formState.isSubmitting}>
+                {passwordForm.formState.isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang đặt lại mật khẩu...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Đặt lại mật khẩu
+                  </>
+                )}
+              </Button>
             </CardFooter>
           </form>
         )}

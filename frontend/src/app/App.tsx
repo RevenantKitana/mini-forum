@@ -19,6 +19,7 @@ import { TagsPage } from '@/pages/TagsPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import {
   AdminDashboardPage,
   AdminUsersPage,
@@ -118,6 +119,7 @@ export default function App() {
             {/* Auth Routes (without main layout) */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               </Routes>
               <Toaster position="top-right" richColors closeButton />
             </BrowserRouter>

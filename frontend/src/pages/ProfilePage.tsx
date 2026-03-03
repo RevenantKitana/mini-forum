@@ -244,7 +244,7 @@ export function ProfilePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-6 pt-6 border-t">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
                 <Award className="h-5 w-5 text-yellow-500" />

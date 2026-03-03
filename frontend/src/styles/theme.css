@@ -1237,6 +1237,15 @@ textarea {
   }
 }
 
+/* Disable hover animations on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .card-hover-lift:hover,
+  .item-hover-lift:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 /* Ensure content stays visible when zoom is very high */
 @media (max-width: 320px) {
   .hide-on-tiny {

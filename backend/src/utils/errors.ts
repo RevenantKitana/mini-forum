@@ -60,6 +60,33 @@ export class InternalServerError extends AppError {
   }
 }
 
+export class OtpError extends AppError {
+  public code: 'OTP_EXPIRED' | 'OTP_INVALID' | 'OTP_LIMIT' | 'OTP_USED' | 'OTP_NOT_FOUND' | 'OTP_RESEND_DELAY';
+  public attemptsRemaining?: number;
+
+  constructor(
+    message: string,
+    code: 'OTP_EXPIRED' | 'OTP_INVALID' | 'OTP_LIMIT' | 'OTP_USED' | 'OTP_NOT_FOUND' | 'OTP_RESEND_DELAY',
+    statusCode: number = 400,
+    attemptsRemaining?: number
+  ) {
+    super(message, statusCode);
+    this.name = 'OtpError';
+    this.code = code;
+    this.attemptsRemaining = attemptsRemaining;
+  }
+}
+
+export class RateLimitError extends AppError {
+  public retryAfter: number;
+
+  constructor(message: string = 'Too many requests', retryAfter: number = 60) {
+    super(message, 429);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
 
 
 

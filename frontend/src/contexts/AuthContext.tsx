@@ -30,7 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string, displayName?: string) => Promise<void>;
+  register: (username: string, email: string, password: string, displayName?: string, registrationToken?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string, email: string, password: string, displayName?: string) => {
+  const register = async (username: string, email: string, password: string, displayName?: string, registrationToken?: string) => {
     if (USE_MOCK_API) {
       // Mock register
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newUser);
     } else {
       // Real API register - include displayName
-      const apiUser = await authApi.register({ email, username, password, displayName });
+      const apiUser = await authApi.register({ email, username, password, displayName, registrationToken });
       const userData = transformUser(apiUser);
       setUser(userData);
     }

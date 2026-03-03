@@ -1,6 +1,7 @@
 import app from './app.js';
 import config from './config/index.js';
 import prisma from './config/database.js';
+import { verifyEmailConnection } from './config/email.js';
 
 const PORT = config.port;
 
@@ -9,6 +10,9 @@ async function main() {
     // Test database connection
     await prisma.$connect();
     console.log('✅ Database connected successfully');
+
+    // Verify email/SMTP configuration
+    await verifyEmailConnection();
 
     // Start server
     app.listen(PORT, () => {

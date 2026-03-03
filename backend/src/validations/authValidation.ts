@@ -72,10 +72,62 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
 
+/**
+ * Send OTP for registration schema
+ */
+export const sendOtpRegisterSchema = z.object({
+  email: z.string().email('Địa chỉ email không hợp lệ').max(255),
+});
+
+/**
+ * Verify OTP for registration schema
+ */
+export const verifyOtpRegisterSchema = z.object({
+  email: z.string().email(),
+  verificationToken: z.string().min(1, 'Verification token is required'),
+  otp: z.string().regex(/^\d{6}$/, 'OTP phải là 6 chữ số'),
+});
+
+/**
+ * Send OTP for password reset schema
+ */
+export const sendOtpResetSchema = z.object({
+  email: z.string().email('Địa chỉ email không hợp lệ'),
+});
+
+/**
+ * Verify OTP for password reset schema
+ */
+export const verifyOtpResetSchema = z.object({
+  email: z.string().email(),
+  verificationToken: z.string().min(1, 'Verification token is required'),
+  otp: z.string().regex(/^\d{6}$/, 'OTP phải là 6 chữ số'),
+});
+
+/**
+ * Reset password schema
+ */
+export const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  resetToken: z.string().min(1, 'Reset token is required'),
+  newPassword: z
+    .string()
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+    .regex(
+      passwordRegex,
+      'Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường và một số'
+    ),
+});
+
 // Export types
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type SendOtpRegisterInput = z.infer<typeof sendOtpRegisterSchema>;
+export type VerifyOtpRegisterInput = z.infer<typeof verifyOtpRegisterSchema>;
+export type SendOtpResetInput = z.infer<typeof sendOtpResetSchema>;
+export type VerifyOtpResetInput = z.infer<typeof verifyOtpResetSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 
 

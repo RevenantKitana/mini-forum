@@ -43,7 +43,7 @@ export function MobileNav({ className }: MobileNavProps) {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[350px]">
+      <SheetContent side="left" className="w-[min(80vw,350px)]">
         <SheetHeader>
           <SheetTitle className="text-left">Mini Forum</SheetTitle>
         </SheetHeader>

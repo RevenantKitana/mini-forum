@@ -1,12 +1,150 @@
 # Changelog — Mini Forum
 
-> **Version**: v1.17.2  
-> **Last Updated**: 2026-02-26
+> **Version**: v1.18.1  
+> **Last Updated**: 2026-03-04
 
 Tất cả các thay đổi lớn của dự án này sẽ được ghi lại trong file này.
 
 
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+## [1.18.1] - 2026-03-04
+### Note - Chưa tối ưu/ điều chỉnh giao diện phù hợp được cho mobile
+## [1.18.1] - 2026-03-04
+
+### Changed — Frontend Optimization: Mobile UX & Animations
+
+Tối ưu hóa trải nghiệm mobile và bổ sung micro-animations cho cả Frontend và Admin Client.
+
+#### Frontend — Mobile Responsive
+
+- **`frontend/src/pages/ProfilePage.tsx`** — Stats grid responsive: `grid-cols-3` → `grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4` (tránh overflow trên mobile nhỏ)
+- **`frontend/src/components/layout/MobileNav.tsx`** — Nav width: `w-[300px] sm:w-[350px]` → `w-[min(80vw,350px)]` (giới hạn tối đa 80% viewport)
+- **`frontend/src/components/layout/MainLayout.tsx`** — Sidebar collapse animation GPU-accelerated: chuyển sang `transition-[width,opacity,transform]` + `scale-x-0 origin-left` thay vì `w-0 opacity-0`
+
+#### Frontend — Animations & Interactions
+
+- **`frontend/src/app/components/ui/input.tsx`** — Thêm `input-focus-animate` class và `aria-invalid:animate-error-shake` cho validation errors
+- **`frontend/src/app/components/ui/textarea.tsx`** — Tương tự input: thêm focus animation và error shake
+- **`frontend/src/styles/theme.css`** — Thêm `@media (hover: none) and (pointer: coarse)` disable hover animations (.card-hover-lift, .item-hover-lift) trên thiết bị cảm ứng
+
+#### Admin Client — Mobile Navigation (NEW)
+
+- **`admin-client/src/components/layout/AdminLayout.tsx`** — Triển khai hoàn chỉnh mobile sidebar:
+  - Header cố định (fixed top) với hamburger menu, logo, avatar
+  - Sidebar overlay với backdrop + sliding panel (translate-x animation, z-[70], w-[min(80vw,280px)])
+  - Auto-close khi chuyển route, body scroll lock khi mở menu
+  - Responsive: mobile dùng header top bar, desktop giữ sidebar trái
+  - Main content responsive: `mt-14` trên mobile, `ml-64/ml-16` trên desktop
+
+#### Admin Client — Responsive Tables
+
+- **`admin-client/src/pages/UsersPage.tsx`** — Responsive table: ẩn Email (sm), Bài viết/Bình luận (md), Ngày tham gia (lg) + overflow-x-auto
+- **`admin-client/src/pages/PostsPage.tsx`** — Responsive table: ẩn Danh mục (sm), Lượt xem/Bình luận (md), Ngày tạo (lg)
+- **`admin-client/src/pages/CommentsPage.tsx`** — Responsive table: ẩn Bài viết (sm), Votes (md), Ngày tạo (lg)
+- **`admin-client/src/pages/ReportsPage.tsx`** — Responsive table: ẩn Mô tả (sm), Người báo cáo (md), Ngày tạo (lg)
+
+#### Admin Client — Animations & Styles
+
+- **`admin-client/src/styles/globals.css`** — Thêm ~170 dòng animations:
+  - Keyframes: fade-in, fade-in-up, fade-in-scale, pop-in, skeleton-pulse, slide-in-left/right, error-shake
+  - Utility classes: .animate-fade-in, -up, -scale, -pop-in, -skeleton-pulse, -slide-in-left/right, -error-shake
+  - Form interactions: .input-focus-animate, .btn-press, .card-hover-lift, .table-row-hover
+  - Accessibility: `prefers-reduced-motion` media query + touch device 44px targets
+- **`admin-client/src/components/ui/input.tsx`** — Thêm `input-focus-animate` class
+- **`admin-client/src/components/ui/textarea.tsx`** — Thêm `input-focus-animate` class
+- **`admin-client/src/components/layout/AdminLayout.tsx`** — Thêm `animate-fade-in-up` vào Outlet wrapper (page transition)
+
+#### Admin Client — Loading Skeletons (NEW)
+
+- **`admin-client/src/components/ui/skeleton.tsx`** — **(NEW)** Skeleton component (bg-muted + animate-pulse)
+- **`admin-client/src/pages/DashboardPage.tsx`** — Thay loading spinner bằng skeleton layout (cards + content grid) với animate-skeleton-pulse
+
+---
+
+## [1.18.0] - 2026-03-04
+
+### Added — OTP Authentication System (Email Verification)
+
+Triển khai hệ thống xác thực OTP qua email cho đăng ký và quên mật khẩu
+
+#### Backend — Database & Infrastructure
+- **`backend/prisma/schema.prisma`** — Thêm model `otp_tokens` và enum `OtpPurpose` (REGISTER, RESET_PASSWORD)
+  - Fields: id, email, purpose, code (bcrypt-hashed), verification_token (unique), is_verified, attempts_made, max_attempts, expires_at
+  - Indexes: email, expires_at, verification_token
+- **`backend/src/config/index.ts`** — Thêm cấu hình SMTP (host, port, user, pass, fromName) và OTP (length, expirationMinutes, maxAttempts, resendDelaySeconds)
+- **`backend/src/config/email.ts`** — **(NEW)** Nodemailer transporter setup với `verifyEmailConnection()` cho startup health check
+- **`backend/.env.example`** — Thêm environment variables: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, SMTP_FROM_NAME, OTP_LENGTH, OTP_EXPIRATION_MINUTES, OTP_MAX_ATTEMPTS, OTP_RESEND_DELAY_SECONDS
+
+#### Backend — Services
+- **`backend/src/services/otpService.ts`** — **(NEW)** OTP lifecycle management
+  - `sendOtpForRegister()` — Kiểm tra email chưa tồn tại, check resend delay, tạo OTP 6 chữ số, hash bcrypt, lưu DB, gửi email
+  - `sendOtpForReset()` — Luôn trả success (bảo mật), chỉ gửi nếu user tồn tại
+  - `verifyOtpForRegister()` / `verifyOtpForReset()` — Validate OTP, check expiration, attempt limits, trả verification/reset token
+  - `validateRegistrationToken()` / `validateResetToken()` — Validate token trước khi thực hiện action
+  - `consumeOtpToken()` / `cleanupExpiredOtps()` — Cleanup logic
+- **`backend/src/services/emailService.ts`** — **(NEW)** Email sending với HTML templates
+  - `createRegisterOtpTemplate()` — Template xanh dương, welcome message
+  - `createResetOtpTemplate()` — Template đỏ, security warning
+- **`backend/src/services/authService.ts`** — Cập nhật `register()` chấp nhận `registrationToken`, thêm `resetPassword()` method (validate token → hash password → transaction update + xóa refresh tokens)
+
+#### Backend — Routes, Controllers & Middleware
+- **`backend/src/validations/authValidation.ts`** — Thêm 5 Zod schemas: sendOtpRegister, verifyOtpRegister, sendOtpReset, verifyOtpReset, resetPassword
+- **`backend/src/controllers/authController.ts`** — Thêm 5 controller methods: sendOtpRegister, verifyOtpRegister, sendOtpReset, verifyOtpReset, resetPassword
+- **`backend/src/routes/authRoutes.ts`** — Thêm 5 routes mới với rate limiting và validation middleware
+- **`backend/src/middlewares/securityMiddleware.ts`** — Thêm `otpSendLimiter` (3 req/5min) và `otpVerifyLimiter` (10 req/10min)
+- **`backend/src/middlewares/errorMiddleware.ts`** — Thêm xử lý `OtpError` với response format gồm error code và attemptsRemaining
+- **`backend/src/utils/errors.ts`** — Thêm class `OtpError` (codes: OTP_EXPIRED, OTP_INVALID, OTP_LIMIT, OTP_USED, OTP_NOT_FOUND, OTP_RESEND_DELAY) và `RateLimitError`
+
+#### Frontend — API Layer
+- **`frontend/src/api/endpoints.ts`** — Thêm 7 endpoint constants: CHECK_EMAIL, CHECK_USERNAME, SEND_OTP_REGISTER, VERIFY_OTP_REGISTER, SEND_OTP_RESET, VERIFY_OTP_RESET, RESET_PASSWORD
+- **`frontend/src/api/services/authService.ts`** — Thêm `registrationToken` vào RegisterRequest, 5 API functions mới: sendOtpRegister, verifyOtpRegister, sendOtpReset, verifyOtpReset, resetPassword
+
+#### Frontend — Components & Pages
+- **`frontend/src/components/auth/OtpVerification.tsx`** — **(NEW)** Reusable OTP verification component
+  - InputOTP 6 chữ số (2 groups × 3), auto-submit khi nhập đủ
+  - Countdown hết hạn OTP, countdown gửi lại (60s)
+  - Loading state, error display với animation, nút "Gửi lại mã OTP"
+- **`frontend/src/pages/RegisterPage.tsx`** — Nâng cấp từ 3 bước lên 4 bước wizard
+  - Step 1: Email (gửi OTP thay vì chỉ check) → Step 2: Xác thực OTP → Step 3: Username/DisplayName → Step 4: Password
+  - StepIndicator thêm icon ShieldCheck cho bước xác thực
+  - Hiển thị badge CheckCircle2 xanh cho email đã xác thực ở Step 3, 4
+  - Pass `registrationToken` vào API register
+- **`frontend/src/pages/ForgotPasswordPage.tsx`** — **(NEW)** Trang quên mật khẩu 3 bước
+  - Step 1: Nhập email → Step 2: Xác thực OTP → Step 3: Đặt mật khẩu mới
+  - Tích hợp OtpVerification component, PasswordStrength indicator
+  - Màn hình success với nút "Đăng nhập ngay"
+- **`frontend/src/pages/LoginPage.tsx`** — Thêm link "Quên mật khẩu?" trỏ đến `/forgot-password`
+- **`frontend/src/app/App.tsx`** — Thêm route `/forgot-password` → ForgotPasswordPage
+- **`frontend/src/contexts/AuthContext.tsx`** — Cập nhật `register()` chấp nhận tham số `registrationToken`
+
+### Security
+- OTP codes được hash bcrypt trước khi lưu database
+- Rate limiting: 3 lần gửi OTP/5 phút, 10 lần verify/10 phút
+- Resend delay: 60 giây giữa các lần gửi lại
+- Max attempts: 5 lần thử sai mỗi OTP
+- Reset password: xóa tất cả refresh tokens (force logout các thiết bị khác)
+- Password reset endpoint luôn trả success message (chống enumeration)
+
+### Fixed — SMTP Configuration & Error Handling
+- **`backend/src/config/email.ts`** — Cải thiện error messages
+  - Thêm kiểm tra credentials trước khi verify kết nối
+  - Hiển thị hướng dẫn setup cho Gmail, Mailgun, SendGrid
+- **`backend/src/services/emailService.ts`** — Validate SMTP credentials
+  - Kiểm tra SMTP_USER và SMTP_PASS có cấu hình trước khi gửi email
+  - Throw error với message hướng dẫn nếu credentials không tìm thấy
+- **`backend/src/services/otpService.ts`** — Email sending error handling
+  - Try-catch trong `createAndSendOtp()`: nếu email fail, xóa OTP record khỏi DB
+  - Detect và unwrap SMTP credential errors
+  - Provide user-friendly error messages thay vì cryptic Nodemailer errors
+- **`backend/src/index.ts`** — Email verification at startup
+  - Thêm `verifyEmailConnection()` call để check SMTP config khi server start
+  - Log warnings nếu credentials không được cấu hình (non-blocking)
+- **`backend/.env.example`** — Enhanced SMTP documentation
+  - Thêm detailed setup instructions cho Gmail (App Password), Mailgun, SendGrid
+  - Thêm links đến docs của từng provider
+  - Thêm example credentials format
 
 ---
 

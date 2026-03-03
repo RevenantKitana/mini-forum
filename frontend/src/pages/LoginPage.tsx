@@ -113,6 +113,11 @@ export function LoginPage() {
               {errors.password && (
                 <p className="text-sm text-destructive animate-error-shake">{errors.password.message}</p>
               )}
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  Quên mật khẩu?
+                </Link>
+              </div>
             </div>
 
             {/* Demo Credentials */}

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError, ValidationError } from '../utils/errors.js';
+import { AppError, ValidationError, OtpError } from '../utils/errors.js';
 import { sendError } from '../utils/response.js';
 import config from '../config/index.js';
 
@@ -26,6 +26,15 @@ export function errorMiddleware(
   if (err instanceof AppError) {
     if (err instanceof ValidationError) {
       sendError(res, err.message, err.statusCode, err.errors);
+      return;
+    }
+    if (err instanceof OtpError) {
+      res.status(err.statusCode).json({
+        success: false,
+        message: err.message,
+        error: err.code,
+        attemptsRemaining: err.attemptsRemaining,
+      });
       return;
     }
     sendError(res, err.message, err.statusCode);

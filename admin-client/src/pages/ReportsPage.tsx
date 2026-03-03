@@ -137,16 +137,16 @@ export function ReportsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Loại</TableHead>
               <TableHead>Lý do</TableHead>
-              <TableHead>Mô tả</TableHead>
-              <TableHead>Người báo cáo</TableHead>
+              <TableHead className="hidden sm:table-cell">Mô tả</TableHead>
+              <TableHead className="hidden md:table-cell">Người báo cáo</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead>Ngày tạo</TableHead>
+              <TableHead className="hidden lg:table-cell">Ngày tạo</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -166,18 +166,18 @@ export function ReportsPage() {
                       <div className="text-sm font-medium">{report.reason}</div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="max-w-xs">
                       <div className="text-sm text-muted-foreground">
                         {truncateText(report.description || 'Không có mô tả', 50)}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="text-sm">@{report.reporter.username}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(report.status)}</TableCell>
-                  <TableCell>{formatDate(report.createdAt)}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{formatDate(report.createdAt)}</TableCell>
                   <TableCell>
                     {report.status === 'PENDING' && (
                       <DropdownMenu>

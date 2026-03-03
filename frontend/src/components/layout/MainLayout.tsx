@@ -39,11 +39,14 @@ export function MainLayout() {
           {showLeftSidebar && (
             <aside 
               className={cn(
-                "h-full hidden md:block transition-all duration-300 ease-in-out",
-                isLeftSidebarCollapsed ? "w-0 opacity-0 overflow-hidden" : "sidebar-left opacity-100"
+                "h-full hidden md:block overflow-hidden",
+                "transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                isLeftSidebarCollapsed 
+                  ? "w-0 opacity-0 scale-x-0 origin-left pointer-events-none" 
+                  : "sidebar-left opacity-100 scale-x-100 origin-left"
               )}
             >
-              <div className="h-full bg-background rounded-lg border shadow-sm overflow-hidden animate-fade-in relative">
+              <div className="h-full bg-background rounded-lg border shadow-sm overflow-hidden relative">
                 <Sidebar />
                 {/* Collapse button inside sidebar */}
                 <Tooltip>

@@ -226,17 +226,17 @@ export function PostsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Tiêu đề</TableHead>
               <TableHead>Tác giả</TableHead>
-              <TableHead>Danh mục</TableHead>
+              <TableHead className="hidden sm:table-cell">Danh mục</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Lượt xem</TableHead>
-              <TableHead className="text-right">Bình luận</TableHead>
-              <TableHead>Ngày tạo</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Lượt xem</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Bình luận</TableHead>
+              <TableHead className="hidden lg:table-cell">Ngày tạo</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -261,14 +261,14 @@ export function PostsPage() {
                     <div className="text-sm">@{post.author.username}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{post.category?.name || 'N/A'}</Badge>
+                    <Badge variant="outline" className="hidden sm:inline-flex">{post.category?.name || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(post.status, post.isPinned, post.isLocked, post.pinType)}
                   </TableCell>
-                  <TableCell className="text-right">{post.viewCount.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">{post.commentCount}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-right hidden md:table-cell">{post.viewCount.toLocaleString()}</TableCell>
+                  <TableCell className="text-right hidden md:table-cell">{post.commentCount}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                     {formatDate(post.createdAt)}
                   </TableCell>
                   <TableCell>

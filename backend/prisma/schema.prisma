@@ -328,3 +328,27 @@ enum VoteTarget {
   POST
   COMMENT
 }
+
+enum OtpPurpose {
+  REGISTER
+  RESET_PASSWORD
+}
+
+model otp_tokens {
+  id            Int        @id @default(autoincrement())
+  email         String
+  purpose       OtpPurpose @default(REGISTER)
+  code          String     @db.VarChar(255)
+  verification_token String @unique
+  is_verified   Boolean    @default(false)
+  verified_at   DateTime?
+  attempts_made Int        @default(0)
+  max_attempts  Int        @default(5)
+  expires_at    DateTime
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  @@index([email])
+  @@index([expires_at])
+  @@index([verification_token])
+}

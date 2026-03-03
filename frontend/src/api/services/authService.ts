@@ -25,6 +25,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   displayName?: string;
+  registrationToken?: string;
 }
 
 export interface AuthResponse {
@@ -52,6 +53,7 @@ export async function register(data: RegisterRequest): Promise<AuthUser> {
       username: data.username,
       password: data.password,
       display_name: data.displayName,
+      registrationToken: data.registrationToken,
     }
   );
   
@@ -104,6 +106,100 @@ export async function refreshToken(refreshToken: string): Promise<{ accessToken:
   const response = await apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
     API_ENDPOINTS.AUTH.REFRESH,
     { refreshToken }
+  );
+  return response.data.data;
+}
+
+// ==================== OTP APIs ====================
+
+export interface SendOtpResponse {
+  verificationToken: string;
+  expiresIn: number;
+}
+
+export interface VerifyOtpRegisterResponse {
+  registrationToken: string;
+  email: string;
+  otpVerified: boolean;
+  nextStep: string;
+}
+
+export interface VerifyOtpResetResponse {
+  resetToken: string;
+  email: string;
+  otpVerified: boolean;
+  nextStep: string;
+}
+
+export interface ResetPasswordResponse {
+  email: string;
+  passwordReset: boolean;
+  redirectTo: string;
+}
+
+/**
+ * Send OTP for registration
+ */
+export async function sendOtpRegister(email: string): Promise<SendOtpResponse> {
+  const response = await apiClient.post<ApiResponse<SendOtpResponse>>(
+    API_ENDPOINTS.AUTH.SEND_OTP_REGISTER,
+    { email }
+  );
+  return response.data.data;
+}
+
+/**
+ * Verify OTP for registration
+ */
+export async function verifyOtpRegister(
+  email: string,
+  verificationToken: string,
+  otp: string
+): Promise<VerifyOtpRegisterResponse> {
+  const response = await apiClient.post<ApiResponse<VerifyOtpRegisterResponse>>(
+    API_ENDPOINTS.AUTH.VERIFY_OTP_REGISTER,
+    { email, verificationToken, otp }
+  );
+  return response.data.data;
+}
+
+/**
+ * Send OTP for password reset
+ */
+export async function sendOtpReset(email: string): Promise<SendOtpResponse> {
+  const response = await apiClient.post<ApiResponse<SendOtpResponse>>(
+    API_ENDPOINTS.AUTH.SEND_OTP_RESET,
+    { email }
+  );
+  return response.data.data;
+}
+
+/**
+ * Verify OTP for password reset
+ */
+export async function verifyOtpReset(
+  email: string,
+  verificationToken: string,
+  otp: string
+): Promise<VerifyOtpResetResponse> {
+  const response = await apiClient.post<ApiResponse<VerifyOtpResetResponse>>(
+    API_ENDPOINTS.AUTH.VERIFY_OTP_RESET,
+    { email, verificationToken, otp }
+  );
+  return response.data.data;
+}
+
+/**
+ * Reset password after OTP verification
+ */
+export async function resetPassword(
+  email: string,
+  resetToken: string,
+  newPassword: string
+): Promise<ResetPasswordResponse> {
+  const response = await apiClient.post<ApiResponse<ResetPasswordResponse>>(
+    API_ENDPOINTS.AUTH.RESET_PASSWORD,
+    { email, resetToken, newPassword }
   );
   return response.data.data;
 }

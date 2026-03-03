@@ -201,16 +201,16 @@ export function CommentsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[350px]">Nội dung</TableHead>
               <TableHead>Tác giả</TableHead>
-              <TableHead>Bài viết</TableHead>
+              <TableHead className="hidden sm:table-cell">Bài viết</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Votes</TableHead>
-              <TableHead>Ngày tạo</TableHead>
+              <TableHead className="text-right hidden md:table-cell">Votes</TableHead>
+              <TableHead className="hidden lg:table-cell">Ngày tạo</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -258,7 +258,7 @@ export function CommentsPage() {
                     </div>
                     <div className="text-xs text-muted-foreground">@{comment.author.username}</div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <a
                       href={`http://localhost:5173/posts/${comment.post.id}`}
                       target="_blank"
@@ -272,12 +272,12 @@ export function CommentsPage() {
                   <TableCell>
                     {getStatusBadge(comment.status)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right hidden md:table-cell">
                     <span className="text-green-600">+{comment.upvoteCount}</span>
                     {' / '}
                     <span className="text-red-600">-{comment.downvoteCount}</span>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
                     {formatDate(comment.createdAt)}
                   </TableCell>
                   <TableCell>

@@ -3,6 +3,7 @@ import prisma from '../config/database.js';
 import { generateTokenPair, verifyRefreshToken, TokenPair, TokenPayload } from '../utils/jwt.js';
 import { BadRequestError, ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
 import { RegisterInput, LoginInput } from '../validations/authValidation.js';
+import * as otpService from './otpService.js';
 
 const SALT_ROUNDS = 12;
 
@@ -26,8 +27,17 @@ export interface AuthResponse {
 
 /**
  * Register a new user
+ * If registrationToken is provided, validates OTP verification first
  */
-export async function register(data: RegisterInput): Promise<AuthResponse> {
+export async function register(data: RegisterInput & { registrationToken?: string }): Promise<AuthResponse> {
+  // If registrationToken is provided, validate OTP verification
+  if (data.registrationToken) {
+    const isValid = await otpService.validateRegistrationToken(data.email, data.registrationToken);
+    if (!isValid) {
+      throw new BadRequestError('Token đăng ký không hợp lệ hoặc đã hết hạn. Vui lòng xác thực OTP lại.');
+    }
+  }
+
   // Check if email already exists
   const existingEmail = await prisma.users.findUnique({
     where: { email: data.email },
@@ -49,13 +59,14 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
   // Hash password
   const password_hash = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  // Create user
+  // Create user with verified status if OTP was used
   const user = await prisma.users.create({
     data: {
       email: data.email,
       username: data.username,
       password_hash: password_hash,
       display_name: data.display_name || null,
+      is_verified: !!data.registrationToken, // Mark as verified if OTP was used
     },
     select: {
       id: true,
@@ -87,6 +98,11 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
   });
+
+  // Consume the OTP token if it was used
+  if (data.registrationToken) {
+    await otpService.consumeOtpToken(data.email, data.registrationToken);
+  }
 
   return { user, tokens };
 }
@@ -281,6 +297,53 @@ export async function getCurrentUser(userId: number): Promise<AuthUser> {
   }
 
   return user;
+}
+
+/**
+ * Reset user password after OTP verification
+ */
+export async function resetPassword(
+  email: string,
+  resetToken: string,
+  newPassword: string
+): Promise<void> {
+  // Validate reset token
+  const isValid = await otpService.validateResetToken(email, resetToken);
+  if (!isValid) {
+    throw new BadRequestError('Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+  }
+
+  // Find user
+  const user = await prisma.users.findUnique({
+    where: { email },
+    select: { id: true, is_active: true },
+  });
+
+  if (!user) {
+    throw new NotFoundError('Không tìm thấy người dùng.');
+  }
+
+  if (!user.is_active) {
+    throw new BadRequestError('Tài khoản đã bị vô hiệu hóa.');
+  }
+
+  // Hash new password
+  const password_hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  // Update password and invalidate all sessions
+  await prisma.$transaction([
+    prisma.users.update({
+      where: { id: user.id },
+      data: { password_hash },
+    }),
+    // Invalidate all refresh tokens for the user (force re-login)
+    prisma.refresh_tokens.deleteMany({
+      where: { user_id: user.id },
+    }),
+  ]);
+
+  // Consume the reset token
+  await otpService.consumeOtpToken(email, resetToken);
 }
 
 

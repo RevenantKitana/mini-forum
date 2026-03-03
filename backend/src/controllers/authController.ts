@@ -1,7 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/authService.js';
+import * as otpService from '../services/otpService.js';
 import { sendSuccess, sendCreated, sendNoContent } from '../utils/response.js';
-import { RegisterInput, LoginInput, RefreshTokenInput } from '../validations/authValidation.js';
+import {
+  RegisterInput,
+  LoginInput,
+  RefreshTokenInput,
+  SendOtpRegisterInput,
+  VerifyOtpRegisterInput,
+  SendOtpResetInput,
+  VerifyOtpResetInput,
+  ResetPasswordInput,
+} from '../validations/authValidation.js';
 
 /**
  * Check if email is available
@@ -11,11 +21,11 @@ export async function checkEmail(req: Request, res: Response, next: NextFunction
   try {
     const email = req.query.email as string;
     if (!email) {
-      sendSuccess(res, { available: false }, 'Email is required');
+      sendSuccess(res, { available: false, exists: false }, 'Email is required');
       return;
     }
     const available = await authService.checkEmailAvailability(email);
-    sendSuccess(res, { available }, available ? 'Email is available' : 'Email is already taken');
+    sendSuccess(res, { available, exists: !available }, available ? 'Email is available' : 'Email is already taken');
   } catch (error) {
     next(error);
   }
@@ -45,7 +55,7 @@ export async function checkUsername(req: Request, res: Response, next: NextFunct
  */
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = req.body as RegisterInput;
+    const data = req.body as RegisterInput & { registrationToken?: string };
     const result = await authService.register(data);
 
     sendCreated(res, result, 'Registration successful');
@@ -126,6 +136,103 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
     const user = await authService.getCurrentUser(userId);
 
     sendSuccess(res, user, 'User retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== OTP Endpoints ====================
+
+/**
+ * Send OTP for registration
+ * POST /api/v1/auth/send-otp-register
+ */
+export async function sendOtpRegister(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = req.body as SendOtpRegisterInput;
+    const result = await otpService.sendOtpForRegister(email);
+
+    sendSuccess(res, {
+      verificationToken: result.verificationToken,
+      expiresIn: result.expiresIn,
+    }, 'Mã OTP đã được gửi đến email của bạn.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Verify OTP for registration
+ * POST /api/v1/auth/verify-otp-register
+ */
+export async function verifyOtpRegister(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email, verificationToken, otp } = req.body as VerifyOtpRegisterInput;
+    const result = await otpService.verifyOtpForRegister(email, verificationToken, otp);
+
+    sendSuccess(res, {
+      registrationToken: result.registrationToken,
+      email,
+      otpVerified: true,
+      nextStep: 'complete_registration',
+    }, 'Xác thực OTP thành công.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Send OTP for password reset
+ * POST /api/v1/auth/send-otp-reset
+ */
+export async function sendOtpReset(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = req.body as SendOtpResetInput;
+    const result = await otpService.sendOtpForReset(email);
+
+    sendSuccess(res, {
+      verificationToken: result.verificationToken,
+      expiresIn: result.expiresIn,
+    }, 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được mã OTP.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Verify OTP for password reset
+ * POST /api/v1/auth/verify-otp-reset
+ */
+export async function verifyOtpReset(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email, verificationToken, otp } = req.body as VerifyOtpResetInput;
+    const result = await otpService.verifyOtpForReset(email, verificationToken, otp);
+
+    sendSuccess(res, {
+      resetToken: result.resetToken,
+      email,
+      otpVerified: true,
+      nextStep: 'reset_password',
+    }, 'Xác thực OTP thành công. Bạn có thể đặt lại mật khẩu.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Reset password after OTP verification
+ * POST /api/v1/auth/reset-password
+ */
+export async function resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email, resetToken, newPassword } = req.body as ResetPasswordInput;
+    await authService.resetPassword(email, resetToken, newPassword);
+
+    sendSuccess(res, {
+      email,
+      passwordReset: true,
+      redirectTo: '/login',
+    }, 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.');
   } catch (error) {
     next(error);
   }

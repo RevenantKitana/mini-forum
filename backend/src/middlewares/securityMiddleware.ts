@@ -67,6 +67,30 @@ export const searchLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiter for OTP send requests (strict: 3 per 5 minutes per IP)
+export const otpSendLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 3, // 3 OTP requests per 5 minutes
+  message: {
+    success: false,
+    message: 'Quá nhiều yêu cầu gửi OTP. Vui lòng thử lại sau 5 phút.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for OTP verify requests (10 per 10 minutes per IP)
+export const otpVerifyLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 10, // 10 verify attempts per 10 minutes
+  message: {
+    success: false,
+    message: 'Quá nhiều lần thử xác thực OTP. Vui lòng thử lại sau.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Input sanitizer middleware - basic XSS prevention
 export function sanitizeInput(req: Request, _res: Response, next: NextFunction) {
   // Sanitize body
