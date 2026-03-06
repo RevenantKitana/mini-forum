@@ -98,6 +98,9 @@ export function PostDetailPage() {
   const { data: postData, isLoading: postLoading, error: postError } = usePost(id!);
   const post = postData;
 
+  // Trim leading/trailing whitespace to avoid large blank paragraphs
+  const sanitizeContent = (s?: string | null) => (typeof s === 'string' ? s.trim() : s);
+
   const { data: commentsData, isLoading: commentsLoading } = useComments(id!, { sort: commentSort });
   const comments = commentsData?.data || [];
 
@@ -230,7 +233,7 @@ export function PostDetailPage() {
   const authorAvatar = post?.author?.avatarUrl;
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="space-y-2 animate-fade-in-up">
       {/* Post Card */}
       <Card className="animate-fade-in-scale">
         <CardHeader>
@@ -256,7 +259,7 @@ export function PostDetailPage() {
                 )}
               </div>
               
-              <div className="flex items-start gap-3 mb-4">
+              <div className="flex items-start gap-3 mb-3">
                 {/* Category color badge */}
                 {post.category?.color && (
                   <span
@@ -273,7 +276,6 @@ export function PostDetailPage() {
                   {decodeHtmlEntities(post.title)}
                 </h1>
               </div>
-
               {post.author && (
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <Link
@@ -309,13 +311,14 @@ export function PostDetailPage() {
               </div>
             )}
           </div>
-        </CardHeader>
+        </CardHeader> 
 
         <CardContent>
-          <MarkdownRenderer content={post.content} />
 
+          <MarkdownRenderer content={post.content} />
+          
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-6">
+            <div className="flex flex-wrap gap-2 mt-4">
               {post.tags.map((tag) => (
                 <Link key={tag.id} to={`/?tag=${tag.slug}`}>
                   <Badge variant="secondary">{tag.name}</Badge>

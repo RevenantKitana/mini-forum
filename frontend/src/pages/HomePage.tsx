@@ -165,9 +165,9 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-10 bg-background pb-4 -mx-4 px-responsive pt-0 -mt-4 mb-0" style={{ top: '-16px' }}>
+      <div className="sticky top-0 z-10 bg-background pb-3 -mx-3 px-3 py-2 -mt-3 mb-0" style={{ top: '-12px' }}>
         {/* Header - Dynamic based on selected category */}
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-responsive-sm">
               {headerContent.icon ? (
@@ -191,7 +191,7 @@ export function HomePage() {
         </div>
 
         {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-responsive flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Sort buttons with toggle functionality - fixed width */}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
@@ -302,7 +302,7 @@ export function HomePage() {
       </div>
 
       {/* Scrollable Posts List */}
-      <div className="flex-1 overflow-y-auto pt-4">
+      <div className="flex-1 overflow-y-auto pt-3">
         {/* Show restricted content message if user cannot view category */}
         {!canViewCategory && selectedCategory ? (
           <RestrictedContent
@@ -314,7 +314,7 @@ export function HomePage() {
           <PostListSkeleton count={5} />
         ) : data?.data && data.data.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {data.data.map((post, index) => (
                 <div 
                   key={post.id} 
@@ -328,7 +328,7 @@ export function HomePage() {
 
             {/* Pagination */}
             {data.pagination && data.pagination.totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-8 pb-4">
+              <div className="flex justify-center gap-2 mt-6 pb-4">
                 <Button
                   variant="outline"
                   className="btn-press"

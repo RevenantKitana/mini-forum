@@ -121,7 +121,7 @@ export function NotificationBell() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative btn-press hover:animate-wiggle"
+                className="relative min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 btn-press hover:animate-wiggle"
                 disabled={isOnNotificationsPage}
               >
                 <Bell 

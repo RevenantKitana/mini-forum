@@ -174,12 +174,13 @@ export function RightSidebar() {
   return (
     <>
       <aside className="h-full overflow-y-auto scrollbar-gutter-stable animate-enter-right">
-        <div className="flex flex-col h-full p-responsive">
+        {/* p-3: reduced from p-responsive (Phase 4 - 2026-03-06) */}
+        <div className="flex flex-col h-full p-3">
           {/* Pinned/Featured Posts - Main content */}
           <div className="flex-1">
             <div className="rounded-lg border bg-muted/30 overflow-hidden">
-              <div className="px-responsive py-2 border-b bg-primary/5">
-                <h3 className="font-semibold flex items-center gap-2 text-responsive-sm uppercase tracking-wide text-muted-foreground">
+              <div className="px-3 py-2 border-b bg-primary/5">
+                <h3 className="font-semibold flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
                   <Pin className="h-4 w-4 text-primary flex-shrink-0 animate-float" />
                   <span className="truncate">Bài viết nổi bật</span>
                 </h3>
@@ -231,7 +232,7 @@ export function RightSidebar() {
           </div>
 
           {/* Markdown Guide - At the bottom */}
-          <div className="mt-auto pt-4">
+          <div className="mt-auto pt-3">
             <MarkdownGuide variant="compact" />
           </div>
         </div>

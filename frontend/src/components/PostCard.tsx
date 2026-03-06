@@ -68,9 +68,9 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Card className="card-hover-lift border-l-4 border-l-transparent hover:border-l-primary transition-all duration-200 flex flex-col">
-      <CardHeader className="pb-2 md:pb-3">
+      <CardHeader className="pb-2">
         {/* Title & Status Row */}
-        <div className="space-y-2 mb-1">
+        <div className="space-y-1.5 mb-0.5">
           <div className="flex items-start gap-2 flex-wrap">
             {post.isPinned && (
               <Tooltip>
@@ -120,22 +120,22 @@ export function PostCard({ post }: PostCardProps) {
         </div>
 
         {/* Author & Meta Row */}
-        <div className="flex items-center gap-2 flex-wrap text-responsive-sm">
+        <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm">
           {post.author && (
             <Link
               to={`/users/${post.author.username}`}
               className="flex items-center gap-1.5 hover:text-foreground transition-colors group/author flex-shrink-0"
             >
-              <Avatar className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover/author:scale-110">
+              <Avatar className="h-5 w-5 sm:h-5 sm:w-5 flex-shrink-0 transition-transform duration-200 group-hover/author:scale-110">
                 <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                <AvatarFallback className="text-xs">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="text-[10px]">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
               <span className="truncate font-medium text-foreground">{authorDisplayName}</span>
             </Link>
           )}
           
-          {/* Author role badge */}
-          {getAuthorBadge()}
+          {/* Author role badge - hidden on very small screens */}
+          <span className="hidden sm:contents">{getAuthorBadge()}</span>
           
           <span className="text-muted-foreground flex-shrink-0">•</span>
           <span className="text-muted-foreground text-responsive-xs flex-shrink-0">
@@ -170,15 +170,15 @@ export function PostCard({ post }: PostCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="pb-3 flex-1 space-y-3">
+      <CardContent className="pb-2 flex-1 space-y-2">
         {/* Excerpt */}
-        <p className="text-responsive-sm text-muted-foreground line-clamp-2 whitespace-pre-line">
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 whitespace-pre-line leading-relaxed">
           {decodedExcerpt}
         </p>
         
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-responsive-sm">
+          <div className="flex flex-wrap gap-1">
             {post.tags.slice(0, 3).map((tag) => (
               <Link key={tag.id} to={`/?tag=${tag.slug}`}>
                 <Badge variant="secondary" className="hover:bg-primary hover:text-primary-foreground cursor-pointer text-responsive-xs transition-all duration-200 btn-press inline-block">
@@ -196,32 +196,32 @@ export function PostCard({ post }: PostCardProps) {
       </CardContent>
 
       {/* Footer Stats & Actions */}
-      <CardFooter className="border-t pt-3 pb-3 flex items-center justify-between gap-2 flex-wrap">
+      <CardFooter className="border-t pt-2 pb-2 flex items-center justify-between gap-2 flex-wrap">
         {/* Stats Row */}
-        <div className="flex items-center gap-3 text-responsive-sm text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
           {/* Vote score with visual indicator */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+              <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md transition-all ${
                 voteScore > 0 ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400' : 
                 voteScore < 0 ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400' : 
                 'bg-muted'
               }`}>
-                <span className="font-semibold text-responsive-sm">{voteScore}</span>
-                <span className="text-responsive-xs">điểm</span>
+                <span className="font-semibold">{voteScore}</span>
+                <span className="hidden sm:inline text-xs">điểm</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {post.upvoteCount} upvote {post.downvoteCount} downvote
+              {post.upvoteCount} upvote · {post.downvoteCount} downvote
             </TooltipContent>
           </Tooltip>
 
           {/* Comments count */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-all cursor-help">
-                <MessageSquare className="h-4 w-4" />
-                <span className="text-responsive-sm">{post.commentCount}</span>
+              <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>{post.commentCount}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -232,9 +232,9 @@ export function PostCard({ post }: PostCardProps) {
           {/* Views count - hidden on mobile */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-all cursor-help">
-                <Eye className="h-4 w-4" />
-                <span className="text-responsive-sm">{post.viewCount}</span>
+              <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
+                <Eye className="h-3.5 w-3.5" />
+                <span>{post.viewCount}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">

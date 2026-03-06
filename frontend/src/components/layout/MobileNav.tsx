@@ -104,9 +104,9 @@ export function MobileNav({ className }: MobileNavProps) {
           <span className="sr-only">Mở menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[min(85vw,380px)] p-0 flex flex-col">
+      <SheetContent side="left" className="w-[min(90vw,400px)] p-0 flex flex-col">
         <SheetHeader className="px-4 pt-4 pb-2">
-          <SheetTitle className="text-left text-lg">Forum</SheetTitle>
+          <SheetTitle className="text-left text-lg sm:text-xl">Forum</SheetTitle>
         </SheetHeader>
 
         {/* Mobile Search */}

@@ -34,7 +34,8 @@ export function MainLayout() {
     <div className="h-screen flex flex-col overflow-hidden bg-muted/30">
       <Header />
       <div className="flex-1 overflow-hidden">
-        <div className="w-full h-full flex gap-responsive py-responsive px-responsive">
+        {/* Mobile-optimized spacing: gap-3 → gap-4, py-3 → py-4, px-3 → px-4 */}
+        <div className="w-full h-full flex gap-3 md:gap-4 py-3 md:py-4 px-3 md:px-4">
           {/* Left Sidebar - responsive width using CSS variables, smart hiding with collapse support */}
           {showLeftSidebar && (
             <aside 
@@ -88,7 +89,7 @@ export function MainLayout() {
           )}
           
           {/* Main content - scrolls independently with smooth transitions */}
-          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-responsive scroll-smooth scrollbar-gutter-stable">
+          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-4 md:p-5 scroll-smooth scrollbar-gutter-stable">
             <div className="animate-fade-in-up">
               <Outlet />
             </div>

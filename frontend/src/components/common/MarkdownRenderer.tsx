@@ -74,6 +74,9 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
     // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>');
 
+    // Images ![alt](url) - responsive with lazy loading
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-2" loading="lazy" />');
+
     // Blockquotes (> text)
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-4 border-muted-foreground/30 pl-4 my-1.5 text-muted-foreground italic">$1</blockquote>');
 

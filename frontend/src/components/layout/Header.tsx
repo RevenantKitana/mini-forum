@@ -52,7 +52,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full flex h-14 items-center px-responsive gap-responsive">
+      {/* h-12 on mobile, h-14 on sm+ | px-4 mobile (16px), px-responsive on sm+ */}
+      <div className="w-full flex h-12 sm:h-14 items-center px-4 sm:px-responsive gap-2 sm:gap-responsive">
         {/* Mobile hamburger menu */}
         <MobileNav />
 
@@ -168,8 +169,8 @@ export function Header() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-1 btn-press">
-                    <Avatar className="h-8 w-8 ring-2 ring-transparent hover:ring-primary/20 transition-all">
+                  <Button variant="ghost" className="relative h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full ml-1 btn-press">
+                    <Avatar className="h-8 w-8 sm:h-8 sm:w-8 ring-2 ring-transparent hover:ring-primary/20 transition-all">
                       <AvatarImage src={user?.avatar || undefined} alt={user?.displayName || user?.username} />
                       <AvatarFallback className="bg-primary/10 text-primary font-medium">
                         {(user?.displayName || user?.username || 'U')?.[0]?.toUpperCase() || 'U'}

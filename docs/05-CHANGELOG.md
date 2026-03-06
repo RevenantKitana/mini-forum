@@ -1,7 +1,7 @@
 # Changelog — Mini Forum
 
-> **Version**: v1.19.1  
-> **Last Updated**: 2026-03-04
+> **Version**: v1.21.0  
+> **Last Updated**: 2026-03-06
 
 Tất cả các thay đổi lớn của dự án này sẽ được ghi lại trong file này.
 
@@ -9,6 +9,137 @@ Tất cả các thay đổi lớn của dự án này sẽ được ghi lại tr
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+## [1.21.0] - 2026-03-06
+
+### Improved — Mobile UX/UI & Responsive Optimization (PLAN.md Phase 1–5)
+
+Tối ưu UX/UI mobile cho frontend user client, phạm vi 720x1280 → 1080x1920.
+Không thay đổi API, không ảnh hưởng admin-client, backward compatible với desktop.
+
+#### Phase 1 — Touch & Spacing Foundation
+
+- **`frontend/src/styles/theme.css`** — Thêm CSS variables mới:
+  - **Touch target tokens**: `--touch-target-min: 44px`, `--touch-target-comfortable: 48px`
+  - **Button size scale**: `--button-height-sm`, `--button-height-md`, `--button-height-lg`
+  - **Responsive spacing presets**: `--spacing-page-x`, `--spacing-page-y`, `--spacing-compact-x/y`, `--spacing-comfortable-x/y` sử dụng `clamp()` để scale tự động 12–24px
+
+- **`frontend/src/components/layout/Header.tsx`** — Mobile padding cải thiện:
+  - `px-3` → `px-4` (16px trên mobile, responsive trên sm+)
+  - User menu button: thêm `min-h-[44px] min-w-[44px]` đảm bảo touch target WCAG 2.1
+
+- **`frontend/src/components/layout/MainLayout.tsx`** — Tăng breathing room:
+  - Layout gaps: `gap-2 md:gap-3` → `gap-3 md:gap-4`
+  - Layout padding: `py-2 md:py-3 px-2 md:px-3` → `py-3 md:py-4 px-3 md:px-4`
+  - Main content padding: `p-3 md:p-4` → `p-4 md:p-5`
+
+- **`frontend/src/components/layout/Sidebar.tsx`** — Sidebar padding:
+  - `p-2.5 md:p-3.5` → `p-3 md:p-4` (tăng 20% padding)
+
+#### Phase 2 — Form & Input Optimization
+
+- **`frontend/src/app/components/ui/input.tsx`** — Mobile input height:
+  - `h-9` (36px) → `h-10 sm:h-9` (40px mobile, 36px desktop)
+  - Cải thiện touch target cho form inputs, ngăn iOS auto-zoom khi focus
+
+- **`frontend/src/components/common/PostFormDialog.tsx`** — Mobile responsive dialog:
+  - Width: `w-[50vw]` → `w-[95vw] sm:w-[85vw] md:w-[70vw] lg:w-[50vw]` (full-width mobile)
+  - Max width: thêm `max-w-2xl` cap cho desktop
+  - Max height: `max-h-[80vh]` → `max-h-[85vh] sm:max-h-[80vh]` (thêm space mobile)
+  - Padding responsive: `px-6 pt-6` → `px-4 sm:px-6 pt-4 sm:pt-6`
+
+#### Phase 3 — Typography & Readability
+
+- **`frontend/src/styles/theme.css`** — Font size mobile-optimized:
+  - `--font-size-sm`: `12px→14px` → `13px→14px` (+1px min cho mobile)
+  - `--font-size-base`: `14px→16px` → `15px→16px` (+1px min cho mobile)
+  - `--font-size-lg`: `16px→18px` → `17px→18px` (+1px min cho mobile)
+  - `--line-height-normal`: `1.5` → `1.6` (tăng line-height cho readability)
+
+#### Phase 4 — Modal & Navigation UX
+
+- **`frontend/src/components/layout/MobileNav.tsx`** — Drawer optimization:
+  - Width: `85vw/380px` → `90vw/400px` (rộng hơn cho mobile)
+  - Title: thêm responsive sizing `text-lg sm:text-xl`
+
+- **`frontend/src/components/common/ThemeToggle.tsx`** — Touch target:
+  - Thêm `min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0` (44px trên mobile, giữ 36px desktop)
+
+- **`frontend/src/components/common/NotificationBell.tsx`** — Touch target:
+  - Thêm `min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0`
+
+#### Phase 5 — Image & Media Optimization
+
+- **`frontend/src/components/PostCard.tsx`** — Avatar mobile:
+  - Avatar: `h-4 w-4 sm:h-5 sm:w-5` → `h-5 w-5` (consistent 20px, dễ tap hơn)
+
+- **`frontend/src/components/common/MarkdownRenderer.tsx`** — Responsive images:
+  - Thêm markdown image support: `![alt](url)` → `<img>` với `max-w-full h-auto rounded-md loading="lazy"`
+
+---
+
+## [1.20.0] - 2026-03-06
+
+### Improved — UX/UI: Frontend Spacing & Layout Optimizations (Phase 1–4)
+
+Loạt cải tiến UX/UI toàn diện theo PLAN.md, tập trung vào mật độ nội dung mobile, tính compact của card và giảm whitespace dư thừa.
+
+#### Phase 1 — Spacing & Layout Refinement (LOW RISK)
+
+- **`frontend/src/styles/theme.css`** — Thêm CSS design tokens và utility classes mới:
+  - **Spacing variants**: `--spacing-unit-tight`, `--spacing-unit-normal`, `--spacing-unit-loose`
+  - **Padding variants**: `--padding-sm`, `--padding-normal`, `--padding-lg`
+  - **Modular typography scale**: `--font-size-xs` (11→13px) → `--font-size-2xl` (22→30px) với `clamp()` fluid scaling
+  - **Line-height tokens**: `--line-height-tight` (1.3), `--line-height-normal` (1.5), `--line-height-relaxed` (1.75)
+  - **Utility classes**: `.text-responsive-xs`, `.gap-responsive-tight`, `.p-responsive-sm`, `.px-responsive-sm`, `.py-responsive-sm`
+
+- **`frontend/src/components/PostCard.tsx`** — Compact layout tổng thể:
+  - `CardHeader`: `pb-2 md:pb-3` → `pb-2` (loại bỏ md variation thừa)
+  - Title section: `space-y-2 mb-1` → `space-y-1.5 mb-0.5` (tighter internal spacing)
+  - Author meta row: `gap-2 text-responsive-sm` → `gap-1.5 text-xs sm:text-sm` (responsive text size)
+  - Author avatar: `h-5 w-5` → `h-4 w-4 sm:h-5 sm:w-5` (smaller on mobile)
+  - Role badge (Admin/Mod): ẩn trên màn hình < sm (`hidden sm:contents`)
+  - `CardContent`: `pb-3 space-y-3` → `pb-2 space-y-2`
+  - Excerpt: `text-responsive-sm` → `text-xs sm:text-sm` với `leading-relaxed`
+  - Tags gap: `gap-responsive-sm` → `gap-1` (fixed compact gap)
+  - `CardFooter`: `pt-3 pb-3` → `pt-2 pb-2` (-33% vertical padding)
+  - Stats gap: `gap-3` → `gap-2`; stats badge: `px-2 py-1` → `px-1.5 py-0.5` (smaller pills)
+  - Icons stats: `h-4 w-4` → `h-3.5 w-3.5`
+  - **Kết quả**: Card height giảm ~14% (~280px → ~240px)
+
+- **`frontend/src/pages/HomePage.tsx`** — Grid và header tighter:
+  - Sticky header: `-mx-4 px-responsive pt-0 -mt-4` → `-mx-3 px-3 py-2 -mt-3` (reduced outer margins)
+  - Header title `mb-4` → `mb-3`
+  - Sort tabs row: `gap-responsive` → `gap-2` (fixed compact gap)
+  - Posts list: `pt-4` → `pt-3`
+  - **Grid breakpoint**: `grid-cols-1 md:grid-cols-2 gap-4` → `grid-cols-1 sm:grid-cols-2 gap-3`
+    - `sm:` (640px+) thay vì `md:` (768px+) → 2 cột xuất hiện sớm hơn trên tablet
+    - gap giảm từ 16px → 12px
+  - Pagination: `mt-8` → `mt-6`
+
+- **`frontend/src/components/layout/MainLayout.tsx`** — Outer layout tighter:
+  - Wrapper: `gap-responsive py-responsive px-responsive` → `gap-2 md:gap-3 py-2 md:py-3 px-2 md:px-3`
+  - Main content padding: `p-responsive` → `p-3 md:p-4`
+
+#### Phase 2 — Mobile-First Optimization (MEDIUM RISK)
+
+- **`frontend/src/components/layout/Header.tsx`** — Responsive header height:
+  - `h-14` (56px, fixed) → `h-12 sm:h-14` (48px mobile / 56px sm+)
+  - `px-responsive gap-responsive` → `px-3 sm:px-responsive gap-2 sm:gap-responsive`
+  - **Kết quả**: Tiết kiệm 8px trên mobile, thêm ~3% nội dung hiển thị above-fold
+
+- **`frontend/src/components/layout/Sidebar.tsx`** — Mobile padding compaction:
+  - Outer padding: `p-responsive` → `p-2.5 md:p-3.5` (mobile 10px / desktop 14px)
+  - Section headers: `mb-3 gap-2 text-responsive-sm` → `mb-2 gap-1.5 text-xs`
+  - Tags/Stats section top margin: `mt-4` → `mt-3`
+  - Tag badges gap: `gap-2` → `gap-1.5`
+
+#### Phase 4 — RightSidebar Optimization (OPTIONAL)
+
+- **`frontend/src/components/layout/RightSidebar.tsx`** — Reduce padding:
+  - Main container: `p-responsive` → `p-3`
+  - Featured section header: `px-responsive` → `px-3`; title text: `text-responsive-sm` → `text-xs`
+  - Markdown guide section: `pt-4` → `pt-3`
 
 ## [1.19.1] - 2026-03-04
 

@@ -462,8 +462,8 @@ export function PostFormDialog({
           </DialogTrigger>
         )}
         
-        <DialogContent className="max-w-none w-[50vw] max-h-[80vh] p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-2">
+        <DialogContent className="w-[95vw] sm:w-[85vw] md:w-[70vw] lg:w-[50vw] max-w-2xl max-h-[85vh] sm:max-h-[80vh] p-0 overflow-hidden">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {mode === 'create' ? (
@@ -489,19 +489,19 @@ export function PostFormDialog({
           </DialogHeader>
           
           {isLoading ? (
-            <div className="px-6 pb-6 space-y-4">
+            <div className="px-4 sm:px-6 pb-6 space-y-4">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-1/2" />
               <Skeleton className="h-40 w-full" />
               <Skeleton className="h-10 w-32" />
             </div>
           ) : !isEditing && mode === 'edit' && !post ? (
-            <div className="px-6 pb-6 text-center text-muted-foreground">
+            <div className="px-4 sm:px-6 pb-6 text-center text-muted-foreground">
               Không tìm thấy bài viết
             </div>
           ) : (
-            <ScrollArea className="max-h-[calc(80vh-140px)]">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-6 pb-6">
+            <ScrollArea className="max-h-[calc(85vh-140px)] sm:max-h-[calc(80vh-140px)]">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-4 sm:px-6 pb-6">
                 {/* Title */}
                 <div className="space-y-2">
                   <Label htmlFor="title">Tiêu đề</Label>

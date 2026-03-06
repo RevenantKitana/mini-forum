@@ -132,12 +132,13 @@ export function Sidebar() {
 
   return (
     <aside className="h-full overflow-hidden scrollbar-gutter-stable animate-enter-left">
-      <div className="flex flex-col h-full p-responsive">
+      {/* p-3 md:p-4 - Mobile-optimized sidebar padding */}
+      <div className="flex flex-col h-full p-3 md:p-4">
         {/* Categories - 45% height */}
         <div style={{ flex: '0 0 45%' }} className="flex flex-col min-h-0">
           {!shouldHideFilters && (
             <div className="flex flex-col h-full">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-responsive-sm uppercase tracking-wide text-muted-foreground">
+              <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
                 <Folder className="h-4 w-4 flex-shrink-0" />
                 <span className="truncate">Categories</span>
               </h3>
@@ -216,11 +217,11 @@ export function Sidebar() {
         </div>
 
         {/* Tags - 35% height */}
-        <div style={{ flex: '0 0 35%' }} className="flex flex-col min-h-0 mt-4">
+        <div style={{ flex: '0 0 35%' }} className="flex flex-col min-h-0 mt-3">
           {!shouldHideFilters && (
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
                   <Tag className="h-4 w-4" />
                   Popular Tags
                 </h3>
@@ -248,7 +249,7 @@ export function Sidebar() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-2 overflow-y-auto">
+                  <div className="flex flex-wrap gap-1.5 overflow-y-auto">
                     {popularTags?.map((tag) => {
                       const isActive = activeTags.includes(tag.slug);
                       const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
@@ -296,7 +297,7 @@ export function Sidebar() {
         </div>
 
         {/* Community Stats - 20% height (remaining) */}
-        <div style={{ flex: '0 0 20%' }} className="flex flex-col min-h-0 mt-4">
+        <div style={{ flex: '0 0 20%' }} className="flex flex-col min-h-0 mt-3">
           <div className="flex flex-col h-full rounded-lg border p-3 bg-muted/50 animate-fade-in-up">
             <h3 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 animate-float" />
