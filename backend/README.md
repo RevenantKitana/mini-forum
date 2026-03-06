@@ -132,6 +132,7 @@ cp .env.example .env           # Cấu hình DATABASE_URL + JWT secrets
 npm run db:generate            # Generate Prisma Client
 npm run db:migrate             # Chạy migrations
 npm run db:seed                # Seed dữ liệu mẫu (tùy chọn)
+npx prisma migrate reset --force  #clear
 ```
 
 ### Scripts

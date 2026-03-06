@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
+import { MobileNav } from './MobileNav';
 import {
   Search,
   User,
@@ -52,6 +53,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full flex h-14 items-center px-responsive gap-responsive">
+        {/* Mobile hamburger menu */}
+        <MobileNav />
+
         {/* Logo - Left side */}
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-all duration-200 flex-shrink-0 group">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-110 group-hover:rotate-3">
@@ -135,6 +139,17 @@ export function Header() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-1">
+          {/* Mobile search button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden min-h-[44px] min-w-[44px]"
+            onClick={() => navigate('/search')}
+            aria-label="Tìm kiếm"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
           {/* New Post Button - Only when authenticated */}
           {isAuthenticated && (
             <div className="hidden sm:block">

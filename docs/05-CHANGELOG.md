@@ -1,6 +1,6 @@
 # Changelog — Mini Forum
 
-> **Version**: v1.18.1  
+> **Version**: v1.19.1  
 > **Last Updated**: 2026-03-04
 
 Tất cả các thay đổi lớn của dự án này sẽ được ghi lại trong file này.
@@ -9,6 +9,135 @@ Tất cả các thay đổi lớn của dự án này sẽ được ghi lại tr
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+## [1.19.1] - 2026-03-04
+
+### Fixed — P0-BUG-1: Comment Reply tạo Regular Comments thay vì Replies
+
+- **`frontend/src/pages/PostDetailPage.tsx`** — Sửa `handleSubmitReply`: đổi field name từ `parentId` → `parent_id` và `quotedCommentId` → `quoted_comment_id` để khớp interface `CreateCommentData` (snake_case).  
+  Root cause: Component gửi camelCase nhưng `CreateCommentData` định nghĩa snake_case → `parent_id` luôn `undefined` khi gửi lên backend.
+
+### Fixed — P0-BUG-2: Avatar Update không hoạt động từ Frontend
+
+- **`frontend/src/hooks/useUsers.ts`** — Refactor `useUpdateAvatar`:
+  - Thêm `useAuth()` để lấy `user.id` từ context (nhất quán với `useUpdateProfile`)
+  - Thay đổi mutation input từ `{ userId, avatarUrl }` → `{ avatar_url: string }`
+  - Thêm `invalidateQueries` cho cả `['user', userId]` và `['user', 'username', username]`
+- **`frontend/src/pages/EditProfilePage.tsx`** — Sửa `handleAvatarSubmit`: thay `{ userId: user!.id, avatarUrl }` → `{ avatar_url: avatarUrl.trim() }` để khớp hook signature mới.
+
+### Improved — P1: Password Change UX (2-stage form với real-time validation)
+
+- **`frontend/src/pages/EditProfilePage.tsx`** — Tái thiết kế hoàn toàn form đổi mật khẩu:
+  - **Stage 1**: Chỉ hiển thị field "Mật khẩu hiện tại" + nút "Tiếp theo" (disabled khi rỗng). Nhấn Enter để tiếp tục.
+  - **Stage 2**: Xuất hiện sau khi nhập mật khẩu hiện tại — hiển thị fields mật khẩu mới + strength indicator
+  - **Real-time strength indicator** (`StrengthItem` component):  4 tiêu chí: ≥8 ký tự, chữ hoa A-Z, chữ thường a-z, có số 0-9
+  - **Confirm password**: live matching check
+  - **Submit button**: disabled cho đến khi tất cả 5 điều kiện thỏa (4 strength + match)
+  - **Error recovery**: nếu backend trả 401/403 → reset về Stage 1 với error message rõ ràng
+  - Thêm imports: `CheckCircle2`, `XCircle` từ `lucide-react`; thêm helper component `StrengthItem`
+
+### Improved — P2-UX: Rate Limit Message hiển thị thời gian chờ cụ thể
+
+- **`backend/src/middlewares/securityMiddleware.ts`** — Cập nhật `authLimiter`:
+  - Thay `message` object bằng `handler` function để kiểm soát response đầy đủ
+  - Thêm header `Retry-After` với giá trị giây còn lại
+  - Thêm field `retryAfter` (số giây) trong JSON response body
+- **`frontend/src/pages/LoginPage.tsx`** — Cập nhật `onSubmit` catch block:
+  - Detect HTTP 429 riêng biệt
+  - Đọc `retryAfter` từ response body, format sang phút/giây (VD: "8 phút 42 giây")
+  - Hiển thị: `"Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau X phút Y giây."`
+
+---
+## [1.19.1] - 2026-03-06
+### Change - UI UX
+Chỉnh sửa, bố cục lại một vài thành phần trang chi tiết bài viết
+## [1.19.0] - 2026-03-04
+
+### Fixed — Animation System: TailwindCSS v4 Integration
+
+Chuyển đổi toàn bộ animation system từ plain CSS classes sang TW v4 `@theme inline` tokens, cho phép TW engine tự động generate utility classes với full variant support.
+
+#### Frontend — Animation Token Migration (P0-1)
+
+- **`frontend/src/styles/theme.css`** — Đăng ký **34 animation tokens** trong `@theme inline`:
+  - Icon interactions: `shake`, `wiggle`, `float`, `heartbeat`, `bounce-soft`, `bell-ring`, `theme-rotate`, `icon-swap`
+  - Vote/Bookmark: `vote-pop`, `vote-up`, `vote-down`, `bookmark-save`
+  - Content entrance: `fade-in`, `fade-in-up`, `fade-in-scale`, `pop-in`, `slide-up-enter`, `slide-in-left/right`, `enter-left/right`
+  - List/stagger: `stagger`, `tab-slide`, `active-indicator`
+  - Loading: `skeleton-pulse`, `pulse-glow`
+  - Expand/collapse: `expand`, `slide-expand`
+  - Exit: `fade-out-shrink`
+  - Counter: `count-up`, `count-down`
+  - Feedback: `highlight-flash`, `error-shake`
+  - Progress: `progress-fill`, `line-fill`
+- **`frontend/src/styles/theme.css`** — Xóa ~35 manually defined `.animate-*` classes (TW v4 auto-generate)
+- **`frontend/src/styles/theme.css`** — Xóa 6 manual `.hover\:animate-*:hover` selectors (TW v4 handles variants automatically)
+- **`frontend/src/styles/theme.css`** — Giữ companion CSS cho animations cần extra properties:
+  - `.animate-stagger` → `animation-delay`, `.animate-expand/.slide-expand/.fade-out-shrink` → `overflow: hidden`, `.animate-line-fill` → `transform-origin: left`
+
+**Kết quả**: Tất cả `.animate-*` classes giờ hỗ trợ full TW v4 variants: `hover:`, `md:`, `dark:`, `motion-safe:`, `group-hover:`, etc.
+
+### Fixed — Mobile UX Optimization (P0-2)
+
+#### Frontend — Mobile Navigation (Enhanced)
+
+- **`frontend/src/components/layout/MobileNav.tsx`** — Tái thiết kế hoàn toàn mobile navigation drawer:
+  - Tích hợp inline search bar (không cần navigate tới /search)
+  - Thêm **Categories section** với filter trực tiếp từ drawer (same logic as Sidebar)
+  - Thêm **Popular Tags** section với multi-select toggle
+  - Thêm Quick Stats (Categories/Posts/Tags count)
+  - Active route highlighting cho tất cả nav items
+  - Tất cả touch targets ≥ 44px (WCAG 2.1 compliant)
+  - Responsive width: `w-[min(85vw,380px)]`
+  - ScrollArea cho nội dung dài
+
+- **`frontend/src/components/layout/Header.tsx`** — Tích hợp MobileNav:
+  - Thêm hamburger menu button (md:hidden) vào header
+  - Thêm mobile search icon button (md:hidden) cho quick access
+  - MobileNav render ở vị trí đầu header content
+  - Touch targets: min 44×44px cho tất cả header buttons
+
+#### Frontend — Touch & Mobile CSS
+
+- **`frontend/src/styles/theme.css`** — Nâng cấp touch optimization:
+  - `@media (pointer: coarse)`: Mở rộng 44px targets cho `[role="tab"]`, `[role="menuitem"]`, badges
+  - `@media (hover: none)`: Disable `btn-interactive:hover`, `link-underline::after` trên touch
+  - Disable expensive infinite animations (`float`, `heartbeat`, `pulse-glow`) trên mobile
+  - Thêm `@media (max-width: 767px)` cho mobile-first layout adjustments
+  - Input font-size `max(16px, 1rem)` prevents iOS zoom on focus
+
+### Changed — Admin Client: TailwindCSS v4 Upgrade (P1)
+
+Nâng cấp Admin Client từ TailwindCSS v3 lên v4, đồng bộ với Frontend stack.
+
+#### Admin Client — Build System Migration
+
+- **`admin-client/package.json`** — Cập nhật dependencies:
+  - `tailwindcss`: `^3.4.1` → `^4.1.12`
+  - `vite`: `^5.0.12` → `^6.3.5`
+  - Thêm: `@tailwindcss/vite ^4.1.12`
+  - Thay: `tailwindcss-animate ^1.0.7` → `tw-animate-css ^1.3.8`
+  - Xóa: `autoprefixer`, `postcss` (không cần với TW v4 Vite plugin)
+- **`admin-client/vite.config.ts`** — Thêm `@tailwindcss/vite` plugin
+- **`admin-client/postcss.config.mjs`** — Xóa nội dung (TW v4 không dùng PostCSS)
+- **`admin-client/tailwind.config.js`** — **XÓA** (TW v4 dùng CSS-based config)
+- **`admin-client/components.json`** — Cập nhật: xóa reference tới `tailwind.config.js`
+
+#### Admin Client — CSS Migration
+
+- **`admin-client/src/styles/globals.css`** — Migrate hoàn toàn sang TW v4 syntax:
+  - `@tailwind base/components/utilities` → `@import 'tailwindcss' source(none)` + `@source`
+  - HSL components (`0 0% 100%`) → full `hsl()` values (`hsl(0 0% 100%)`)
+  - Thêm `@custom-variant dark` directive
+  - Thêm `@theme inline` block: color tokens, radius tokens, 10 animation tokens
+  - Xóa 8 manual `.animate-*` classes (TW v4 auto-generate)
+  - Thêm accordion keyframes (migrated từ tailwind.config.js)
+  - Thêm `outline-ring/50` vào base styles
+
+**Build verification**: CSS output 48.21 kB (gzip 9.37 kB) — tương đương TW v3 build size.
+
+---
+
 ## [1.18.1] - 2026-03-04
 ### Note - Chưa tối ưu/ điều chỉnh giao diện phù hợp được cho mobile
 ## [1.18.1] - 2026-03-04
@@ -60,6 +189,128 @@ Tối ưu hóa trải nghiệm mobile và bổ sung micro-animations cho cả Fr
 
 - **`admin-client/src/components/ui/skeleton.tsx`** — **(NEW)** Skeleton component (bg-muted + animate-pulse)
 - **`admin-client/src/pages/DashboardPage.tsx`** — Thay loading spinner bằng skeleton layout (cards + content grid) với animate-skeleton-pulse
+
+### Enhanced — Post Card UI/UX Redesign
+
+Cải thiện bảng tin & post card với visual hierarchy, spacing, và interactive feedback tốt hơn.
+
+#### Visual Hierarchy & Layout
+
+- **`frontend/src/components/PostCard.tsx`** — Tái thiết kế hoàn toàn Post Card layout từ 3-column messy → clean 3-section flow:
+  - **Section 1: Title & Status** — Pin/Lock icons + aligned title
+  - **Section 2: Author & Meta** — Avatar, name, **role badge**, timestamp, category tag
+  - **Section 3: Content & Tags** — Excerpt, up to 3 tags visible (+N more badge)
+
+#### Author Role Badge — NEW ✨
+
+Thêm author role color-coded badges:
+- **ADMIN** → Destructive/Red badge with Shield icon
+- **MODERATOR** → Primary/Blue badge with Shield icon  
+- **MEMBER** → No badge (default)
+- Position: Inline next to author name
+
+Code implementation:
+```tsx
+const getAuthorBadge = () => {
+  switch (post.author?.role) {
+    case 'ADMIN': return <Badge variant="destructive" className="gap-1"><Shield className="h-3 w-3" /> Admin</Badge>;
+    case 'MODERATOR': return <Badge variant="default" className="gap-1 bg-blue-600"><Shield className="h-3 w-3" /> Mod</Badge>;
+    default: return null;
+  }
+};
+```
+
+#### Vote Score Display — REDESIGNED
+
+**Before**: Plain text (e.g. "5 điểm")  
+**After**: Color-coded badge with tooltip:
+- 🟢 **Green background** — Positive scores (upvotes > downvotes)
+- 🔴 **Red background** — Negative scores (downvotes > upvotes)
+- ⚫ **Gray background** — Neutral (0 or balanced)
+- Tooltip on hover: Shows exact split (e.g. "5 upvote 2 downvote")
+- Prominent font weight for better visibility
+
+#### Comments & Views Stats
+
+- Icons + number in compact stat badges
+- Hover state brightens background
+- Views count **hidden on mobile** to reduce clutter
+- Tooltips explain each metric
+
+#### Action Button Layout — MAJOR CHANGE
+
+**Before**: Vote buttons on left (vertical sidebar), bookmark on right (scattered)  
+**After**: Horizontal compact layout in footer
+- Vote buttons (up/down) + Bookmark stacked horizontally
+- Positioned right side of footer
+- All ≥44px touch targets (WCAG 2.1)
+- Mobile-friendly without reordering
+
+#### Tag Display — TRUNCATED
+
+**Before**: Show all tags (can overflow, messy on mobile)  
+**After**: Show max 3 tags + overflow badge
+- Tag 1, Tag 2, Tag 3, [+2 more]
+- Reduces visual clutter
+- Still accessible (tooltip or modal for full list)
+
+#### theme.css Enhancements
+
+- **`frontend/src/styles/theme.css`** — Thêm 60+ dòng CSS cho card styling:
+  - `.card-hover-lift` gradient background: `linear-gradient(135deg, transparent, rgba(primary, 0.02/0.04))`
+  - Smooth hover lift + shadow enhancement
+  - Category indicator scale & brightness on hover
+  - Stat badge `.stat-badge-positive/negative` color-coded backgrounds
+  - Better visual separation between card sections
+  - GPU-accelerated animations (60fps)
+
+#### Responsive Mobile Optimization
+
+- Removed confusing flexbox `order-*` classes
+- Natural stacking: Title → Author → Excerpt → Tags → Footer
+- All touch targets ≥ 44px × 44px (WCAG 2.1 Level AA)
+- Responsive spacing via `clamp()` utilities
+- Views stat hidden `hidden sm:flex` on mobile
+
+#### Style Comparison Table
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Vote Display | Plain text, no color | Color-coded bg (green/red/gray) + tooltip |
+| Vote Buttons | Left sidebar, vertical layout | Footer, horizontal compact |
+| Bookmark Button | Right edge, isolated | Footer, grouped with votes |
+| Author Badge | Missing | ADMIN/MOD badges visible |
+| Tags | All visible, overflow | Max 3 + "+N more" badge |
+| Footer | Cramped text, plain | Clean stat badges, actions row |
+| Mobile Layout | Confusing `order-*` | Natural stacking |
+| Category Icon | Tiny dot | Scaled on hover |
+| Spacing | Inconsistent | Uniform via Tailwind `gap-responsive` |
+
+#### Accessibility & Performance
+
+✅ **WCAG 2.1 AA Compliant**
+- All buttons/clickable ≥ 44×44px
+- Proper contrast on color-coded elements
+- Semantic HTML structure maintained
+- Tooltips for abbreviated content
+- Icon + text pairing (no icon-only)
+
+✅ **Performance**
+- CSS +0.81 kB (132.90 kB total)
+- JS unchanged (925.05 kB)
+- Build time ~5.3s (no change)
+- Animations GPU-accelerated (60fps smooth)
+
+#### Testing Verification
+
+- [x] Build passed (npx vite build ✓)
+- [x] Author badges display for ADMIN/MODERATOR
+- [x] Vote scores show correct colors
+- [x] All buttons ≥ 44px (touch compliant)
+- [x] Tooltips functional (upvote/downvote split)
+- [x] Mobile layout stacks correctly
+- [x] Tag overflow badge appears
+- [x] Responsive spacing at all breakpoints
 
 ---
 

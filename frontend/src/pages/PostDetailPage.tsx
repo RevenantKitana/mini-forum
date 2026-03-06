@@ -32,7 +32,6 @@ import {
   Flag,
   X,
   Check,
-  ArrowUpDown,
   TrendingUp,
   Clock,
   History,
@@ -163,8 +162,8 @@ export function PostDetailPage() {
     createCommentMutation.mutate(
       { 
         content: replyContent, 
-        parentId: replyToId ? parseInt(replyToId) : undefined, 
-        quotedCommentId: quotedCommentId ? parseInt(quotedCommentId) : undefined 
+        parent_id: replyToId ? parseInt(replyToId) : undefined, 
+        quoted_comment_id: quotedCommentId ? parseInt(quotedCommentId) : undefined 
       },
       {
         onSuccess: () => {
@@ -377,7 +376,7 @@ export function PostDetailPage() {
       </Card>
 
       {/* Comments Section */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-2xl font-bold">Comments ({post.commentCount})</h2>
           
@@ -385,7 +384,6 @@ export function PostDetailPage() {
           {post.commentCount > 0 && (
             <Select value={commentSort} onValueChange={(v) => setCommentSort(v as typeof commentSort)}>
               <SelectTrigger className="w-[180px]">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
               <SelectContent>
@@ -486,9 +484,9 @@ export function PostDetailPage() {
 
           // Has permission - show comment form
           return (
-            <Card id="comment-form">
-              <CardContent className="pt-6">
-                <form onSubmit={handleSubmit(onSubmitComment)} className="space-y-4">
+            <Card className="gap-2">
+              <CardContent className="pt-4 pb-0">
+                <form id="comment-form" onSubmit={handleSubmit(onSubmitComment)} className="space-y-0">
                   <div className="relative">
                     <Textarea
                       {...register('content')}
@@ -498,7 +496,7 @@ export function PostDetailPage() {
                       }}
                       placeholder="Viết bình luận của bạn..."
                       rows={4}
-                      className="pr-10"
+                      className="pr-10 input-focus-animate"
                     />
                     <div className="absolute right-2 bottom-2">
                       <EmojiPicker 
@@ -511,11 +509,13 @@ export function PostDetailPage() {
                   {errors.content && (
                     <p className="text-sm text-destructive animate-error-shake">{errors.content.message}</p>
                   )}
-                  <Button type="submit" className="btn-interactive" disabled={createCommentMutation.isPending}>
-                    {createCommentMutation.isPending ? 'Đang đăng...' : 'Đăng bình luận'}
-                  </Button>
                 </form>
               </CardContent>
+              <CardFooter className="pb-4 pt-2">
+                <Button form="comment-form" type="submit" className="btn-interactive" disabled={createCommentMutation.isPending}>
+                  {createCommentMutation.isPending ? 'Đang đăng...' : 'Đăng bình luận'}
+                </Button>
+              </CardFooter>
             </Card>
           );
         })()}
@@ -524,7 +524,7 @@ export function PostDetailPage() {
         {commentsLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : comments && comments.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {comments.map((comment, index) => {
               // Calculate canComment for each comment/reply context
               const canCommentInCategory = checkPermissionLevel(
@@ -535,7 +535,7 @@ export function PostDetailPage() {
               return (
               <div
                 key={comment.id}
-                className="animate-stagger"
+                className="pt-0 mt-0 animate-stagger"
                 style={{ '--stagger-index': index } as React.CSSProperties}
               >
               <CommentItem
@@ -583,7 +583,7 @@ export function PostDetailPage() {
           </div>
         ) : (
           <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
+            <CardContent className="pt-5 text-center text-muted-foreground">
               No comments yet. Be the first to comment!
             </CardContent>
           </Card>
@@ -730,9 +730,9 @@ function CommentItem({
   };
 
   return (
-    <div id={`comment-${comment.id}`} className={isReply ? 'ml-8 mt-3' : ''}>
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-5 mt-1' : ''}>
       <Card className={isReply ? 'border-l-2 border-l-primary/30' : ''}>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 !pb-1">
           {/* Quoted Comment - Clickable to scroll */}
           {comment.quotedComment && (
             <div 
@@ -740,11 +740,11 @@ function CommentItem({
               onClick={handleQuotedCommentClick}
               title="Click để xem bình luận gốc"
             >
-              <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>Trả lời @{comment.quotedComment.author?.username || 'Unknown'}</span>
                 <span className="text-primary">↩</span>
               </div>
-              <div className="text-sm text-muted-foreground line-clamp-2">
+              <div className="text-sm text-muted-foreground line-clamp-1">
                 <MarkdownRenderer content={comment.quotedComment.content} />
               </div>
             </div>
@@ -761,9 +761,9 @@ function CommentItem({
               orientation="vertical"
             />
 
-            <div className="flex-1">
+            <div className="flex-1 mb-0">
               {comment.author && (
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
                     <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
@@ -780,7 +780,7 @@ function CommentItem({
               )}
 
               {isEditing ? (
-                <div className="space-y-3 animate-slide-expand">
+                <div className="space-y-10 animate-slide-expand">
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
@@ -815,7 +815,7 @@ function CommentItem({
               )}
 
               {!isEditing && (
-                <div className="flex gap-2 mt-3">
+                <div className="flex justify-end gap-2 mt-3 mb-0">
                   {isAuthenticated && canComment && !isPostLocked && comment.status !== 'DELETED' && (
                     <>
                       <Button variant="ghost" size="sm" className="btn-press" onClick={() => onReply(comment)}>
@@ -863,15 +863,15 @@ function CommentItem({
 
               {/* Inline Reply Form */}
               {isReplyingToThis && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg border animate-slide-expand">
+                <div className="mt-2 p-2 bg-muted/50 rounded-lg border animate-slide-expand">
                   {quotedComment && (
-                    <div className="p-3 mb-3 bg-background rounded-lg border-l-4 border-primary">
+                    <div className="p-1 mb-1 bg-background rounded-lg border-l-4 border-primary">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-muted-foreground">
                           Trích dẫn từ <span className="font-medium">@{quotedComment.author?.username || 'Unknown'}</span>
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-muted-foreground line-clamp-1">
                         {quotedComment.content}
                       </p>
                     </div>

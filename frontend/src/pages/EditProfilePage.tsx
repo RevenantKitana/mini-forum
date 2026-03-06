@@ -11,8 +11,21 @@ import { Separator } from '@/app/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
-import { ArrowLeft, Save, User, Lock, AlertCircle, ImageIcon, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, User, Lock, AlertCircle, ImageIcon, Calendar, CheckCircle2, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
+
+// Helper: password strength row indicator
+function StrengthItem({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs ${ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+      {ok
+        ? <CheckCircle2 className="h-3 w-3 shrink-0" />
+        : <XCircle className="h-3 w-3 shrink-0" />
+      }
+      <span>{label}</span>
+    </div>
+  );
+}
 
 export function EditProfilePage() {
   const navigate = useNavigate();
@@ -32,6 +45,15 @@ export function EditProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  // Password 2-stage state
+  const [currentPasswordVerified, setCurrentPasswordVerified] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    matches: false,
+  });
 
   const updateProfileMutation = useUpdateProfile();
   const updateAvatarMutation = useUpdateAvatar();
@@ -75,8 +97,7 @@ export function EditProfilePage() {
 
     try {
       const result = await updateAvatarMutation.mutateAsync({
-        userId: user!.id,
-        avatarUrl: avatarUrl.trim(),
+        avatar_url: avatarUrl.trim(),
       });
 
       // Update auth context with new avatar
@@ -94,17 +115,38 @@ export function EditProfilePage() {
     }
   };
 
+  const validatePasswordStrength = (password: string, confirmPwd = confirmPassword) => {
+    setPasswordStrength({
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      matches: confirmPwd === password && password.length > 0,
+    });
+  };
+
+  const handleVerifyCurrentPassword = () => {
+    if (!currentPassword.trim()) {
+      setPasswordError('Vui lòng nhập mật khẩu hiện tại');
+      return;
+    }
+    setPasswordError('');
+    setCurrentPasswordVerified(true);
+  };
+
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Mật khẩu mới không khớp');
-      return;
-    }
+    const allValid =
+      passwordStrength.minLength &&
+      passwordStrength.hasUppercase &&
+      passwordStrength.hasLowercase &&
+      passwordStrength.hasNumber &&
+      passwordStrength.matches;
 
-    if (newPassword.length < 8) {
-      setPasswordError('Mật khẩu mới phải có ít nhất 8 ký tự');
+    if (!allValid) {
+      setPasswordError('Mật khẩu chưa đáp ứng tất cả yêu cầu');
       return;
     }
 
@@ -114,14 +156,22 @@ export function EditProfilePage() {
         newPassword,
       });
 
-      // Clear form
+      // Clear form and reset to stage 1
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-
+      setCurrentPasswordVerified(false);
+      setPasswordStrength({ minLength: false, hasUppercase: false, hasLowercase: false, hasNumber: false, matches: false });
 
     } catch (error: any) {
-      toast.error(error.message || 'Không thể đổi mật khẩu.');
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        setCurrentPasswordVerified(false);
+        setCurrentPassword('');
+        setPasswordError('Mật khẩu hiện tại không đúng. Vui lòng thử lại.');
+      } else {
+        toast.error(error.response?.data?.message || error.message || 'Không thể đổi mật khẩu.');
+      }
     }
   };
 
@@ -288,55 +338,120 @@ export function EditProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            {passwordError && (
-              <Alert variant="destructive">
+          {passwordError && (
+              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{passwordError}</AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
+            {/* Stage 1 — Xác nhận mật khẩu hiện tại */}
+            {!currentPasswordVerified ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Nhập mật khẩu hiện tại"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleVerifyCurrentPassword())}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleVerifyCurrentPassword}
+                  disabled={!currentPassword.trim()}
+                >
+                  Tiếp theo →
+                </Button>
+              </div>
+            ) : (
+              /* Stage 2 — Mật khẩu mới + strength indicator */
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  <span className="text-muted-foreground">Mật khẩu hiện tại đã xác nhận</span>
+                  <button
+                    type="button"
+                    className="ml-auto text-xs text-primary hover:underline"
+                    onClick={() => {
+                      setCurrentPasswordVerified(false);
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                      setPasswordError('');
+                      setPasswordStrength({ minLength: false, hasUppercase: false, hasLowercase: false, hasNumber: false, matches: false });
+                    }}
+                  >
+                    Thay đổi
+                  </button>
+                </div>
 
-            <Separator />
+                <Separator />
 
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Mật khẩu mới</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Mật khẩu mới</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      validatePasswordStrength(e.target.value);
+                    }}
+                    placeholder="Tối thiểu 8 ký tự"
+                  />
+                  {newPassword && (
+                    <div className="space-y-1 pt-1">
+                      <StrengthItem ok={passwordStrength.minLength} label="Ít nhất 8 ký tự" />
+                      <StrengthItem ok={passwordStrength.hasUppercase} label="Có chữ hoa (A-Z)" />
+                      <StrengthItem ok={passwordStrength.hasLowercase} label="Có chữ thường (a-z)" />
+                      <StrengthItem ok={passwordStrength.hasNumber} label="Có số (0-9)" />
+                    </div>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setPasswordStrength(prev => ({
+                        ...prev,
+                        matches: e.target.value === newPassword && e.target.value.length > 0,
+                      }));
+                    }}
+                    placeholder="Nhập lại mật khẩu mới"
+                  />
+                  {confirmPassword && (
+                    <div className="pt-1">
+                      <StrengthItem ok={passwordStrength.matches} label="Hai mật khẩu khớp nhau" />
+                    </div>
+                  )}
+                </div>
 
-            <Button type="submit" disabled={changePasswordMutation.isPending}>
-              <Lock className="h-4 w-4 mr-2" />
-              {changePasswordMutation.isPending ? 'Đang xử lý...' : 'Đổi mật khẩu'}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  disabled={
+                    changePasswordMutation.isPending ||
+                    !passwordStrength.minLength ||
+                    !passwordStrength.hasUppercase ||
+                    !passwordStrength.hasLowercase ||
+                    !passwordStrength.hasNumber ||
+                    !passwordStrength.matches
+                  }
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  {changePasswordMutation.isPending ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                </Button>
+              </form>
+            )}
         </CardContent>
       </Card>
     </div>

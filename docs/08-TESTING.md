@@ -310,11 +310,11 @@ e2e/
 ### Checklist
 
 #### Authentication
-- [ ] Đăng ký tài khoản mới (3 steps)
-- [ ] Đăng nhập bằng email
-- [ ] Đăng nhập bằng username
+- [x] Đăng ký tài khoản mới (3 steps)
+- [x] Đăng nhập bằng email
+- [x] Đăng nhập bằng username
 - [ ] Token refresh tự động
-- [ ] Logout
+- [x] Logout
 
 #### Posts
 - [ ] Xem danh sách posts

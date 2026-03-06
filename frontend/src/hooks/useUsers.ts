@@ -109,16 +109,22 @@ export function useChangePassword() {
 }
 
 /**
- * Hook to update avatar
+ * Hook to update avatar (current user)
  */
 export function useUpdateAvatar() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: ({ userId, avatarUrl }: { userId: number; avatarUrl: string }) =>
-      userService.updateAvatar(userId, avatarUrl),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: ['user', userId] });
+    mutationFn: (data: { avatar_url: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      return userService.updateAvatar(user.id, data.avatar_url);
+    },
+    onSuccess: () => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ['user', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['user', 'username', user.username] });
+      }
     },
   });
 }

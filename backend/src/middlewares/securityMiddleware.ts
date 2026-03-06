@@ -22,13 +22,21 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 requests per window
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later',
-  },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Only count failed attempts
+  handler: (req, res) => {
+    const resetTime = (req as any).rateLimit?.resetTime as Date | undefined;
+    const retryAfter = resetTime
+      ? Math.max(0, Math.ceil((resetTime.getTime() - Date.now()) / 1000))
+      : 15 * 60;
+    res.set('Retry-After', retryAfter.toString());
+    res.status(429).json({
+      success: false,
+      message: 'Too many authentication attempts, please try again later',
+      retryAfter,
+    });
+  },
 });
 
 // Rate limiter for creating content (posts, comments)

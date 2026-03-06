@@ -45,8 +45,19 @@ export function LoginPage() {
       navigate('/');
     } catch (error) {
       if (error instanceof AxiosError) {
-        const message = error.response?.data?.message || 'Đăng nhập thất bại';
-        toast.error(message);
+        if (error.response?.status === 429) {
+          const retryAfter: number = error.response.data?.retryAfter ?? 900;
+          const minutes = Math.floor(retryAfter / 60);
+          const seconds = retryAfter % 60;
+          const timeStr =
+            minutes > 0
+              ? `${minutes} phút${seconds > 0 ? ` ${seconds} giây` : ''}`
+              : `${seconds} giây`;
+          toast.error(`Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau ${timeStr}.`);
+        } else {
+          const message = error.response?.data?.message || 'Đăng nhập thất bại';
+          toast.error(message);
+        }
       } else if (error instanceof Error) {
         toast.error(error.message);
       } else {

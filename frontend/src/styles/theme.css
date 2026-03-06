@@ -130,6 +130,67 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* =====================================================
+     ANIMATION TOKENS — TW v4 Utility System
+     Generates .animate-* utilities with full variant support
+     (hover:, md:, dark:, motion-safe:, etc.)
+     ===================================================== */
+
+  /* Icon micro-interactions */
+  --animate-shake: shake 0.5s ease-in-out;
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-float: float 2s ease-in-out infinite;
+  --animate-heartbeat: heartbeat 1.5s ease-in-out infinite;
+  --animate-bounce-soft: bounce-soft 0.4s ease-in-out;
+  --animate-bell-ring: bell-ring 0.8s ease-in-out;
+  --animate-theme-rotate: theme-rotate 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --animate-icon-swap: icon-swap 0.3s ease-in-out;
+
+  /* Vote / Bookmark interactions */
+  --animate-vote-pop: vote-pop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --animate-vote-up: vote-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --animate-vote-down: vote-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --animate-bookmark-save: bookmark-save 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Content entrance animations */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-fade-in-up: fade-in-up 0.4s ease-out;
+  --animate-fade-in-scale: fade-in-scale 0.3s ease-out;
+  --animate-pop-in: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-slide-up-enter: slide-up-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-in-left: slide-in-left 0.3s ease-out;
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
+  --animate-enter-left: enter-from-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-enter-right: enter-from-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* List & stagger animations */
+  --animate-stagger: stagger-fade-in 0.3s ease-out backwards;
+  --animate-tab-slide: tab-slide 0.2s ease-out;
+  --animate-active-indicator: active-indicator-slide 0.25s ease-out;
+
+  /* Loading states */
+  --animate-skeleton-pulse: skeleton-pulse 2s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+
+  /* Expand / Collapse */
+  --animate-expand: expand 0.25s ease-out;
+  --animate-slide-expand: slide-expand 0.3s ease-out forwards;
+
+  /* Exit animations */
+  --animate-fade-out-shrink: fade-out-shrink 0.3s ease-in forwards;
+
+  /* Counter animations */
+  --animate-count-up: count-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --animate-count-down: count-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Feedback animations */
+  --animate-highlight-flash: highlight-flash 1.5s ease-out;
+  --animate-error-shake: error-shake 0.4s ease-in-out;
+
+  /* Progress indicators */
+  --animate-progress-fill: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-line-fill: line-fill 0.4s ease-out;
 }
 
 @layer base {
@@ -327,73 +388,11 @@
   }
 }
 
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-.animate-wiggle {
-  animation: wiggle 0.5s ease-in-out;
-}
-
-.animate-float {
-  animation: float 2s ease-in-out infinite;
-}
-
-.animate-heartbeat {
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-.animate-vote-pop {
-  animation: vote-pop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-vote-up {
-  animation: vote-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-vote-down {
-  animation: vote-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-bookmark-save {
-  animation: bookmark-save 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-bell-ring {
-  animation: bell-ring 0.8s ease-in-out;
-}
-
-.animate-theme-rotate {
-  animation: theme-rotate 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out;
-}
-
-.animate-fade-in-scale {
-  animation: fade-in-scale 0.3s ease-out;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.3s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
-}
-
-.animate-skeleton-pulse {
-  animation: skeleton-pulse 2s ease-in-out infinite;
-}
-
-.animate-tab-slide {
-  animation: tab-slide 0.2s ease-out;
-}
+/* =====================================================
+   ANIMATION COMPANION PROPERTIES
+   Extra properties that TW utility tokens can't express
+   (TW auto-generates .animate-* with just the animation property)
+   ===================================================== */
 
 /* Stagger animation for lists - use with data-index attribute or CSS variables */
 @keyframes stagger-fade-in {
@@ -407,8 +406,8 @@
   }
 }
 
+/* Stagger animation companion: animation-delay via CSS variable */
 .animate-stagger {
-  animation: stagger-fade-in 0.3s ease-out backwards;
   animation-delay: calc(var(--stagger-index, 0) * 50ms);
 }
 
@@ -454,18 +453,10 @@
   }
 }
 
-.animate-pop-in {
-  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 /* Subtle bounce effect for icons */
 @keyframes bounce-soft {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
-}
-
-.animate-bounce-soft {
-  animation: bounce-soft 0.4s ease-in-out;
 }
 
 /* Smooth expand/collapse for accordions and collapsibles */
@@ -481,8 +472,8 @@
   }
 }
 
+/* Expand companion: overflow hidden */
 .animate-expand {
-  animation: expand 0.25s ease-out;
   overflow: hidden;
 }
 
@@ -518,30 +509,7 @@
   transform-origin: left;
 }
 
-/* Hover variants for animations */
-.hover\:animate-shake:hover {
-  animation: shake 0.5s ease-in-out;
-}
-
-.hover\:animate-wiggle:hover {
-  animation: wiggle 0.5s ease-in-out;
-}
-
-.hover\:animate-float:hover {
-  animation: float 1s ease-in-out;
-}
-
-.hover\:animate-heartbeat:hover {
-  animation: heartbeat 0.6s ease-in-out;
-}
-
-.hover\:animate-vote-pop:hover {
-  animation: vote-pop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.hover\:animate-bell-ring:hover {
-  animation: bell-ring 0.6s ease-in-out;
-}
+/* Hover variants: TW v4 handles hover:animate-* automatically via @theme tokens */
 
 /* Smooth scroll behavior */
 html {
@@ -636,6 +604,23 @@ body[data-scroll-locked] {
 .card-hover-lift:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Post card enhanced styling */
+.card-hover-lift {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 0%, rgba(var(--primary-rgb), 0.02) 100%);
+}
+
+.card-hover-lift:hover {
+  background: linear-gradient(135deg, transparent 0%, rgba(var(--primary-rgb), 0.04) 100%);
+}
+
+/* Icon scale on category indicator hover */
+.card-hover-lift:hover [style*="border-color"] {
+  filter: brightness(1.2);
 }
 
 /* Button press effect */
@@ -942,14 +927,6 @@ textarea {
   100% { transform: translateY(0); opacity: 1; }
 }
 
-.animate-count-up {
-  animation: count-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.animate-count-down {
-  animation: count-down 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
 /* Smooth expand/collapse for reply forms, edit areas */
 @keyframes slide-expand {
   from {
@@ -977,8 +954,8 @@ textarea {
   }
 }
 
+/* Slide-expand companion: overflow hidden */
 .animate-slide-expand {
-  animation: slide-expand 0.3s ease-out forwards;
   overflow: hidden;
 }
 
@@ -1000,10 +977,6 @@ textarea {
   50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
 /* Slide up for new items appearing in lists */
 @keyframes slide-up-enter {
   from {
@@ -1014,10 +987,6 @@ textarea {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-.animate-slide-up-enter {
-  animation: slide-up-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Fade out for deleted/removed items */
@@ -1036,8 +1005,8 @@ textarea {
   }
 }
 
+/* Fade-out-shrink companion: overflow hidden */
 .animate-fade-out-shrink {
-  animation: fade-out-shrink 0.3s ease-in forwards;
   overflow: hidden;
 }
 
@@ -1055,18 +1024,10 @@ textarea {
   100% { transform: rotateY(0deg); opacity: 1; }
 }
 
-.animate-icon-swap {
-  animation: icon-swap 0.3s ease-in-out;
-}
-
 /* Highlight flash for newly appeared content */
 @keyframes highlight-flash {
   0% { background-color: rgba(59, 130, 246, 0.15); }
   100% { background-color: transparent; }
-}
-
-.animate-highlight-flash {
-  animation: highlight-flash 1.5s ease-out;
 }
 
 /* Card entrance from different directions */
@@ -1080,22 +1041,10 @@ textarea {
   to { opacity: 1; transform: translateX(0); }
 }
 
-.animate-enter-left {
-  animation: enter-from-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.animate-enter-right {
-  animation: enter-from-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* Active category slide indicator */
 @keyframes active-indicator-slide {
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }
-}
-
-.animate-active-indicator {
-  animation: active-indicator-slide 0.25s ease-out;
 }
 
 /* Form field focus animation */
@@ -1115,10 +1064,6 @@ textarea {
   30%, 70% { transform: translateX(4px); }
 }
 
-.animate-error-shake {
-  animation: error-shake 0.4s ease-in-out;
-}
-
 /* Smooth number transition */
 .number-transition {
   display: inline-block;
@@ -1131,18 +1076,14 @@ textarea {
   from { width: 0%; }
 }
 
-.animate-progress-fill {
-  animation: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* Step indicator connection line fill */
 @keyframes line-fill {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
 
+/* Line-fill companion: transform-origin */
 .animate-line-fill {
-  animation: line-fill 0.4s ease-out;
   transform-origin: left;
 }
 
@@ -1220,11 +1161,19 @@ textarea {
   max-width: min(100%, var(--content-max-width));
 }
 
+/* =====================================================
+   TOUCH & MOBILE OPTIMIZATION
+   WCAG 2.1 compliant touch targets (44px+)
+   Performance optimization for mobile devices
+   ===================================================== */
+
 /* Touch-friendly target sizes on mobile */
 @media (pointer: coarse) {
   button,
   a,
-  [role="button"] {
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -1235,14 +1184,62 @@ textarea {
     min-height: 44px;
     font-size: max(16px, 1rem); /* Prevent iOS zoom on focus */
   }
+
+  /* Larger badge/tag touch targets */
+  .badge,
+  [data-slot="badge"] {
+    min-height: 36px;
+    padding-inline: 0.75rem;
+  }
+  
+  /* Tooltip triggers need adequate size */
+  [data-state="delayed-open"],
+  [data-state="instant-open"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
-/* Disable hover animations on touch devices */
+/* Disable hover-only animations on touch devices */
 @media (hover: none) and (pointer: coarse) {
   .card-hover-lift:hover,
-  .item-hover-lift:hover {
+  .item-hover-lift:hover,
+  .btn-interactive:hover {
     transform: none;
     box-shadow: none;
+  }
+  
+  .link-underline::after {
+    display: none;
+  }
+  
+  /* Reduce animation intensity on mobile for battery/performance */
+  .animate-float,
+  .animate-heartbeat,
+  .animate-pulse-glow {
+    animation: none !important;
+  }
+}
+
+/* Mobile-first layout adjustments */
+@media (max-width: 767px) {
+  /* Main content full width on mobile */
+  .sidebar-left,
+  .sidebar-right {
+    display: none;
+  }
+  
+  /* Tighter spacing on mobile */
+  .p-responsive {
+    padding: clamp(0.5rem, 0.375rem + 0.5vw, 0.75rem);
+  }
+  
+  .px-responsive {
+    padding-inline: clamp(0.375rem, 0.25rem + 0.5vw, 0.75rem);
+  }
+  
+  .gap-responsive {
+    gap: clamp(0.25rem, 0.2rem + 0.5vw, 0.5rem);
   }
 }
 
@@ -1297,6 +1294,43 @@ textarea {
   header > div {
     gap: clamp(0.25rem, 0.2rem + 0.5vw, 0.5rem) !important;
   }
+}
+
+/* Post Card Stat Badges */
+[class*="stat-badge"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+[class*="stat-badge"]:hover {
+  background-color: hsl(var(--muted));
+}
+
+/* Vote score with color variants */
+.stat-badge-positive {
+  background-color: hsl(142 76% 36% / 0.1);
+  color: hsl(142 72% 29%);
+}
+
+.dark .stat-badge-positive {
+  background-color: hsl(142 70% 40% / 0.2);
+  color: hsl(142 76% 50%);
+}
+
+.stat-badge-negative {
+  background-color: hsl(0 84% 60% / 0.1);
+  color: hsl(0 94% 40%);
+}
+
+.dark .stat-badge-negative {
+  background-color: hsl(0 80% 50% / 0.2);
+  color: hsl(0 84% 60%);
 }
 
 /* Further optimize for ultra-small (1/4 screen) */
