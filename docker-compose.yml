@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # ─── Database ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:15-alpine
     container_name: mini_forum_db
@@ -18,6 +19,53 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ─── Backend ───────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mini_forum_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mini_forum?schema=public
+      NODE_ENV: production
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── Frontend (user-facing) ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api/v1
+        VITE_USE_MOCK_API: "false"
+    container_name: mini_forum_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  # ─── Admin Client ──────────────────────────────────────────────────────────
+  admin-client:
+    build:
+      context: ./admin-client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api/v1
+    container_name: mini_forum_admin
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
