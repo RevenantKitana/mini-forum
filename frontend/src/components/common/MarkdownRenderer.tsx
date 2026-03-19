@@ -74,8 +74,14 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
     // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>');
 
-    // Images ![alt](url) - responsive with lazy loading
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-2" loading="lazy" />');
+    // Images ![alt](url) - responsive with lazy loading, avatar detection
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+      const isAvatar = /avatar|profile|user/i.test(alt);
+      if (isAvatar) {
+        return `<img src="${src}" alt="${alt}" class="w-10 h-10 rounded-full inline-block mx-1 align-middle object-cover" loading="lazy" />`;
+      }
+      return `<img src="${src}" alt="${alt}" class="max-w-full h-auto rounded-md my-2" loading="lazy" />`;
+    });
 
     // Blockquotes (> text)
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-4 border-muted-foreground/30 pl-4 my-1.5 text-muted-foreground italic">$1</blockquote>');

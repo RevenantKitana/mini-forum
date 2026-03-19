@@ -1,9 +1,9 @@
 # Mini Forum — Admin Client
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
-Admin Dashboard — React 18 + TypeScript + Vite + TailwindCSS v3 + shadcn/ui.
+Admin Dashboard — React 18 + TypeScript + Vite 6 + TailwindCSS v4 + shadcn/ui.
 
 > **Lưu ý**: Đây là app tách biệt hoàn toàn với Frontend, chỉ dành cho ADMIN và MODERATOR.
 
@@ -16,18 +16,15 @@ Admin Dashboard — React 18 + TypeScript + Vite + TailwindCSS v3 + shadcn/ui.
 | react | 18.2.0 | UI framework | ✅ |
 | react-router-dom | 6.21.2 | Routing (v6) | ✅ |
 | axios | 1.6.5 | HTTP client | ✅ |
-| tailwindcss | 3.4.1 | CSS framework (v3) | ✅ |
+| tailwindcss | 4.1.12 | CSS framework (v4) | ✅ |
+| @tailwindcss/vite | 4.1.12 | TW v4 Vite plugin | ✅ |
+| tw-animate-css | 1.3.8 | Animation classes | ✅ |
 | @radix-ui/* | various | Headless UI (Shadcn base) | ✅ |
 | lucide-react | 0.312.0 | Icons | ✅ |
 | sonner | 1.3.1 | Toast notifications | ✅ |
-| @tanstack/react-query | 5.17.9 | Server state management | ⚠️ **Chưa import** |
-| @tanstack/react-table | 8.11.6 | Data tables | ⚠️ **Chưa import** |
-| react-hook-form | 7.49.3 | Form handling | ⚠️ **Chưa import** |
-| zod | 3.22.4 | Schema validation | ⚠️ **Chưa import** |
-| recharts | 2.10.4 | Charts | ⚠️ **Chưa import** |
-| date-fns | 3.2.0 | Date utilities | ⚠️ **Chưa import** |
+| @tanstack/react-query | 5.90.21 | Server state management | ⚠️ **Provider wired, pages chưa dùng hooks** |
 
-> **⚠️ Tech Debt**: 6 dependencies được khai báo trong `package.json` nhưng KHÔNG được import trong source code. App sử dụng `useState` + `useEffect` + `axios` thay vì TanStack Query; tables là custom HTML tables với shadcn/ui thay vì TanStack Table; không có charts (dashboard dùng stat cards).
+> **⚠️ Tech Debt**: `@tanstack/react-query` — `QueryClientProvider` đã wired trong `main.tsx` nhưng các page vẫn sử dụng `useState` + `useEffect` + `axios` trực tiếp thay vì TanStack Query hooks. Các dep không sử dụng khác (`react-hook-form`, `zod`, `recharts`, `date-fns`, `@tanstack/react-table`) đã được gỡ khỏi `package.json`.
 
 ---
 
@@ -39,7 +36,7 @@ Admin Dashboard — React 18 + TypeScript + Vite + TailwindCSS v3 + shadcn/ui.
 | Token prefix | `forum_` | **`admin_`** |
 | Target users | All users | Admin, Moderator |
 | Router | React Router v7 | React Router **v6** |
-| Tailwind | v4 | **v3** |
+| Tailwind | v4 | **v4** |
 | Table library | — | Custom tables (shadcn/ui) |
 | Shared code | — | Không share |
 
@@ -212,14 +209,15 @@ Dữ liệu được fetch thủ công qua `useState` + `useEffect` + `axios` (K
 
 ## Dashboard Stats
 
-Dashboard hiển thị **stat cards** và **danh sách hoạt động gần đây** (không có charts).
+Dashboard hiển thị **6 stat cards** tổng quan, **3 range stats** theo khoảng ngày, **quản lý bài viết ghim**, và **audit logs gần đây** (không có charts).
 
 | Component | Dữ liệu |
 |-----------|--------|
-| Stats Cards | Total users, posts, comments, reports |
-| Recent Activity | Bài viết, comments mới gần đây |
-
-> **Lưu ý**: `recharts` có trong `package.json` nhưng chưa được import. Dashboard chỉ dùng stat cards.
+| Overview Stats (6 cards) | Total users, posts, comments, pending reports, active users, pinned posts |
+| Date Range Filter | Lọc theo startDate/endDate (mặc định: hôm nay) |
+| Range Stats (3 cards) | New users, new posts, new comments trong khoảng ngày |
+| Pinned Posts Management | Danh sách bài ghim — bỏ ghim, thay đổi thứ tự (drag handle) |
+| Recent Audit Logs | 10 audit logs gần nhất |
 
 ---
 
@@ -258,7 +256,7 @@ VITE_API_URL=http://localhost:5000/api/v1     # Mặc định
 npm run dev
 # → http://localhost:5174
 # → Login: admin@forum.com / Admin@123
-# → hoặc: mod@forum.com / Moderator@123
+# → Moderator: cần tạo qua admin hoặc seed thủ công
 ```
 
 ### Vite Config
@@ -280,7 +278,7 @@ npm run dev
 
 1. **Tách biệt hoàn toàn**: Không share code với Frontend — riêng package.json, routing, token storage
 2. **Role-based Login**: Reject login nếu user role là MEMBER
-3. **Tailwind v3**: Khác với Frontend (v4) — dùng `tailwind.config.js` + PostCSS
+3. **Tailwind v4**: Giống Frontend — dùng `@tailwindcss/vite` plugin + CSS imports (đã upgrade từ v3 trong v1.19.0)
 4. **React Router v6**: Khác với Frontend (v7) — API `useNavigate`, `useParams`
 5. **Proxy Config**: Vite proxy `/api` → backend trong development mode
 6. **TypeScript Strict**: `strict: true` trong tsconfig.json

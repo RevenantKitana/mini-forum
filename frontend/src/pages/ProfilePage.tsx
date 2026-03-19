@@ -81,6 +81,8 @@ export function ProfilePage() {
     },
     onSuccess: () => {
       toast.success('Đã chặn người dùng');
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['user', username] });
       queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
     },
     onError: (error: any) => {
@@ -88,11 +90,19 @@ export function ProfilePage() {
     },
   });
 
-  // Check if user is blocked
-  const { data: blockStatus } = useMutation({
+  // Unblock user mutation
+  const unblockUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await apiClient.get(`/users/${userId}/block`);
-      return response.data.data;
+      return apiClient.delete(`/users/${userId}/block`);
+    },
+    onSuccess: () => {
+      toast.success('Đã bỏ chặn người dùng');
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['user', username] });
+      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Không thể bỏ chặn người dùng');
     },
   });
 
@@ -149,6 +159,24 @@ export function ProfilePage() {
           </Link>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Show blocked profile view
+  if (profile.isBlockedByMe) {
+    return (
+      <div className="flex flex-col items-center py-16 gap-4 text-center animate-fade-in-up">
+        <UserX className="h-16 w-16 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">@{username}</h2>
+        <p className="text-muted-foreground">Bạn đã chặn người dùng này. Nội dung của họ bị ẩn.</p>
+        <Button 
+          variant="outline" 
+          onClick={() => unblockUserMutation.mutate(profile.id)}
+          disabled={unblockUserMutation.isPending}
+        >
+          {unblockUserMutation.isPending ? 'Đang bỏ chặn...' : 'Bỏ chặn'}
+        </Button>
+      </div>
     );
   }
 

@@ -24,12 +24,12 @@ export function BookmarksPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center gap-3">
-        <BookmarkIcon className="h-8 w-8 text-primary animate-float" />
+    <div className="space-y-3 sm:space-y-6 animate-fade-in-up">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <BookmarkIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
         <div>
-          <h1 className="text-3xl font-bold">Bài viết đã lưu</h1>
-          <p className="text-muted-foreground">Những bài viết bạn đã đánh dấu để đọc sau</p>
+          <h1 className="text-xl sm:text-3xl font-bold">Bài viết đã lưu</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Những bài viết bạn đã đánh dấu để đọc sau</p>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export function BookmarksPage() {
         </div>
       ) : bookmarks && bookmarks.length > 0 ? (
         <>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {bookmarks.map((bookmark) => (
               <PostCard key={bookmark.id} post={bookmark as any} />
             ))}
@@ -49,7 +49,7 @@ export function BookmarksPage() {
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
+            <div className="flex justify-center gap-2 mt-4 sm:mt-6 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"

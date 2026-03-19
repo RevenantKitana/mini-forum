@@ -119,6 +119,28 @@ export function PostCard({ post }: PostCardProps) {
           </Link>
         </div>
 
+        {/* Category Badge - Mobile & Desktop */}
+        {post.category && (
+          <Link
+            to={`/?category=${post.category.slug}`}
+            className="inline-block hover:opacity-80 transition-opacity"
+          >
+            <Badge variant="outline" className="gap-1 text-responsive-xs font-medium">
+              {post.category.name}
+              {post.category.viewPermission && post.category.viewPermission !== 'ALL' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Danh mục có quyền hạn chế
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </Badge>
+          </Link>
+        )}
+
         {/* Author & Meta Row */}
         <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm">
           {post.author && (
@@ -134,39 +156,13 @@ export function PostCard({ post }: PostCardProps) {
             </Link>
           )}
           
-          {/* Author role badge - hidden on very small screens */}
-          <span className="hidden sm:contents">{getAuthorBadge()}</span>
+          {/* Author role badge */}
+          {getAuthorBadge()}
           
           <span className="text-muted-foreground flex-shrink-0">•</span>
           <span className="text-muted-foreground text-responsive-xs flex-shrink-0">
             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
           </span>
-          
-          {/* Category */}
-          {post.category && (
-            <>
-              <span className="text-muted-foreground hidden sm:inline flex-shrink-0">•</span>
-              <Link
-                to={`/?category=${post.category.slug}`}
-                className="hover:text-foreground transition-colors truncate hidden sm:inline flex-shrink-0"
-              >
-                <span className="flex items-center gap-1">
-                  <span className="text-responsive-xs">{post.category.name}</span>
-                  {/* Show permission indicator if category has restricted permissions */}
-                  {post.category.viewPermission && post.category.viewPermission !== 'ALL' && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        Danh mục có quyền hạn chế
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </span>
-              </Link>
-            </>
-          )}
         </div>
       </CardHeader>
 
@@ -208,7 +204,7 @@ export function PostCard({ post }: PostCardProps) {
                 'bg-muted'
               }`}>
                 <span className="font-semibold">{voteScore}</span>
-                <span className="hidden sm:inline text-xs">điểm</span>
+                <span className="hidden md:inline text-xs">điểm</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -229,10 +225,10 @@ export function PostCard({ post }: PostCardProps) {
             </TooltipContent>
           </Tooltip>
 
-          {/* Views count - hidden on mobile */}
+          {/* Views count - hidden on mobile (<768px) */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
+              <div className="hidden md:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
                 <Eye className="h-3.5 w-3.5" />
                 <span>{post.viewCount}</span>
               </div>

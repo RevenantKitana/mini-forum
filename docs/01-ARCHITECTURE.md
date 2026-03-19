@@ -1,7 +1,7 @@
 # System Architecture — Mini Forum
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ## Mục đích
 
@@ -44,8 +44,8 @@ Mini Forum là nền tảng thảo luận trực tuyến Full Stack, hoàn thàn
 ├───────────────────────────┬─────────────────────────────────────┤
 │    Frontend (User)        │        Admin Client                  │
 │    Port: 5173             │        Port: 5174                    │
-│    React 18 + Vite 6      │        React 18 + Vite 5             │
-│    TailwindCSS v4         │        TailwindCSS v3                │
+│    React 18 + Vite 6      │        React 18 + Vite 6             │
+│    TailwindCSS v4         │        TailwindCSS v4                │
 │    React Router v7        │        React Router v6               │
 └───────────────────────────┴─────────────────────────────────────┘
                             │
@@ -60,9 +60,9 @@ Mini Forum là nền tảng thảo luận trực tuyến Full Stack, hoàn thàn
 │  ├── Routes          → Định tuyến API                           │
 │  ├── Middlewares      → Auth, Validation, Security, Error       │
 │  ├── Controllers      → Xử lý request (12 controllers)         │
-│  ├── Services         → Business logic (13 services)            │
+│  ├── Services         → Business logic (15 services)            │
 │  ├── Validations      → Zod schemas (10 files)                  │
-│  └── Utils            → JWT, Error classes, Response format     │
+│  └── Utils            → JWT, Error classes, Response, Slug      │
 └─────────────────────────────────────────────────────────────────┘
                             │
                             │ Prisma ORM (type-safe queries)
@@ -71,10 +71,10 @@ Mini Forum là nền tảng thảo luận trực tuyến Full Stack, hoàn thàn
 │                       DATABASE LAYER                             │
 │                       PostgreSQL                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│   13 Models: User, Post, Comment, Category, Tag, PostTag,       │
+│   14 Models: User, Post, Comment, Category, Tag, PostTag,       │
 │   Vote, Bookmark, Notification, UserBlock, Report,              │
-│   RefreshToken, AuditLog                                         │
-│   11 Enums: Role, PostStatus, CommentStatus, ...                │
+│   RefreshToken, AuditLog, OtpToken                               │
+│   12 Enums: Role, PostStatus, CommentStatus, OtpPurpose, ...    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -126,10 +126,11 @@ Request
 | ORM | Prisma | 5.22.0 |
 | Database | PostgreSQL | 15+ |
 | Auth | jsonwebtoken | 9.0.2 |
-| Password | bcrypt + bcryptjs | 5.1.1 / 3.0.3 |
+| Password | bcrypt | 5.1.1 |
 | Validation | Zod | 3.24.1 |
 | Security | Helmet + express-rate-limit | 8.0.0 / 7.4.1 |
 | Logging | Morgan | 1.10.0 |
+| Email | Nodemailer | 8.0.1 |
 
 ### 3.2 Frontend (User Client)
 
@@ -138,35 +139,66 @@ Request
 | Framework | React | 18.3.1 |
 | Build Tool | Vite | 6.3.5 |
 | Language | TypeScript | 5.x |
-| Styling | TailwindCSS + Shadcn/UI + MUI | 4.1.12 |
+| Styling | TailwindCSS + Shadcn/UI + MUI + Radix UI | 4.1.12 |
 | State | TanStack Query | 5.90.20 |
 | Forms | React Hook Form + Zod | 7.55.0 / 4.3.6 |
 | Router | React Router DOM | 7.13.0 |
 | HTTP | Axios | 1.13.4 |
 | Animation | motion (Framer Motion) | 12.23.24 |
-| Charts | Recharts | 2.15.2 |
 | Icons | Lucide React + MUI Icons | 0.487.0 / 7.3.5 |
 | Toast | Sonner | 2.0.3 |
+| Theme | next-themes | 0.4.6 |
 
 ### 3.3 Admin Client
 
 | Component | Technology | Version | Ghi chú |
 |-----------|-----------|--------|--------|
 | Framework | React | 18.2.0 | |
-| Build Tool | Vite | 5.x | |
-| Styling | TailwindCSS + Shadcn/UI + Radix UI | 3.4.1 | |
+| Build Tool | Vite | 6.3.5 | Upgraded v1.19.0 |
+| Styling | TailwindCSS + Shadcn/UI + Radix UI | 4.1.12 | Upgraded v1.19.0 |
+| State | TanStack React Query | 5.90.21 | QueryClientProvider wired |
 | Router | React Router DOM | 6.21.2 | |
 | HTTP | Axios | 1.6.5 | |
 | Toast | Sonner | 1.3.1 | |
 | Icons | Lucide React | 0.312.0 | |
 
-> **Lưu ý**: Admin Client sử dụng pattern `useState` + `useEffect` + Axios cho data fetching (không dùng TanStack Query hooks). Một số dependencies được khai báo trong `package.json` nhưng chưa sử dụng trong code: `@tanstack/react-query`, `@tanstack/react-table`, `recharts`, `react-hook-form`, `zod`, `date-fns`.
+> **Lưu ý**: Admin Client data fetching sử dụng `useState` + `useEffect` + Axios service calls. `QueryClientProvider` được cấu hình trong `main.tsx` nhưng các pages hiện tại chưa migrate sang `useQuery` hooks.
 
 ---
 
 ## 4. Data Flow
 
 ### 4.1 Authentication Flow
+
+#### Registration (OTP-based)
+
+```
+User                    Frontend                  Backend                 Database
+ │                        │                         │                       │
+ ├── Nhập email ─────────►│                         │                       │
+ │                        ├── POST /auth/send-otp   │                       │
+ │                        │   -register ───────────►│                       │
+ │                        │                         ├── Tạo OTP + hash ───►│
+ │                        │                         ├── Gửi email (SMTP)    │
+ │                        │◄── verificationToken ───┤                       │
+ │◄── Hiện form OTP ──────┤                         │                       │
+ │                        │                         │                       │
+ ├── Nhập OTP ───────────►│                         │                       │
+ │                        ├── POST /auth/verify-otp │                       │
+ │                        │   -register ───────────►│                       │
+ │                        │                         ├── Verify OTP ────────►│
+ │                        │◄── registrationToken ───┤                       │
+ │                        │                         │                       │
+ ├── Nhập username +     │                         │                       │
+ │   password ───────────►│                         │                       │
+ │                        ├── POST /auth/register ─►│                       │
+ │                        │                         ├── Create user ───────►│
+ │                        │                         ├── Generate JWT pair   │
+ │                        │◄── { user, tokens } ────┤                       │
+ │◄── Login success ──────┤                         │                       │
+```
+
+#### Login
 
 ```
 User                    Frontend                  Backend                 Database

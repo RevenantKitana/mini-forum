@@ -13,6 +13,9 @@ export interface AuthUser {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
+  date_of_birth: Date | null;
+  gender: string | null;
   role: string;
   reputation: number;
   is_verified: boolean;
@@ -74,6 +77,9 @@ export async function register(data: RegisterInput & { registrationToken?: strin
       username: true,
       display_name: true,
       avatar_url: true,
+      bio: true,
+      date_of_birth: true,
+      gender: true,
       role: true,
       reputation: true,
       is_verified: true,
@@ -187,6 +193,9 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     username: user.username,
     display_name: user.display_name,
     avatar_url: user.avatar_url,
+    bio: user.bio,
+    date_of_birth: user.date_of_birth,
+    gender: user.gender,
     role: user.role,
     reputation: user.reputation,
     is_verified: user.is_verified,
@@ -284,6 +293,9 @@ export async function getCurrentUser(userId: number): Promise<AuthUser> {
       username: true,
       display_name: true,
       avatar_url: true,
+      bio: true,
+      date_of_birth: true,
+      gender: true,
       role: true,
       reputation: true,
       is_verified: true,

@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { FontSizeSelector } from '@/components/common/FontSizeSelector';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { MobileNav } from './MobileNav';
 import {
@@ -22,7 +23,6 @@ import {
   Settings,
   Bookmark,
   MessageSquare,
-  Shield,
   UserX,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -46,9 +46,6 @@ export function Header() {
     logout();
     navigate('/');
   };
-
-  const isAdmin = user?.role === 'ADMIN';
-  const isModerator = user?.role === 'MODERATOR' || isAdmin;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -94,18 +91,7 @@ export function Header() {
               Tags
             </Button>
           </Link>
-          {isModerator && (
-            <Link to="/admin">
-              <Button 
-                variant={location.pathname.startsWith('/admin') ? 'secondary' : 'ghost'} 
-                size="sm"
-                className="font-medium gap-1 btn-press transition-all duration-200"
-              >
-                <Shield className="h-3.5 w-3.5" />
-                Admin
-              </Button>
-            </Link>
-          )}
+
         </nav>
 
         {/* Spacer */}
@@ -160,6 +146,9 @@ export function Header() {
 
           {/* Theme Toggle */}
           <ThemeToggle />
+
+          {/* Font Size Selector */}
+          <FontSizeSelector />
 
           {isAuthenticated && user ? (
             <>

@@ -5,10 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
-import { Tag, Folder, X, FileText, TrendingUp, Lock, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { Tag, Folder, X, FileText, TrendingUp, Lock, Globe, Search } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { LoginRequiredDialog } from '@/components/common/LoginRequiredDialog';
 
@@ -56,6 +57,13 @@ export function Sidebar() {
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: popularTags, isLoading: tagsLoading } = usePopularTags(15);
+  
+  // Tag filter state
+  const [tagFilter, setTagFilter] = useState('');
+  const filteredPopularTags = useMemo(
+    () => popularTags?.filter((t) => t.name.toLowerCase().includes(tagFilter.toLowerCase())) ?? [],
+    [popularTags, tagFilter]
+  );
   
   // Get selected category details
   const { data: selectedCategory } = useCategoryBySlug(currentCategory || '');
@@ -225,21 +233,6 @@ export function Sidebar() {
                   <Tag className="h-4 w-4" />
                   Popular Tags
                 </h3>
-                {activeTags.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('tags');
-                      newParams.delete('tag');
-                      setSearchParams(newParams);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                )}
               </div>
               <div className="border-t pt-3 flex-1 min-h-0">
                 {tagsLoading ? (
@@ -249,8 +242,36 @@ export function Sidebar() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-1.5 overflow-y-auto">
-                    {popularTags?.map((tag) => {
+                  <div className="space-y-2">
+                    {/* Inline tag filter */}
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                      <Input
+                        placeholder="Lọc tag..."
+                        value={tagFilter}
+                        onChange={(e) => setTagFilter(e.target.value)}
+                        className="h-7 text-xs pl-7"
+                      />
+                    </div>
+                    {/* Active tags indicator */}
+                    {activeTags.length > 0 && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Đang lọc: <strong>{activeTags.length}</strong> tag</span>
+                        <button
+                          className="text-primary hover:underline text-xs"
+                          onClick={() => {
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.delete('tags');
+                            newParams.delete('tag');
+                            setSearchParams(newParams);
+                          }}
+                        >
+                          Xóa hết
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5 overflow-y-auto">
+                    {filteredPopularTags.map((tag) => {
                       const isActive = activeTags.includes(tag.slug);
                       const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
                       const isInactive = tag.isActive === false;
@@ -289,6 +310,7 @@ export function Sidebar() {
 
                       return tagBadge;
                     })}
+                    </div>
                   </div>
                 )}
               </div>

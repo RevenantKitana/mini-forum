@@ -1,7 +1,7 @@
 # Database Schema — Mini Forum
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ## Mục đích
 
@@ -25,8 +25,8 @@ Tài liệu mô tả chi tiết database schema, quan hệ giữa các bảng, e
 |--------|-------|
 | ORM | Prisma 5.22.0 |
 | Database | PostgreSQL 15+ |
-| Models | 13 |
-| Enums | 11 |
+| Models | 14 |
+| Enums | 12 |
 | Schema file | `backend/prisma/schema.prisma` |
 
 ---
@@ -301,6 +301,27 @@ erDiagram
 
 ---
 
+### 3.14 `otp_tokens` — Mã xác thực OTP
+
+| Column | Type | Constraints | Mô tả |
+|--------|------|-------------|--------|
+| id | Int | PK, auto-increment | |
+| email | String | Required | Email nhận OTP |
+| purpose | OtpPurpose | Required | REGISTER / RESET_PASSWORD |
+| code | String | Required | OTP 6 số (đã hash) |
+| verification_token | String | Required | Token 32-byte hex |
+| is_verified | Boolean | Default: `false` | Đã xác thực |
+| verified_at | DateTime? | | Thời gian xác thực |
+| attempts_made | Int | Default: `0` | Số lần thử |
+| max_attempts | Int | Default: `5` | Giới hạn thử |
+| expires_at | DateTime | Required | Thời gian hết hạn |
+| created_at | DateTime | Default: `now()` | |
+| updated_at | DateTime | Auto-update | |
+
+**Indexes**: `email`, `[email, purpose]`
+
+---
+
 ## 4. Enums
 
 ### 4.1 Role — Vai trò người dùng
@@ -406,6 +427,13 @@ erDiagram
 | `REPORT` |
 | `SETTINGS` |
 
+### 4.12 OtpPurpose — Mục đích OTP
+
+| Value | Mô tả |
+|-------|--------|
+| `REGISTER` | Đăng ký tài khoản mới |
+| `RESET_PASSWORD` | Đặt lại mật khẩu |
+
 ---
 
 ## 5. Indexes & Constraints
@@ -448,14 +476,8 @@ Seed file: `backend/prisma/seed.ts`
 | Email | Password | Role | Username |
 |-------|----------|------|----------|
 | admin@forum.com | Admin@123 | ADMIN | admin |
-| mod@forum.com | Moderator@123 | MODERATOR | moderator |
-| john@example.com | Member@123 | MEMBER | john_doe |
 
-### Seed Content
-
-- 6 categories (Thông Báo, Hỏi Đáp, Kiến Thức, Dự Án, Off-topic, Góp Ý)
-- 10 tags (JavaScript, TypeScript, React, Node.js, v.v.)
-- Sample posts và comments
+> **Lưu ý**: Seed hiện tại chỉ tạo tài khoản Admin. Các dữ liệu mẫu khác (categories, tags, posts, comments...) được định nghĩa nhưng bị skip (`return` sớm) trong code.
 
 **Chạy seed**:
 ```bash

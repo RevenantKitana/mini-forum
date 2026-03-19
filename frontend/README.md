@@ -1,7 +1,7 @@
 # Mini Forum — Frontend
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 User-facing SPA — React 18 + TypeScript + Vite + TailwindCSS v4.
 
@@ -24,9 +24,8 @@ User-facing SPA — React 18 + TypeScript + Vite + TailwindCSS v4.
 | recharts | 2.15.2 | Charts |
 | lucide-react | 0.487.0 | Icons |
 | sonner | 2.0.3 | Toast notifications |
+| next-themes | 0.4.6 | Dark/light theme |
 | date-fns | 3.6.0 | Date utilities |
-| react-responsive-masonry | latest | Masonry layout |
-| react-dnd | latest | Drag and drop |
 
 ---
 
@@ -47,33 +46,34 @@ frontend/src/
 │   ├── common/                # 21+ reusable components
 │   ├── ui/                    # Base UI (shadcn-generated)
 │   └── PostCard.tsx           # Post card component
-├── contexts/                  # 3 React contexts
-├── hooks/                     # 14 custom hooks
+├── contexts/                  # 4 React contexts
+├── hooks/                     # 40+ custom hooks
 ├── lib/                       # Utility functions
-├── pages/                     # 19 page components
+├── pages/                     # 14 page components
 ├── routes/                    # Route definitions
-├── styles/                    # Global styles (~30+ keyframes)
+├── styles/                    # Global styles (~34 animation tokens)
 └── types/                     # TypeScript type definitions
 ```
 
 ---
 
-## Pages (19)
+## Pages (14)
 
-### Public (8)
+### Public (9)
 
 | Path | Component | Mô tả |
 |------|-----------|-------|
-| `/` | HomePage | Trang chủ, feed bài viết |
+| `/` | HomePage | Trang chủ, feed bài viết, filter, sort |
 | `/posts/:id` | PostDetailPage | Chi tiết bài viết + comments |
 | `/users/:username` | ProfilePage | Trang profile user |
 | `/search` | SearchPage | Tìm kiếm bài viết, users |
 | `/categories` | CategoriesPage | Danh sách categories |
 | `/tags` | TagsPage | Danh sách tags |
 | `/login` | LoginPage | Đăng nhập |
-| `/register` | RegisterPage | Đăng ký |
+| `/register` | RegisterPage | Đăng ký (multi-step OTP) |
+| `/forgot-password` | ForgotPasswordPage | Đặt lại mật khẩu (OTP) |
 
-### Protected — Yêu cầu đăng nhập (6)
+### Protected — Yêu cầu đăng nhập (5)
 
 | Path | Component | Mô tả |
 |------|-----------|-------|
@@ -82,59 +82,46 @@ frontend/src/
 | `/settings/profile` | EditProfilePage | Chỉnh sửa profile |
 | `/settings/blocked` | BlockedUsersPage | Quản lý users đã block |
 | `/notifications` | NotificationsPage | Danh sách thông báo |
-| `/create-post` | CreatePostPage | Tạo bài viết mới |
-
-### Admin — Yêu cầu MODERATOR+ (5)
-
-| Path | Component | Mô tả |
-|------|-----------|-------|
-| `/admin` | AdminDashboardPage | Dashboard thống kê |
-| `/admin/users` | AdminUsersPage | Quản lý users |
-| `/admin/posts` | AdminPostsPage | Quản lý bài viết |
-| `/admin/comments` | AdminCommentsPage | Quản lý comments |
-| `/admin/reports` | AdminReportsPage | Xử lý reports |
 
 ---
 
 ## Components
 
-### Layout (7)
+### Layout (6)
 
 | Component | Mô tả |
 |-----------|-------|
 | MainLayout | Layout chính (Header + Sidebar + Content + RightSidebar) |
-| AdminLayout | Layout cho admin pages |
-| Header | Navigation header (logo, search, user menu) |
+| Header | Navigation header (logo, search, user menu, theme, font size) |
 | Sidebar | Left sidebar (categories, tags, navigation) |
-| RightSidebar | Right sidebar (info, trending) |
-| MobileNav | Mobile bottom navigation |
-| Footer | Footer component |
+| RightSidebar | Right sidebar (featured/pinned posts) |
+| MobileNav | Mobile hamburger drawer |
+| MobileCategoryBar | Horizontal scrollable category pills (mobile) |
 
-### Common (21+)
+### Common (20+)
 
 | Component | Mô tả |
 |-----------|-------|
-| PostCard | Card hiển thị bài viết |
+| PostCard | Card hiển thị bài viết (author badge, vote score, tags) |
 | VoteButtons | Nút vote up/down với animation |
 | BookmarkButton | Toggle bookmark |
-| CreatePostDialog | Dialog tạo bài viết (Markdown) |
-| EditPostDialog | Dialog sửa bài viết |
+| PostFormDialog | Dialog tạo/sửa bài viết (Markdown, draft auto-save) |
 | ReportModal | Modal report nội dung |
-| MarkdownRenderer | Render Markdown content |
+| MarkdownRenderer | Render Markdown content (hỗ trợ avatar detection) |
+| MarkdownGuide | Hướng dẫn cú pháp Markdown với copy-to-clipboard |
 | LoginRequiredDialog | Dialog yêu cầu đăng nhập |
-| NotificationBell | Icon thông báo + badge |
-| PinnedPostsModal | Modal bài viết đã ghim |
+| NotificationBell | Icon thông báo + badge (dropdown) |
+| PinnedPostsModal | Modal bài viết đã ghim (auto-popup, 10m cooldown) |
 | ThemeToggle | Toggle dark/light theme |
+| FontSizeSelector | Chọn cỡ chữ (5 mức: xs/sm/md/lg/xl) |
+| TagFilterBar | Multi-tag filter với Popover + Apply |
+| TagSearchInput | Debounced tag search input |
+| EmojiPicker | Chọn emoji cho posts/comments |
+| OtpVerification | OTP input 6 số với auto-focus |
 | ErrorBoundary | Error boundary component |
-| InfiniteScroll | Infinite scroll wrapper |
-| ShareButton | Share bài viết |
-| TagBadge | Tag chip |
-| UserAvatar | Avatar với fallback |
-| CommentEditor | Rich comment editor |
-| QuoteReply | Quote reply component |
-| SortSelector | Sort options dropdown |
-| FilterPanel | Filter panel |
-| EmptyState | Empty state illustrations |
+| RestrictedContent | Permission-based content hiding |
+| PermissionBadge | Role/permission badges |
+| AnimatedIcon | Icon với animation wrapper |
 
 ### Skeleton (8)
 
@@ -142,52 +129,52 @@ PostCardSkeleton, CommentSkeleton, ProfileSkeleton, SearchSkeleton, Notification
 
 ---
 
-## Custom Hooks (14)
+## Custom Hooks (40+)
 
-| Hook | Mục đích |
-|------|----------|
-| usePosts | Fetch, create, update, delete posts |
-| useComments | Fetch, create, edit, delete comments |
-| useCategories | Fetch danh sách categories |
-| useTags | Fetch danh sách tags |
-| useVotes | Handle voting (optimistic update) |
-| useBookmarks | Handle bookmarks (toggle) |
-| useSearch | Search queries (debounced) |
-| useNotifications | Fetch + mark read notifications |
-| useUsers | User profile operations |
-| useAdmin | Admin API operations |
-| useResponsive | Responsive breakpoint detection |
+Các custom hooks được tổ chức theo domain:
+
+| Hook group | Mục đích |
+|------------|----------|
+| usePosts, usePost, usePostBySlug, usePostsByAuthor, useFeaturedPosts, useLatestPosts, useInfinitePosts | Fetch, create, update, delete posts |
+| useComments, useCreateComment, useUpdateComment, useDeleteComment | Fetch và quản lý comments |
+| useCategories, useCategoriesWithTags, useCategory, useCategoryBySlug | Categories data |
+| useTags, usePopularTags, usePopularTagsForCategory, useSearchTags | Tags data |
+| useVotePost, useVoteComment, useRemovePostVote, useRemoveCommentVote, useMyVoteHistory | Voting |
+| useBookmarks, useBookmarkStatus, useAddBookmark, useRemoveBookmark, useToggleBookmark | Bookmarks |
+| useSearch, useSearchUsers, useSearchSuggestions | Search |
+| useNotifications, useUnreadNotificationCount, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification | Notifications |
+| useUsers, useUserByUsername, useUserPosts, useUserComments | User profiles |
+| useUpdateProfile, useChangeUsername, useChangePassword, useUpdateAvatar | Profile mutations |
+| useResponsive | Media query breakpoint detection |
 | useScrollLock | Lock body scroll (modals) |
-| usePerformance | Performance monitoring |
-| useAuthInvalidation | Invalidate auth-related queries |
 
 ---
 
-## Contexts (3)
+## Contexts (4)
 
 | Context | State | Methods |
-|---------|-------|---------|
-| AuthContext | user, isAuthenticated, isLoading | login(), logout(), register() |
-| SidebarContext | isOpen, isMobile | toggle(), close() |
-| GlobalLoadingContext | isLoading | setLoading() |
+|---------|-------|--------|
+| AuthContext | user, isAuthenticated, isLoading | login(), logout(), register(), refreshUser() |
+| SidebarContext | isLeftSidebarCollapsed, isRightSidebarCollapsed | toggle, collapse/expand (localStorage) |
+| FontSizeContext | scale (xs/sm/md/lg/xl) | setScale() (localStorage) |
+| GlobalLoadingContext | isLoading, loadingMessage | showLoading(), hideLoading() |
 
 ---
 
-## API Services (11)
+## API Services (10)
 
 | File | Endpoints |
-|------|-----------|
-| authService.ts | Login, register, refresh, logout, change password |
+|------|----------|
+| authService.ts | Login, register, refresh, logout, OTP, reset password |
 | userService.ts | Profile CRUD, user posts/comments |
-| postService.ts | Posts CRUD, pin, lock, featured |
-| commentService.ts | Comments CRUD, quote reply |
-| categoryService.ts | Categories (read) |
-| tagService.ts | Tags (read) |
-| voteService.ts | Vote/unvote posts & comments |
-| bookmarkService.ts | Bookmark toggle, list |
-| searchService.ts | Search posts, users |
+| postService.ts | Posts CRUD, featured, latest |
+| commentService.ts | Comments CRUD, replies |
+| categoryService.ts | Categories, popular tags per category |
+| tagService.ts | Tags, popular, search |
+| voteService.ts | Vote/unvote posts & comments, vote history |
+| bookmarkService.ts | Bookmark toggle, list, status |
+| searchService.ts | Search posts, users, suggestions |
 | notificationService.ts | Notifications CRUD, mark read |
-| adminService.ts | Dashboard stats, user/post/comment management |
 
 ---
 

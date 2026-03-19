@@ -1,12 +1,322 @@
 # Changelog — Mini Forum
 
-> **Version**: v1.21.0  
-> **Last Updated**: 2026-03-06
+> **Version**: v1.26.0  
+> **Last Updated**: 2026-03-19
 
 Tất cả các thay đổi lớn của dự án này sẽ được ghi lại trong file này.
 
 
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.26.0] - 2026-03-19
+
+### Feature — Dynamic Comment Edit Time Limit Configuration
+
+Tạo API endpoint để frontend lấy giá trị `COMMENT_EDIT_TIME_LIMIT` động, thay vì hardcode. Giải quyết vấn đề không đồng bộ khi admin thay đổi cấu hình từ `.env`.
+
+**Problem**: 
+- Backend config: `COMMENT_EDIT_TIME_LIMIT` từ `.env` được đọc động
+- Frontend cấu hình: Hardcode `COMMENT_EDIT_TIME_LIMIT_MINUTES = 30`
+- Nếu admin thay đổi `.env` thành `COMMENT_EDIT_TIME_LIMIT=20`, backend kiểm soát chính xác nhưng frontend vẫn để nút Edit hoạt động 30 phút → người dùng thấy error khi submit sau 20 phút
+
+**Solution**:
+- Tạo endpoint `GET /api/v1/config/comment` trong backend
+- Endpoint trả về `{ editTimeLimit: number }`
+- Frontend hook `useCommentConfig()` lấy dữ liệu động với caching 24h
+- Thay thế hardcode `DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES` bằng giá trị từ API
+- Fallback về 30 phút khi API chưa load xong
+
+**Files changed**:
+- **Backend**:
+  - `backend/src/controllers/configController.ts` (NEW): Controller xử lý endpoint config
+  - `backend/src/routes/configRoutes.ts` (NEW): Routes cho config endpoints
+  - `backend/src/routes/index.ts`: Thêm route `/config`
+
+- **Frontend**:
+  - `frontend/src/hooks/useConfig.ts` (NEW): React Query hook để fetch config động
+  - `frontend/src/pages/PostDetailPage.tsx`:
+    - Import `useCommentConfig` hook
+    - Thay `const COMMENT_EDIT_TIME_LIMIT_MINUTES = 30` → `const DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES = 30`
+    - Fetch config: `const { data: commentConfig } = useCommentConfig()`
+    - Tính giá trị: `const commentEditTimeLimit = commentConfig?.editTimeLimit ?? DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES`
+    - Thêm prop `commentEditTimeLimit` vào `CommentItem` interface
+    - Cập nhật `CommentItem` component sử dụng dynamic value thay vì hardcode
+
+**Benefits**:
+- Backend và frontend đồng bộ khi admin thay đổi config
+- Config được cache 24h để tránh request không cần thiết
+- Admin có thể điều chỉnh thời hạn edit comment mà không cần deploy frontend
+- Fallback an toàn khi API chưa load
+
+---
+
+## [1.25.1] - 2026-03-10
+
+### Bug Fixes — Font Size Persistence, PostCard Mobile Badge, Comment Metadata Wrapping
+
+Fix 3 bugs từ PLAN.md Phase 1: BUG-001 (font size reset sau reload), BUG-003 (comment metadata overflow mobile), BUG-004 (role badge ẩn trên mobile).
+
+#### Bug Fix — BUG-001: Font Size Scale Không Được Áp Dụng Sau Page Reload
+
+**Root Cause**: `FontSizeProvider` đọc scale từ localStorage qua `getInitialScale()` nhưng **không gọi** `applyFontScaleToDOM()` khi mount. CSS variable `--font-size-scale` luôn về giá trị mặc định (1.0) sau mỗi lần reload, bất kể user đã chọn scale nào.
+
+**Symptom**: User chọn "Lớn" (xl=1.3) → refresh trang → UI dropdown vẫn hiện "Lớn" nhưng font size hiển thị bằng "Trung Bình" (1.0).
+
+**Fix**: Thêm `useEffect(() => { applyFontScaleToDOM(scale); }, [])` vào `FontSizeProvider` để apply CSS variable ngay khi component mount, sử dụng scale đã đọc từ localStorage.
+
+**Files changed**:
+- **`frontend/src/contexts/FontSizeContext.tsx`**:
+  - Import thêm `useEffect` từ React
+  - Thêm `useEffect` với dependency array rỗng `[]` để gọi `applyFontScaleToDOM(scale)` một lần khi mount
+  - Scale trong closure được đọc từ `getInitialScale()` (localStorage hoặc `'md'`)
+
+#### Bug Fix — BUG-004: PostCard Author Role Badge Ẩn Trên Mobile
+
+**Root Cause**: Badge Admin/Moderator được wrap trong `<span className="hidden md:contents">`, ẩn hoàn toàn trên viewport < 768px. Mobile users không thể nhận biết author là Admin hay Mod.
+
+**Fix**: Xóa wrapper `hidden md:contents`, để `getAuthorBadge()` render trực tiếp. Parent div đã có `flex-wrap` nên badge tự xuống dòng khi không đủ chỗ, không gây overflow.
+
+**Files changed**:
+- **`frontend/src/components/PostCard.tsx`**:
+  - Xóa `<span className="hidden md:contents">` wrapper
+  - Badge render inline trong `flex flex-wrap items-center gap-1.5` row
+  - Badge chỉ hiện khi author là ADMIN hoặc MODERATOR (null với Members)
+
+#### Bug Fix — BUG-003: Comment Author Metadata Overflow Trên Mobile
+
+**Root Cause**: Author metadata row trong `CommentCard` sử dụng `flex items-center gap-2` **không có** `flex-wrap`. Trên viewport 720px với reply indentation, các phần tử: Avatar + DisplayName + @username + timestamp + "(đã chỉnh sửa)" tràn ra ngoài container.
+
+**Fix**: Đổi sang `flex flex-wrap items-center gap-x-2 gap-y-1` để các phần tử tự xuống dòng. Thêm `flex-shrink-0` vào timestamp và "(đã chỉnh sửa)" để tránh text bị shrink trước khi wrap. Chuẩn hóa font size timestamp từ `text-sm` xuống `text-xs` cho nhất quán.
+
+**Files changed**:
+- **`frontend/src/pages/PostDetailPage.tsx`** (function `CommentCard`):
+  - `flex items-center gap-2` → `flex flex-wrap items-center gap-x-2 gap-y-1`
+  - Avatar: thêm `flex-shrink-0`
+  - Timestamp `<span>`: `text-sm` → `text-xs`, thêm `flex-shrink-0`
+  - "(đã chỉnh sửa)" `<span>`: thêm `flex-shrink-0`
+
+---
+
+## [1.25.0] - 2026-03-10
+
+### Feature — Font Size Customization & Mobile Category Display
+
+Cải thiện UX accessibility: người dùng có thể tùy chỉnh cỡ chữ trang web, hiển thị danh mục bài viết trên mobile.
+
+#### Feature — Font Size Customization (5-Level Scale)
+
+**Tính năng**: Thêm selector cỡ chữ vào Header toolbar cho phép người dùng tùy chỉnh: Rất Nhỏ → Nhỏ → Trung Bình → Lớn → Rất Lớn.
+
+**Cấu trúc**:
+- **Scale factors**: xs=0.7, sm=0.85, md=1 (default), lg=1.15, xl=1.3
+- **Lưu trữ**: localStorage (`forum_font_size_scale`)
+- **UI**: Header toolbar dropdown (icon Type, cạnh ThemeToggle)
+
+**Files changed**:
+- **`frontend/src/contexts/FontSizeContext.tsx`** (NEW):
+  - Context + Provider + Hook `useFontSize()`
+  - Set CSS variable `--font-size-scale` trên html element
+  - Set scaled font sizes (`--font-size-*-scaled`) via JavaScript
+  - Load/save localStorage
+
+- **`frontend/src/components/common/FontSizeSelector.tsx`** (NEW):
+  - Dropdown selector với 5 mức scale
+  - Checkbox items để hiệu quả
+  - Tooltip "Cỡ chữ"
+
+- **`frontend/src/components/layout/Header.tsx`**:
+  - Import FontSizeSelector
+  - Thêm `<FontSizeSelector />` vào right side actions (cạnh ThemeToggle)
+
+- **`frontend/src/app/App.tsx`**:
+  - Import FontSizeProvider
+  - Wrap `<FontSizeProvider>` bao quanh routes (nested giữa SidebarProvider-TooltipProvider)
+
+- **`frontend/src/styles/theme.css`**:
+  - Thêm CSS variable `--font-size-scale: 1` (default)
+  - Thêm html rule: `font-size: calc(16px * var(--font-size-scale, 1))`
+  - Result: tất cả relative font sizes (rem, em) auto-scale globally
+
+#### Enhancement — Category Display on Mobile
+
+**Vấn đề**: List bài viết trên mobile không hiển thị danh mục, khó nhận biết chủ đề bài viết.
+
+**Giải pháp**: Thêm category badge dưới title, hiển thị trên tất cả breakpoints (mobile, tablet, desktop).
+
+**Files changed**:
+- **`frontend/src/components/PostCard.tsx`**:
+  - Thêm section "Category Badge - Mobile & Desktop" sau title row
+  - Category badge: `<Badge variant="outline">` với category name + permission shield icon
+  - Clickable: link tới `/?category={slug}` để filter
+  - Xoá category display cũ từ "Author & Meta Row" (ẩn trên mobile)
+  - Result: category hiển thị rõ ràng trên mobile, consistent với desktop
+
+**Styling**:
+- Badge: `text-responsive-xs font-medium` (scale với font size)
+- Margin: phần tử độc lập giữa title và author info
+
+---
+
+## [1.24.0] - 2026-03-10
+
+### Phase 1: Critical UX Fixes (PLAN.md)
+
+Fix responsive mobile layout, tối ưu PostCard metadata, cải thiện Markdown rendering và thêm copy-to-clipboard cho Markdown Guide.
+
+#### Fix — Mobile Grid Layout Responsive (P0 CRITICAL)
+
+**Root Cause**: Grid breakpoint `sm:grid-cols-2` (640px) khiến mobile 720x1280 hiển thị 2 cột — không mong muốn. Mobile nên luôn 1 cột, tablet 768px+ mới 2 cột.
+
+**Files changed**:
+- **`frontend/src/pages/HomePage.tsx`** — Grid breakpoint: `sm:grid-cols-2` → `md:grid-cols-2` (768px+)
+- **`frontend/src/pages/CategoriesPage.tsx`** — Summary grid: `sm:grid-cols-2` → `md:grid-cols-2`
+- **`frontend/src/pages/TagsPage.tsx`** — Stats grid: `sm:grid-cols-2` → `md:grid-cols-2`
+
+#### Fix — PostCard Metadata Breakpoints (P1)
+
+**Vấn đề**: PostCard sử dụng `sm:` breakpoint (640px) để ẩn/hiện metadata, không nhất quán với mobile 720px.
+
+**Files changed**:
+- **`frontend/src/components/PostCard.tsx`**:
+  - Role badge: `hidden sm:contents` → `hidden md:contents` (ẩn trên mobile <768px)
+  - Category label: `hidden sm:inline` → `hidden md:inline`
+  - Category separator: `hidden sm:inline` → `hidden md:inline`
+  - Vote "điểm" label: `hidden sm:inline` → `hidden md:inline`
+  - Views count: `hidden sm:flex` → `hidden md:flex`
+  - **Kết quả**: Metadata layout nhất quán với mobile breakpoint mới (md:768px)
+
+#### Enhancement — Markdown Image Avatar Detection (P1)
+
+**Tính năng**: Tự động phát hiện ảnh avatar trong markdown content dựa trên alt text.
+
+**Files changed**:
+- **`frontend/src/components/common/MarkdownRenderer.tsx`**:
+  - Thêm avatar detection logic: kiểm tra alt text chứa "avatar", "profile", hoặc "user"
+  - Avatar images: render `w-10 h-10 rounded-full inline-block` (tròn, compact)
+  - Regular images: giữ nguyên `max-w-full h-auto rounded-md` (responsive block)
+  - Sử dụng callback-based regex replace thay vì static replacement
+
+#### Feature — Markdown Guide Copy-to-Clipboard (P2)
+
+**Tính năng mới**: Nút sao chép cú pháp markdown trong MarkdownGuide dialog.
+
+**Files changed**:
+- **`frontend/src/components/common/MarkdownGuide.tsx`**:
+  - Thêm import: `Copy`, `Check` từ `lucide-react`; `useCallback` từ React
+  - Thêm `CopyButton` component: click → copy syntax → icon chuyển sang Check (2s)
+  - Mỗi markdown example row giờ có nút copy bên phải
+  - Sử dụng `navigator.clipboard.writeText` API
+
+#### Audit — Console Warnings Review (P2)
+
+- Kiểm tra toàn bộ codebase frontend cho React warning patterns
+- Kết quả: Không phát hiện missing key props, useEffect issues, hoặc runtime warnings
+- Các `console.error` hiện tại trong catch blocks là error handling hợp lệ (AuthContext, ErrorBoundary, draft parsing)
+
+---
+
+## [1.23.0] - 2026-03-10
+
+### Critical Fixes & Tag Filter Feature (PLAN.md Sprint 1)
+
+Fix profile update không hoạt động, thêm validation cho profile input, thêm tag filter có nút Apply trên HomePage.
+
+#### Bug Fix — Profile Update Not Working (P0 BLOCKER)
+
+**Root Cause**: Frontend gửi camelCase keys (`displayName`, `dateOfBirth`) nhưng backend API & `UpdateProfileData` interface yêu cầu snake_case (`display_name`, `date_of_birth`). Data không bao giờ đến được backend.
+
+**Files changed**:
+- **`frontend/src/pages/EditProfilePage.tsx`**
+  - Fix mutation call: chuyển từ camelCase sang snake_case keys (`display_name`, `date_of_birth`)
+  - Fix `updateUser` (không tồn tại trong AuthContext) → sử dụng `refreshUser` để reload user data từ server
+  - Thêm `toast.success()` sau khi update profile và avatar thành công
+- **`frontend/src/contexts/AuthContext.tsx`**
+  - Fix `updateProfile` function: chuyển sang snake_case keys khi build `UpdateProfileData`
+  - Thêm `bio`, `dateOfBirth`, `gender` vào `transformUser` để AuthContext user có đầy đủ field
+- **`frontend/src/api/services/authService.ts`**
+  - Thêm `bio`, `dateOfBirth`, `gender` vào `AuthUser` interface
+- **`backend/src/services/authService.ts`**
+  - Thêm `bio`, `date_of_birth`, `gender` vào `AuthUser` interface
+  - Thêm 3 fields vào `getCurrentUser` select query
+  - Thêm 3 fields vào `login` authUser return object
+  - Thêm 3 fields vào `register` select query
+- **`backend/src/services/userService.ts`**
+  - Fix typo `updated_ata` → `updateData` trong `updateProfile` function
+
+#### Enhancement — Profile Input Validation (P0)
+
+**`backend/src/validations/userValidation.ts`**:
+- `date_of_birth`: Validate ISO 8601 format, ngày phải trong quá khứ, tuổi >= 13
+- `display_name`: Thêm error messages tiếng Việt
+- `bio`: Thêm error message max length tiếng Việt
+
+#### Feature — Tag Filter with Apply Button (P0 UX)
+
+**Vấn đề cũ**: Tag filter ngay lập tức khi click, không có xác nhận.  
+**Giải pháp**: TagFilterBar component với Popover, chọn nhiều tags → nhấn "Áp dụng" → filter.
+
+**Files changed**:
+- **`frontend/src/components/TagFilterBar.tsx`** (mới)
+  - Popover-based tag selector với search
+  - State riêng cho selected vs applied tags
+  - Nút "Áp dụng" và "Xóa bộ lọc"
+  - Badge hiển thị số tags đang active
+  - Sử dụng `usePopularTags(30)` để load tags
+- **`frontend/src/pages/HomePage.tsx`**
+  - Import và render `TagFilterBar` trong filter bar
+  - Thêm `appliedTags` computed từ URL params (`tag` + `tags`)
+  - Thêm `handleTagsApply` và `handleTagsClear` handlers
+  - Tags được set vào URL param `tags` (comma-separated slugs)
+
+---
+
+## [1.22.0] - 2026-03-06
+
+### Maintenance & Feature Sprint (PLAN.md Tasks 1–5)
+
+Loại bỏ admin code khỏi frontend, sửa block feature, cải thiện responsive mobile, thêm live tag search và mobile category bar.
+Không thay đổi DB schema, không thêm npm packages mới.
+
+#### Task 1 — Loại bỏ Admin Code khỏi Frontend (P0)
+
+- **Xóa files**: `pages/admin/*`, `AdminLayout.tsx`, `AdminRoute.tsx`, `ModeratorRoute.tsx`, `useAdmin.ts`, `adminService.ts`
+- **`frontend/src/app/App.tsx`** — Xóa admin imports và route block; `/admin/*` giờ trả về NotFoundPage
+- **`frontend/src/components/layout/Header.tsx`** — Xóa admin link, Shield import, isAdmin/isModerator biến
+- **`frontend/src/components/layout/MobileNav.tsx`** — Xóa admin section (Shield icon, "Admin Dashboard" button)
+- **`frontend/src/routes/index.ts`** — Xóa AdminRoute, ModeratorRoute exports
+- **`frontend/src/components/layout/index.ts`** — Xóa AdminLayout export
+
+#### Task 2 — Responsive UI/UX Mobile Fixes (P1)
+
+- **`frontend/src/pages/BookmarksPage.tsx`** — Responsive spacing (`space-y-3 sm:space-y-6`), heading sizes (`text-xl sm:text-3xl`), icon sizes, pagination responsive
+- **`frontend/src/pages/HomePage.tsx`** — Date picker label ẩn trên xs (`hidden sm:inline`), pagination gap/margin responsive
+- **`frontend/src/components/layout/MainLayout.tsx`** — Landscape mobile detection: ẩn sidebar khi `orientation: landscape` + `max-height: 500px`
+- **`frontend/src/styles/theme.css`** — Thêm `.scrollbar-hide` utility class (scrollbar-width: none, -webkit-scrollbar: none)
+
+#### Task 3 — Block Feature Fix — Backend (P0)
+
+- **`backend/src/services/postService.ts`** — Import `getBlockedUserIds`, thêm filter `author_id: { notIn: blockedIds }` vào `getPosts()` khi có `requestingUserId`
+- **`backend/src/services/commentService.ts`** — Thêm `requestingUserId` param vào `getCommentsByPostId`; soft-replace comment của blocked users bằng `[Nội dung đã bị ẩn]` với `isHiddenByBlock: true` (áp dụng đệ quy cho replies)
+- **`backend/src/controllers/commentController.ts`** — Pass `authReq.user?.userId` vào `commentService.getCommentsByPostId`
+- **`backend/src/services/userService.ts`** — Thêm `isBlockedByMe` và `hasBlockedMe` fields vào `getUserById` response (parallel Promise.all check)
+
+#### Task 3 — Block Feature Fix — Frontend (P0)
+
+- **`frontend/src/pages/ProfilePage.tsx`** — Thêm `unblockUserMutation` (DELETE `/users/:id/block`), cache invalidation cho posts/user/blockedUsers, `BlockedProfileView` component hiển thị UserX icon + unblock button khi `profile.isBlockedByMe === true`
+
+#### Task 4 — Live Search / Instant Search cho Tags (P1)
+
+- **`frontend/src/components/common/TagSearchInput.tsx`** (mới) — Reusable tag search component: debounced search, filtered tag display, active tag highlighting, compact mode
+- **`frontend/src/pages/TagsPage.tsx`** — Thêm search input trong header, 150ms debounce, conditional rendering: search → flat filtered list; empty → grouped view
+- **`frontend/src/components/layout/Sidebar.tsx`** — Thêm inline tag filter input (`Input` + `Search` icon), active tags indicator ("Đang lọc: N tag" + "Xóa hết"), sử dụng `filteredPopularTags` memo thay vì `popularTags` trực tiếp
+- **`frontend/src/components/layout/MobileNav.tsx`** — Thêm inline tag filter input, `filteredPopularTags` memo, active tags indicator, Vietnamese labels ("Xóa hết")
+
+#### Task 5 — Mobile Category Fastlist Bar (P1)
+
+- **`frontend/src/components/layout/MobileCategoryBar.tsx`** (mới) — Horizontal scrollable pill-buttons category bar, chỉ hiện trên `< md`, role="tablist", permission-aware
+- **`frontend/src/pages/HomePage.tsx`** — Tích hợp `MobileCategoryBar` ngay trên post feed, import `useCategories` (cached), `visibleCategories` memo filter theo permission, `handleMobileCategorySelect` handler sync URL params
 
 ---
 

@@ -1,7 +1,7 @@
 # Security
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -33,6 +33,7 @@
 | Password Hashing | bcrypt (salt 12) | ✅ |
 | Input Sanitization | Custom middleware | ✅ |
 | Audit Logging | AuditLog model | ✅ |
+| OTP Verification | Nodemailer + hashed codes | ✅ |
 | Automated Security Tests | — | ❌ |
 | Dependency Scanning | — | ❌ |
 
@@ -137,10 +138,14 @@ optionalAuth          → Attach user if token present (public routes)
 |-------------|:-----:|:------:|---------|
 | General API | 300 req | 15 phút | Toàn bộ `/api/v1` |
 | Auth routes | 10 req | 15 phút | Chỉ đếm failed attempts |
-
-> **Lưu ý**: Các rate limiter chuyên biệt (`createContentLimiter`, `voteLimiter`, `searchLimiter`) được định nghĩa trong `securityMiddleware.ts` nhưng chưa được áp dụng vào routes.
+| Content creation | 5 req | 1 phút | `POST /posts`, `POST /comments` |
+| Voting | 30 req | 1 phút | `POST /posts/:id/vote`, `POST /comments/:id/vote` |
+| Search | 30 req | 1 phút | Toàn bộ `/search/*` |
+| OTP Send | 3 req | 5 phút | `POST /auth/send-otp-*` |
+| OTP Verify | 10 req | 10 phút | `POST /auth/verify-otp-*` |
 
 Implementation: `express-rate-limit` v7.4.1 trong `securityMiddleware.ts`.
+Tất cả rate limiters đều được áp dụng vào routes tương ứng.
 
 ---
 

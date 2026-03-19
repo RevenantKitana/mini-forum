@@ -1,6 +1,6 @@
 import { useSearchParams, Link } from 'react-router-dom';
 import { usePosts } from '@/hooks/usePosts';
-import { useCategoryBySlug } from '@/hooks/useCategories';
+import { useCategoryBySlug, useCategories } from '@/hooks/useCategories';
 import { PostCard } from '@/components/PostCard';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -15,6 +15,8 @@ import { PostListSkeleton } from '@/components/common/LoadingStates';
 import { RestrictedContent } from '@/components/common/RestrictedContent';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { cn } from '@/lib/utils';
+import { MobileCategoryBar } from '@/components/layout/MobileCategoryBar';
+import { TagFilterBar } from '@/components/TagFilterBar';
 
 // Sort options with reverse capability
 type SortOption = 'latest' | 'popular' | 'trending' | 'oldest_first' | 'unpopular' | 'least_trending';
@@ -73,6 +75,58 @@ export function HomePage() {
     
     return true;
   }, [selectedCategory, isAuthenticated, user]);
+
+  // Categories for mobile category bar (cached, no extra request)
+  const { data: allCategories } = useCategories();
+  const visibleCategories = useMemo(() =>
+    allCategories?.filter(cat => {
+      const perm = cat.viewPermission || 'ALL';
+      if (perm === 'ALL') return true;
+      if (!isAuthenticated || !user) return false;
+      const role = user.role;
+      if (perm === 'MEMBER') return true;
+      if (perm === 'MODERATOR') return role === 'MODERATOR' || role === 'ADMIN';
+      if (perm === 'ADMIN') return role === 'ADMIN';
+      return true;
+    }) ?? [],
+    [allCategories, isAuthenticated, user]
+  );
+
+  const handleMobileCategorySelect = (slug: string | null) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (slug) newParams.set('category', slug);
+    else newParams.delete('category');
+    newParams.delete('page');
+    setSearchParams(newParams);
+  };
+
+  // Parse applied tags from URL
+  const appliedTags = useMemo(() => {
+    const tagsSlugs: string[] = [];
+    if (tagSlug) tagsSlugs.push(tagSlug);
+    if (tagsParam) tagsSlugs.push(...tagsParam.split(',').filter(Boolean));
+    return [...new Set(tagsSlugs)];
+  }, [tagSlug, tagsParam]);
+
+  const handleTagsApply = (tags: string[]) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('tag');
+    if (tags.length > 0) {
+      newParams.set('tags', tags.join(','));
+    } else {
+      newParams.delete('tags');
+    }
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
+
+  const handleTagsClear = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('tag');
+    newParams.delete('tags');
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
 
   // Only fetch posts if user can view the category
   const { data, isLoading } = usePosts(canViewCategory ? {
@@ -224,7 +278,7 @@ export function HomePage() {
           {/* Date Range Filter */}
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
                 <CalendarDays className="h-4 w-4" />
                 {hasDateFilter ? (
                   <span className="text-xs">
@@ -233,7 +287,7 @@ export function HomePage() {
                     {dateToParam && format(new Date(dateToParam), 'dd/MM/yy', { locale: vi })}
                   </span>
                 ) : (
-                  'Khoảng thời gian'
+                  <span className="hidden sm:inline">Khoảng thời gian</span>
                 )}
               </Button>
             </PopoverTrigger>
@@ -298,11 +352,24 @@ export function HomePage() {
               />
             </Badge>
           )}
+
+          {/* Tag Filter */}
+          <TagFilterBar
+            appliedTags={appliedTags}
+            onApply={handleTagsApply}
+            onClear={handleTagsClear}
+          />
         </div>
       </div>
 
       {/* Scrollable Posts List */}
       <div className="flex-1 overflow-y-auto pt-3">
+        {/* Mobile Category Bar */}
+        <MobileCategoryBar
+          categories={visibleCategories}
+          activeCategory={categorySlug ?? null}
+          onSelect={handleMobileCategorySelect}
+        />
         {/* Show restricted content message if user cannot view category */}
         {!canViewCategory && selectedCategory ? (
           <RestrictedContent
@@ -314,7 +381,7 @@ export function HomePage() {
           <PostListSkeleton count={5} />
         ) : data?.data && data.data.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {data.data.map((post, index) => (
                 <div 
                   key={post.id} 
@@ -328,7 +395,7 @@ export function HomePage() {
 
             {/* Pagination */}
             {data.pagination && data.pagination.totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-6 pb-4">
+              <div className="flex justify-center gap-1.5 sm:gap-2 mt-4 sm:mt-6 pb-4 flex-wrap">
                 <Button
                   variant="outline"
                   className="btn-press"

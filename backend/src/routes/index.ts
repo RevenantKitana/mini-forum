@@ -11,6 +11,7 @@ import searchRoutes from './searchRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import blockReportRoutes from './blockReportRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import configRoutes from './configRoutes.js';
 import * as commentController from '../controllers/commentController.js';
 import * as postController from '../controllers/postController.js';
 import * as voteController from '../controllers/voteController.js';
@@ -32,6 +33,7 @@ router.get('/health', (_req: Request, res: Response) => {
 
 // API routes
 router.use('/auth', authRoutes);
+router.use('/config', configRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/tags', tagRoutes);
 router.use('/posts', postRoutes);

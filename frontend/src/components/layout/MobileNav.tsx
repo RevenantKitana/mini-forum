@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
-  Menu, X, Home, FileText, User, LogIn, LogOut, Settings, Shield,
+  Menu, X, Home, FileText, User, LogIn, LogOut, Settings,
   Search, Bookmark, Tag, Folder, TrendingUp, UserX, Globe, Lock
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
@@ -24,6 +24,7 @@ interface MobileNavProps {
 export function MobileNav({ className }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,6 +39,11 @@ export function MobileNav({ className }: MobileNavProps) {
   const legacyTag = searchParams.get('tag');
   const activeTags = legacyTag ? [legacyTag] : currentTags;
   const totalPosts = categories?.reduce((sum, cat) => sum + cat.postCount, 0) || 0;
+
+  const filteredPopularTags = useMemo(
+    () => popularTags?.filter((t) => t.name.toLowerCase().includes(tagFilter.toLowerCase())) ?? [],
+    [popularTags, tagFilter]
+  );
 
   const handleLogout = () => {
     logout();
@@ -87,9 +93,6 @@ export function MobileNav({ className }: MobileNavProps) {
     }
     setSearchParams(newParams);
   };
-
-  const isAdmin = user?.role === 'ADMIN';
-  const isModerator = user?.role === 'MODERATOR' || isAdmin;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -228,10 +231,26 @@ export function MobileNav({ className }: MobileNavProps) {
                         setSearchParams(newParams);
                       }}
                     >
-                      Clear
+                      Xóa hết
                     </button>
                   )}
                 </h3>
+                {/* Inline tag filter */}
+                <div className="relative px-2 mb-2">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Lọc tag..."
+                    value={tagFilter}
+                    onChange={(e) => setTagFilter(e.target.value)}
+                    className="h-8 text-xs pl-7"
+                  />
+                </div>
+                {/* Active tags indicator */}
+                {activeTags.length > 0 && (
+                  <div className="px-2 mb-1 text-xs text-muted-foreground">
+                    Đang lọc: <strong>{activeTags.length}</strong> tag
+                  </div>
+                )}
                 {tagsLoading ? (
                   <div className="flex flex-wrap gap-2 px-2 mb-2">
                     {[...Array(6)].map((_, i) => (
@@ -240,7 +259,7 @@ export function MobileNav({ className }: MobileNavProps) {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 px-2 mb-2">
-                    {popularTags?.map((tag) => {
+                    {filteredPopularTags.map((tag) => {
                       const isActive = activeTags.includes(tag.slug);
                       const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
                       return (
@@ -334,25 +353,7 @@ export function MobileNav({ className }: MobileNavProps) {
               </div>
             )}
 
-            {/* Admin Section */}
-            {isModerator && (
-              <>
-                <Separator className="my-2" />
-                <div className="space-y-0.5">
-                  <p className="px-2 text-xs font-medium text-muted-foreground mb-1">
-                    Quản trị
-                  </p>
-                  <Button
-                    variant={location.pathname.startsWith('/admin') ? 'secondary' : 'ghost'}
-                    className="w-full justify-start min-h-[44px]"
-                    onClick={() => handleNavigate('/admin')}
-                  >
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </Button>
-                </div>
-              </>
-            )}
+
 
             {/* Logout */}
             {isAuthenticated && (

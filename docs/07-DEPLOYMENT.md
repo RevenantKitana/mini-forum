@@ -1,7 +1,7 @@
 # Deployment & Setup
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -96,7 +96,7 @@ cp .env.example .env
 npm run dev
 
 # 6. Truy cập
-# Frontend:  http://localhost:5173  (john@example.com / Member@123)
+# Frontend:  http://localhost:5173  (admin@forum.com / Admin@123)
 # Admin:     http://localhost:5174  (admin@forum.com / Admin@123)
 # API:       http://localhost:5000/api/v1/health
 ```
@@ -158,6 +158,15 @@ JWT_REFRESH_SECRET=<chuỗi ngẫu nhiên min 32 ký tự>
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
+
+# SMTP (OTP email)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM_EMAIL=noreply@forum.com
+SMTP_FROM_NAME=Mini Forum
 ```
 
 Tạo JWT secret ngẫu nhiên:
@@ -251,10 +260,9 @@ npm run dev
 | Role | Email | Password | Access |
 |------|-------|----------|--------|
 | Admin | `admin@forum.com` | `Admin@123` | Frontend + Admin Client |
-| Moderator | `mod@forum.com` | `Moderator@123` | Frontend + Admin Client |
-| Member | `john@example.com` | `Member@123` | Frontend only |
 
 > Admin Client yêu cầu role MODERATOR hoặc ADMIN.
+> Seed hiện tại chỉ tạo tài khoản Admin. Các tài khoản khác cần đăng ký qua giao diện (yêu cầu SMTP đã cấu hình để nhận OTP).
 
 ### Dữ liệu mẫu (seed)
 
@@ -295,6 +303,13 @@ npx prisma migrate reset   # → nhập 'yes' → auto seed
 | `JWT_REFRESH_EXPIRES_IN` | — | `7d` | Thời hạn refresh token |
 | `FRONTEND_URL` | — | `http://localhost:5173` | CORS allowed origin |
 | `COMMENT_EDIT_TIME_LIMIT` | — | `30` | Phút giới hạn edit comment |
+| `SMTP_HOST` | — | — | SMTP server hostname |
+| `SMTP_PORT` | — | `587` | SMTP port |
+| `SMTP_SECURE` | — | `false` | TLS connection |
+| `SMTP_USER` | — | — | SMTP username |
+| `SMTP_PASS` | — | — | SMTP password |
+| `SMTP_FROM_EMAIL` | — | — | Sender email address |
+| `SMTP_FROM_NAME` | — | `Mini Forum` | Sender display name |
 
 ### frontend/.env
 
@@ -452,7 +467,8 @@ Hoặc đổi port trong `.env`.
 ### Admin Client 403 Forbidden
 
 - Admin panel yêu cầu role **MODERATOR** hoặc **ADMIN**
-- Dùng: `admin@forum.com / Admin@123` hoặc `mod@forum.com / Moderator@123`
+- Dùng: `admin@forum.com / Admin@123` (seed tạo sẵn)
+- Moderator: cần tạo thủ công qua admin panel hoặc database
 
 ### JWT Token invalid / expired
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/app/components/ui/button';
 import {
   Dialog,
@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from '@/app/components/ui/dialog';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
-import { HelpCircle, Bold, Italic, Code, Link2, List, Quote, Heading1, Heading2 } from 'lucide-react';
+import { HelpCircle, Bold, Italic, Code, Link2, List, Quote, Heading1, Heading2, Copy, Check } from 'lucide-react';
 
 interface MarkdownExample {
   syntax: string;
@@ -133,6 +133,26 @@ export function MarkdownGuide({ variant = 'button', className }: MarkdownGuidePr
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [text]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded hover:bg-muted-foreground/10 transition-colors flex-shrink-0"
+      title="Sao chép cú pháp"
+    >
+      {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+    </button>
+  );
+}
+
 function MarkdownGuideContent() {
   return (
     <DialogContent className="w-[80vw] max-w-[80vw] h-[80vh] max-h-[80vh]">
@@ -170,6 +190,7 @@ function MarkdownGuideContent() {
                         dangerouslySetInnerHTML={{ __html: example.result }}
                       />
                     </div>
+                    <CopyButton text={example.syntax} />
                   </div>
                 ))}
               </div>

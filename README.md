@@ -1,6 +1,6 @@
 # Mini Forum
 
-> **Version**: v1.16.0 — MVP hoàn thành (55/55 tasks)
+> **Version**: v1.25.1 — MVP hoàn thành (55/55 tasks)
 
 Website Forum Full Stack — đăng bài, bình luận, vote, bookmark, thông báo, quản trị.
 
@@ -18,7 +18,7 @@ cd ../admin-client && npm i && cp .env.example .env && npm run dev
 
 | Service | URL | Test Account |
 |---------|-----|-------------|
-| Frontend | http://localhost:5173 | `john@example.com` / `Member@123` |
+| Frontend | http://localhost:5173 | `admin@forum.com` / `Admin@123` |
 | Admin Client | http://localhost:5174 | `admin@forum.com` / `Admin@123` |
 | Backend API | http://localhost:5000/api/v1/health | — |
 
@@ -30,11 +30,11 @@ cd ../admin-client && npm i && cp .env.example .env && npm run dev
 
 | Layer | Công nghệ |
 |-------|-----------|
-| Backend | Node.js 20+, Express 4.21, TypeScript (strict), Prisma 5.22, Zod 3.24 |
+| Backend | Node.js 20+, Express 4.21, TypeScript (strict), Prisma 5.22, Zod 3.24, Nodemailer |
 | Frontend | React 18.3, Vite 6.3, TailwindCSS 4.1, TanStack Query 5.90, React Router 7.13 |
-| Admin Client | React 18.2, Vite 5, TailwindCSS 3.4, React Router 6.21, shadcn/ui |
-| Database | PostgreSQL 15+ (13 models, 11 enums) |
-| Auth | JWT (Access 15m + Refresh 7d), RBAC (Admin / Moderator / Member) |
+| Admin Client | React 18.2, Vite 6.3, TailwindCSS 4.1, React Router 6.21, shadcn/ui |
+| Database | PostgreSQL 15+ (14 models, 12 enums) |
+| Auth | JWT (Access 15m + Refresh 7d), RBAC (Admin / Moderator / Member), OTP email | |
 
 ---
 
@@ -58,8 +58,8 @@ DA-mini-forum/
 |-----------|-------|
 | [docs/README.md](docs/README.md) | Mục lục tài liệu |
 | [docs/01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md) | Kiến trúc hệ thống |
-| [docs/02-DATABASE.md](docs/02-DATABASE.md) | Database schema (13 models) |
-| [docs/03-API/](docs/03-API/README.md) | API Reference (116 endpoints) |
+| [docs/02-DATABASE.md](docs/02-DATABASE.md) | Database schema (14 models) |
+| [docs/03-API/](docs/03-API/README.md) | API Reference (121 endpoints) |
 | [docs/04-FEATURES.md](docs/04-FEATURES.md) | Tính năng cross-module |
 | [docs/05-CHANGELOG.md](docs/05-CHANGELOG.md) | Lịch sử phiên bản |
 | [docs/06-ROADMAP.md](docs/06-ROADMAP.md) | Roadmap & trạng thái |
@@ -85,7 +85,8 @@ DA-mini-forum/
 - **Bookmarks**: Toggle, danh sách riêng
 - **Notifications**: 5 loại (comment, reply, mention, upvote, system), soft delete
 - **Search**: Full-text posts + users, suggestions
+- **OTP Authentication**: Đăng ký + reset password qua email OTP (Nodemailer)
 - **Moderation**: Pin/lock/hide posts, hide comments, ban users, audit logs
-- **Admin Dashboard**: Statistics (stat cards), management tables, CRUD categories/tags
-- **UX**: Dark/light mode, ~30+ CSS animations, skeleton loading, responsive design
+- **Admin Dashboard**: Statistics, management tables, CRUD categories/tags
+- **UX**: Dark/light mode, font size scale, ~30+ CSS animations, skeleton loading, responsive design
 

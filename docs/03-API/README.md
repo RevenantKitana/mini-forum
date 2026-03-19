@@ -1,9 +1,9 @@
 # API Reference — Mini Forum
 
-> **Version**: v1.16.0  
+> **Version**: v1.25.1  
 > **Base URL**: `http://localhost:5000/api/v1`  
 > **Format**: JSON (`Content-Type: application/json`)  
-> **Last Updated**: 2026-02-25
+> **Last Updated**: 2026-03-19
 
 ## Mục đích
 
@@ -39,6 +39,11 @@ API version nằm trong URL: `/api/v1/...`
 |------|----------|
 | Chung (toàn API) | 300 requests / 15 phút |
 | Auth (login/register) | 10 requests / 15 phút |
+| Content creation | 5 requests / 1 phút |
+| Voting | 30 requests / 1 phút |
+| Search | 30 requests / 1 phút |
+| OTP Send | 3 requests / 5 phút |
+| OTP Verify | 10 requests / 10 phút |
 
 ---
 
@@ -226,11 +231,11 @@ Authorization: Bearer <access_token>
 
 ## 6. Endpoint Index
 
-### Tổng số: **116 endpoints**
+### Tổng số: **121 endpoints**
 
 | # | Group | Count | Auth | File |
 |---|-------|-------|------|------|
-| 1 | Auth | 8 | Hỗn hợp | [01-auth.md](./01-auth.md) |
+| 1 | Auth | 13 | Hỗn hợp | [01-auth.md](./01-auth.md) |
 | 2 | Users | 10 | Hỗn hợp | [02-users.md](./02-users.md) |
 | 3 | Posts | 13 | Hỗn hợp | [03-posts.md](./03-posts.md) |
 | 4 | Comments | 5 | Hỗn hợp | [04-comments.md](./04-comments.md) |

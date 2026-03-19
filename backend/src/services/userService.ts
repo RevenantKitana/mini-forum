@@ -2,6 +2,7 @@ import prisma from '../config/database.js';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors.js';
 import { UpdateProfileInput, ChangeUsernameInput, ChangePasswordInput } from '../validations/userValidation.js';
 import bcrypt from 'bcrypt';
+import { isUserBlocked } from './blockService.js';
 
 const USERNAME_CHANGE_COOLDOWN_DAYS = 30;
 
@@ -57,10 +58,22 @@ export async function getUserById(id: number, requestingUserId?: number) {
     }),
   ]);
 
+  // Check block status between requesting user and this profile
+  let isBlockedByMe = false;
+  let hasBlockedMe = false;
+  if (requestingUserId && requestingUserId !== id) {
+    [isBlockedByMe, hasBlockedMe] = await Promise.all([
+      isUserBlocked(requestingUserId, id),
+      isUserBlocked(id, requestingUserId),
+    ]);
+  }
+
   return {
     ...user,
     post_count,
     comment_count,
+    isBlockedByMe,
+    hasBlockedMe,
   };
 }
 
@@ -84,25 +97,25 @@ export async function getUserByUsername(username: string, requestingUserId?: num
  * Update user profile
  */
 export async function updateProfile(userId: number, data: UpdateProfileInput) {
-  const updated_ata: Record<string, any> = {};
+  const updateData: Record<string, any> = {};
 
   if (data.display_name !== undefined) {
-    updated_ata.display_name = data.display_name;
+    updateData.display_name = data.display_name;
   }
   if (data.bio !== undefined) {
-    updated_ata.bio = data.bio;
+    updateData.bio = data.bio;
   }
   if (data.date_of_birth !== undefined) {
-    updated_ata.date_of_birth = data.date_of_birth ? new Date(data.date_of_birth) : null;
+    updateData.date_of_birth = data.date_of_birth ? new Date(data.date_of_birth) : null;
   }
   if (data.gender !== undefined) {
-    updated_ata.gender = data.gender;
+    updateData.gender = data.gender;
   }
 
   const user = await prisma.users.update({
     where: { id: userId },
     select: privateUserSelect,
-    data: updated_ata,
+    data: updateData,
   });
 
   return user;

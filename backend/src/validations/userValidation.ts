@@ -4,9 +4,27 @@ import { z } from 'zod';
  * Schema for updating user profile
  */
 export const updateProfileSchema = z.object({
-  display_name: z.string().min(1).max(50).optional(),
-  bio: z.string().max(500).optional(),
-  date_of_birth: z.string().datetime().optional().nullable(),
+  display_name: z.string().min(1, 'Tên hiển thị phải có ít nhất 1 ký tự').max(50, 'Tên hiển thị tối đa 50 ký tự').optional(),
+  bio: z.string().max(500, 'Giới thiệu tối đa 500 ký tự').optional(),
+  date_of_birth: z.string().datetime({ message: 'Ngày sinh phải đúng định dạng ISO 8601' })
+    .optional()
+    .nullable()
+    .refine((val) => {
+      if (!val) return true;
+      const dob = new Date(val);
+      return dob < new Date();
+    }, { message: 'Ngày sinh phải là ngày trong quá khứ' })
+    .refine((val) => {
+      if (!val) return true;
+      const dob = new Date(val);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      return age >= 13;
+    }, { message: 'Bạn phải từ 13 tuổi trở lên' }),
   gender: z.enum(['male', 'female', 'other']).optional().nullable(),
 });
 

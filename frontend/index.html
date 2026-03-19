@@ -6,6 +6,24 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
       <meta name="description" content="Mini Forum - Diễn đàn thảo luận" />
       <title>Mini Forum</title>
+      
+      <!-- Early font size initialization to prevent flashing before React renders -->
+      <script>
+        (function() {
+          const SCALE_VALUES = {
+            'xs': 0.7,
+            'sm': 0.85,
+            'md': 1,
+            'lg': 1.15,
+            'xl': 1.3
+          };
+          
+          const initialScale = localStorage.getItem('forum_font_size_scale') || 'md';
+          const scaleValue = SCALE_VALUES[initialScale] || 1;
+          
+          document.documentElement.style.setProperty('--font-size-scale', String(scaleValue));
+        })();
+      </script>
     </head>
 
     <body>

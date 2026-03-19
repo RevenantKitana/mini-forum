@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePost, useDeletePost } from '@/hooks/usePosts';
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment, Comment } from '@/hooks/useComments';
+import { useCommentConfig } from '@/hooks/useConfig';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/app/components/ui/card';
@@ -49,8 +50,8 @@ import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { EmojiPicker } from '@/components/common/EmojiPicker';
 import { decodeHtmlEntities } from '@/lib/utils';
 
-// Comment edit time limit in minutes (should match backend config)
-const COMMENT_EDIT_TIME_LIMIT_MINUTES = 30;
+// Default fallback - will be overridden by config from API
+const DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES = 30;
 
 // Permission labels for Vietnamese display
 const permissionLabels: Record<string, string> = {
@@ -94,6 +95,10 @@ export function PostDetailPage() {
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment'; id: number } | null>(null);
   const [commentSort, setCommentSort] = useState<'popular' | 'latest' | 'oldest'>('popular');
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch dynamic comment edit time limit from backend
+  const { data: commentConfig } = useCommentConfig();
+  const commentEditTimeLimit = commentConfig?.editTimeLimit ?? DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES;
 
   const { data: postData, isLoading: postLoading, error: postError } = usePost(id!);
   const post = postData;
@@ -546,6 +551,7 @@ export function PostDetailPage() {
                 postId={id!}
                 isPostLocked={post.isLocked}
                 canComment={isAuthenticated && canCommentInCategory}
+                commentEditTimeLimit={commentEditTimeLimit}
                 onReply={(c: Comment) => {
                   setReplyToId(c.id);
                   setReplyContent('');
@@ -626,6 +632,7 @@ interface CommentItemProps {
   postId: string;
   isPostLocked?: boolean;
   canComment?: boolean; // Whether user has permission to comment in this category
+  commentEditTimeLimit: number; // Dynamic edit time limit from backend config
   onReply: (comment: Comment) => void;
   isReply?: boolean;
   // Props for inline reply form
@@ -645,6 +652,7 @@ function CommentItem({
   postId,
   isPostLocked = false,
   canComment = true,
+  commentEditTimeLimit,
   onReply, 
   isReply = false,
   replyToId,
@@ -671,7 +679,7 @@ function CommentItem({
 
   // Check if comment can still be edited (within time limit)
   const commentAge = Date.now() - new Date(comment.createdAt).getTime();
-  const canEditTimeLimit = commentAge < COMMENT_EDIT_TIME_LIMIT_MINUTES * 60 * 1000;
+  const canEditTimeLimit = commentAge < commentEditTimeLimit * 60 * 1000;
   const isCommentAuthor = user && (Number(user.id) === comment.authorId || user.id === comment.authorId);
   const isModOrAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
   const canEdit = isCommentAuthor && (canEditTimeLimit || isModOrAdmin);
@@ -719,7 +727,7 @@ function CommentItem({
 
   // Calculate remaining edit time
   const getRemainingEditTime = () => {
-    const remaining = (COMMENT_EDIT_TIME_LIMIT_MINUTES * 60 * 1000) - commentAge;
+    const remaining = (commentEditTimeLimit * 60 * 1000) - commentAge;
     if (remaining <= 0) return null;
     const minutes = Math.floor(remaining / 60000);
     return `${minutes} phút`;
@@ -766,18 +774,18 @@ function CommentItem({
 
             <div className="flex-1 mb-0">
               {comment.author && (
-                <div className="flex items-center gap-2 mb-3">
-                  <Avatar className="h-6 w-6">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+                  <Avatar className="h-6 w-6 flex-shrink-0">
                     <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
                     <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <span className="font-medium">{authorDisplayName}</span>
                   <span className="text-muted-foreground/70 text-xs">@{comment.author.username}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                   </span>
                   {comment.isEdited && (
-                    <span className="text-xs text-muted-foreground">(đã chỉnh sửa)</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">(đã chỉnh sửa)</span>
                   )}
                 </div>
               )}

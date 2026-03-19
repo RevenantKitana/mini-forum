@@ -8,6 +8,9 @@ export interface AuthUser {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
+  dateOfBirth: string | null;
+  gender: 'male' | 'female' | 'other' | null;
   role: string;
   reputation: number;
   isVerified: boolean;

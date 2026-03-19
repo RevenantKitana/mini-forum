@@ -3,15 +3,28 @@ import { useTags } from '@/hooks/useTags';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Tag as TagIcon, Hash } from 'lucide-react';
+import { Input } from '@/app/components/ui/input';
+import { Tag as TagIcon, Hash, Search, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginRequiredDialog } from '@/components/common/LoginRequiredDialog';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export function TagsPage() {
   const { data: tags, isLoading } = useTags();
   const { isAuthenticated } = useAuth();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 150);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const filteredTags = useMemo(
+    () => tags?.filter((t) => t.name.toLowerCase().includes(debouncedQuery.toLowerCase())) ?? [],
+    [tags, debouncedQuery]
+  );
 
   if (!isAuthenticated) {
     return (
@@ -72,9 +85,27 @@ export function TagsPage() {
           <TagIcon className="h-8 w-8 text-primary animate-float" />
           <h1 className="text-3xl font-bold">Tags</h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           Khám phá các chủ đề thông qua hệ thống tag
         </p>
+        {/* Search Input */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Tìm tag..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
+          {searchQuery && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -85,6 +116,24 @@ export function TagsPage() {
         </div>
       ) : tags && tags.length > 0 ? (
         <>
+          {/* Search results (flat list) */}
+          {debouncedQuery.trim() ? (
+            <div>
+              <h2 className="text-sm font-medium text-muted-foreground mb-3">
+                {filteredTags.length} kết quả cho "{debouncedQuery}"
+              </h2>
+              {filteredTags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {filteredTags.map((tag) => (
+                    <TagBadge key={tag.id} tag={tag} size="default" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Không tìm thấy tag nào phù hợp.</p>
+              )}
+            </div>
+          ) : (
+          <>
           {/* Hot Tags */}
           {groupedTags.hot.length > 0 && (
             <div>
@@ -150,7 +199,7 @@ export function TagsPage() {
           {/* Summary */}
           <div className="rounded-lg border p-4 bg-muted/50">
             <h3 className="font-semibold mb-2">Thống kê</h3>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="text-sm">
                 <span className="text-muted-foreground">Tổng số tag: </span>
                 <span className="font-medium">{tags.length}</span>
@@ -169,6 +218,8 @@ export function TagsPage() {
               </div>
             </div>
           </div>
+        </>
+          )}
         </>
       ) : (
         <Card>

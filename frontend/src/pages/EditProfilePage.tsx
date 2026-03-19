@@ -29,7 +29,7 @@ function StrengthItem({ ok, label }: { ok: boolean; label: string }) {
 
 export function EditProfilePage() {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   // Profile form state
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -63,25 +63,16 @@ export function EditProfilePage() {
     e.preventDefault();
     
     try {
-      const result = await updateProfileMutation.mutateAsync({
-        displayName: displayName.trim() || undefined,
+      await updateProfileMutation.mutateAsync({
+        display_name: displayName.trim() || undefined,
         bio: bio.trim() || undefined,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
+        date_of_birth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
         gender: gender || null,
       });
 
-      // Update auth context with new user data
-      if (updateUser && result) {
-        updateUser({
-          ...user!,
-          displayName: displayName.trim() || user!.displayName,
-          bio: bio.trim() || user!.bio,
-          dateOfBirth: dateOfBirth || undefined,
-          gender: gender || undefined,
-        });
-      }
-
-
+      // Refresh user from server to update auth context
+      await refreshUser();
+      toast.success('Cập nhật thông tin thành công!');
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'Không thể cập nhật thông tin cá nhân.');
     }
@@ -96,20 +87,13 @@ export function EditProfilePage() {
     }
 
     try {
-      const result = await updateAvatarMutation.mutateAsync({
+      await updateAvatarMutation.mutateAsync({
         avatar_url: avatarUrl.trim(),
       });
 
-      // Update auth context with new avatar
-      if (updateUser && result) {
-        updateUser({
-          ...user!,
-          avatar: avatarUrl.trim(),
-          avatarUrl: avatarUrl.trim(),
-        });
-      }
-
-
+      // Refresh user from server to update auth context
+      await refreshUser();
+      toast.success('Cập nhật ảnh đại diện thành công!');
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'Không thể cập nhật ảnh đại diện.');
     }

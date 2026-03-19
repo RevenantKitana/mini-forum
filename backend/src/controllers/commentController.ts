@@ -12,7 +12,8 @@ export async function getCommentsByPostId(req: Request, res: Response, next: Nex
   try {
     const postId = parseInt(req.params.postId as string, 10);
     const query = listCommentsQuerySchema.parse(req.query);
-    const result = await commentService.getCommentsByPostId(postId, query);
+    const authReq = req as AuthRequest;
+    const result = await commentService.getCommentsByPostId(postId, query, true, authReq.user?.userId);
     return res.json({
       success: true,
       message: 'Comments retrieved successfully',

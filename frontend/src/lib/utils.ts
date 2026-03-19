@@ -1,6 +1,19 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+/**
+ * Combine Tailwind CSS classes with proper precedence handling
+ * Merges conflicting Tailwind utilities and removes duplicates
+ * 
+ * @param inputs - Array of class names, objects, or arrays
+ * @returns Merged class string with proper Tailwind precedence
+ * 
+ * @example
+ * ```ts
+ * cn('px-2', 'px-4') // Returns 'px-4'
+ * cn('p-2', { 'pt-4': true }, ['rounded-md']) // Merges all properly
+ * ```
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

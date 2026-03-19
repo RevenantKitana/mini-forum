@@ -157,7 +157,7 @@ export function CategoriesPage() {
       {categories && categories.length > 0 && (
         <div className="rounded-lg border p-4 bg-muted/50">
           <h3 className="font-semibold mb-2">Tổng quan</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="text-sm">
               <span className="text-muted-foreground">Tổng số danh mục: </span>
               <span className="font-medium">{categories.length}</span>

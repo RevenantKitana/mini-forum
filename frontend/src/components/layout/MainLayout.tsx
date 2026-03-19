@@ -5,6 +5,7 @@ import { RightSidebar } from './RightSidebar';
 import { PinnedPostsModal } from '@/components/common/PinnedPostsModal';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useMediaQuery } from '@/hooks/useResponsive';
 import { Button } from '@/app/components/ui/button';
 import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/too
 
 export function MainLayout() {
   const { isLeftSidebarCollapsed, toggleLeftSidebar } = useSidebar();
+  const isLandscapeMobile = useMediaQuery('(orientation: landscape) and (max-height: 500px)');
   
   // Smart sidebar visibility based on actual viewport width
   const [showLeftSidebar, setShowLeftSidebar] = useState(window.innerWidth >= 768);
@@ -37,7 +39,7 @@ export function MainLayout() {
         {/* Mobile-optimized spacing: gap-3 → gap-4, py-3 → py-4, px-3 → px-4 */}
         <div className="w-full h-full flex gap-3 md:gap-4 py-3 md:py-4 px-3 md:px-4">
           {/* Left Sidebar - responsive width using CSS variables, smart hiding with collapse support */}
-          {showLeftSidebar && (
+          {showLeftSidebar && !isLandscapeMobile && (
             <aside 
               className={cn(
                 "h-full hidden md:block overflow-hidden",
@@ -69,7 +71,7 @@ export function MainLayout() {
           )}
           
           {/* Expand button when sidebar is collapsed */}
-          {showLeftSidebar && isLeftSidebarCollapsed && (
+          {showLeftSidebar && !isLandscapeMobile && isLeftSidebarCollapsed && (
             <div className="hidden md:flex items-start pt-2">
               <Tooltip>
                 <TooltipTrigger asChild>

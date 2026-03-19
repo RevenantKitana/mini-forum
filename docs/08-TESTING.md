@@ -1,7 +1,7 @@
 # Testing
 
-> **Version**: v1.19.0  
-> **Last Updated**: 2026-02-26
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -299,11 +299,11 @@ e2e/
 
 ### Test Accounts
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@forum.com` | `Admin@123` |
-| Moderator | `mod@forum.com` | `Moderator@123` |
-| Member | `john@example.com` | `Member@123` |
+| Role | Email | Password | Tạo bởi |
+|------|-------|----------|--------|
+| Admin | `admin@forum.com` | `Admin@123` | Seed (tự động) |
+| Moderator | `mod@forum.com` | `Moderator@123` | Tạo thủ công |
+| Member | `john@example.com` | `Member@123` | Tạo thủ công |
 
 > **URLs:** Frontend `http://localhost:5173` — Admin `http://localhost:5174`
 
@@ -656,11 +656,11 @@ npx playwright install
 
 ### Hiện tại — Test Accounts
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@forum.com` | `Admin@123` |
-| Moderator | `mod@forum.com` | `Moderator@123` |
-| Member | `john@example.com` | `Member@123` |
+| Role | Email | Password | Tạo bởi |
+|------|-------|----------|--------|
+| Admin | `admin@forum.com` | `Admin@123` | Seed (tự động) |
+| Moderator | `mod@forum.com` | `Moderator@123` | Tạo thủ công |
+| Member | `john@example.com` | `Member@123` | Tạo thủ công |
 
 ### Checklist thủ công
 

@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
+import { FontSizeProvider } from '@/contexts/FontSizeContext';
 import { PrivateRoute } from '@/routes';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { AdminLayout } from '@/components/layout/AdminLayout';
 import { HomePage } from '@/pages/HomePage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
 import { EditPostPage } from '@/pages/EditPostPage';
@@ -20,13 +20,6 @@ import { NotificationsPage } from '@/pages/NotificationsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
-import {
-  AdminDashboardPage,
-  AdminUsersPage,
-  AdminPostsPage,
-  AdminCommentsPage,
-  AdminReportsPage,
-} from '@/pages/admin';
 import { Toaster } from '@/app/components/ui/sonner';
 import { TooltipProvider } from '@/app/components/ui/tooltip';
 import { Button } from '@/app/components/ui/button';
@@ -49,11 +42,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SidebarProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* Main Layout Routes */}
-                <Route path="/" element={<MainLayout />}>
+          <FontSizeProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <Routes>
+                  {/* Main Layout Routes */}
+                  <Route path="/" element={<MainLayout />}>
               <Route index element={<HomePage />} />
               <Route path="posts/:id" element={<PostDetailPage />} />
               <Route path="users/:username" element={<ProfilePage />} />
@@ -107,15 +101,6 @@ export default function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Route>
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="posts" element={<AdminPostsPage />} />
-              <Route path="comments" element={<AdminCommentsPage />} />
-              <Route path="reports" element={<AdminReportsPage />} />
-            </Route>
-
             {/* Auth Routes (without main layout) */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -123,7 +108,8 @@ export default function App() {
               </Routes>
               <Toaster position="top-right" richColors closeButton />
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </FontSizeProvider>
         </SidebarProvider>
       </AuthProvider>
     </QueryClientProvider>

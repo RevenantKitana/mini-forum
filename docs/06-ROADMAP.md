@@ -1,7 +1,7 @@
 # Roadmap & Trạng thái dự án
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -30,8 +30,8 @@
 | Component | Trạng thái | Mức độ hoàn thiện |
 |-----------|:----------:|:-----------------:|
 | Backend API | ✅ Functional | 95% |
-| Frontend (User) | ✅ Functional | 92% |
-| Admin Client | ✅ Functional | 90% |
+| Frontend (User) | ✅ Functional | 95% |
+| Admin Client | ✅ Functional | 92% |
 | Database | ✅ Stable | 100% |
 
 **Kế hoạch: 55/55 tasks hoàn thành (100%).**
@@ -43,11 +43,11 @@
 | Functionality | 9/10 | Core features đầy đủ |
 | Code Quality | 8/10 | Clean, organized |
 | Architecture | 8/10 | Layered, scalable |
-| UX/UI | 9/10 | Polish tốt, ~30+ animations |
-| Security | 7.5/10 | Cơ bản đầy đủ, cần audit |
+| UX/UI | 9/10 | ~30+ animations, responsive, font size scale |
+| Security | 7.5/10 | JWT, RBAC, OTP, rate limiting, cần audit |
 | Performance | 7/10 | Cần optimization |
-| Documentation | 8/10 | Đã đồng bộ v1.16.0 |
-| Testing | 3/10 | Chưa có automated tests |
+| Documentation | 8/10 | Đã đồng bộ v1.25.1 |
+| Testing | 5/10 | 40 automated tests (unit + integration + E2E scaffolded) |
 
 ---
 
@@ -213,7 +213,6 @@ Các tính năng chưa triển khai (nằm ngoài scope MVP):
 | Category | Tính năng | Ưu tiên |
 |----------|-----------|:-------:|
 | Real-time | WebSocket, live notifications, online indicators | Medium |
-| Email | Verification, password reset, digest emails | Medium |
 | File Management | Image upload, avatar upload, cloud storage | Medium |
 | Social | User following, social sharing, OAuth login | Low |
 | Performance | Redis caching, CDN, SSR, Elasticsearch | Medium |

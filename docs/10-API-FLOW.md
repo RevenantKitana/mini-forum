@@ -1,8 +1,8 @@
 # API Flow Visualization — Mini Forum
 
 > Hướng dẫn chi tiết luồng API từ Frontend → Backend → Database  
-> **Version**: v1.0  
-> **Last Updated**: 4 tháng 3, 2026
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -49,7 +49,7 @@ UI Render
 
 ### 1️⃣ Frontend: User Input
 
-**File**: [frontend/src/pages/CreatePostPage.tsx](../../frontend/src/pages/CreatePostPage.tsx) (hoặc component tương tự)
+**File**: `frontend/src/components/common/PostFormDialog.tsx` (hoặc CreatePostDialog)
 
 ```typescript
 // User điền form: title, content, tags, categoryId
@@ -69,7 +69,7 @@ const handleSubmit = async (e) => {
 
 ### 2️⃣ Frontend: Validation
 
-**File**: [frontend/src/lib/validation.ts](../../frontend/src/lib/validation.ts) hoặc [frontend/src/utils.ts](../../frontend/src/lib/utils.ts)
+**File**: Frontend sử dụng Zod validation tại form component và React Hook Form
 
 ```typescript
 // Kiểm tra dữ liệu trước khi gửi
@@ -89,7 +89,7 @@ if (!isValid) {
 
 ### 3️⃣ API Request: Frontend gửi
 
-**File**: [frontend/src/api/axios.ts](../../frontend/src/api/axios.ts) và [frontend/src/api/services/](../../frontend/src/api/services/)
+**File**: `frontend/src/api/axios.ts` và `frontend/src/api/services/postService.ts`
 
 ```typescript
 // axios client (axios.ts)
@@ -136,7 +136,7 @@ Content-Type: application/json
 
 ### 4️⃣ Backend: Auth Middleware
 
-**File**: [backend/src/middlewares/](../../backend/src/middlewares/) (xem `auth.ts` hoặc tương tự)
+**File**: `backend/src/middlewares/authMiddleware.ts`
 
 ```typescript
 // 1. Kiểm tra Authorization header
@@ -180,7 +180,7 @@ next();
 
 ### 5️⃣ Backend: Request Validation
 
-**File**: [backend/src/validations/](../../backend/src/validations/) (xem `postValidation.ts` hoặc tương tự)
+**File**: `backend/src/validations/postValidation.ts`
 
 ```typescript
 // Validate body fields
@@ -225,7 +225,7 @@ if (!validation.valid) {
 
 ### 6️⃣ Backend: Controller Logic
 
-**File**: [backend/src/controllers/postController.ts](../../backend/src/controllers/) hoặc tương tự
+**File**: `backend/src/controllers/postController.ts`
 
 ```typescript
 export const createPost = async (req, res) => {
@@ -271,7 +271,7 @@ export const createPost = async (req, res) => {
 
 ### 7️⃣ Backend: Business Logic (Service Layer)
 
-**File**: [backend/src/services/postService.ts](../../backend/src/services/) hoặc tương tự
+**File**: `backend/src/services/postService.ts`
 
 ```typescript
 export const createPost = async (data) => {
@@ -338,7 +338,7 @@ export const createPost = async (data) => {
 
 ### 8️⃣ Database: Insert Query
 
-**File**: [backend/prisma/schema.prisma](../../backend/prisma/schema.prisma)
+**File**: `backend/prisma/schema.prisma`
 
 ```prisma
 model Post {

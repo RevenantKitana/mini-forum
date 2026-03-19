@@ -86,6 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: apiUser.email,
     avatarUrl: apiUser.avatarUrl,
     avatar: apiUser.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${apiUser.username}`,
+    bio: apiUser.bio,
+    dateOfBirth: apiUser.dateOfBirth,
+    gender: apiUser.gender,
     role: apiUser.role,
     reputation: apiUser.reputation,
     isVerified: apiUser.isVerified,
@@ -222,9 +225,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       // Real API call
       const updateData: userService.UpdateProfileData = {
-        displayName: data.displayName ?? undefined,
+        display_name: data.displayName ?? undefined,
         bio: data.bio ?? undefined,
-        dateOfBirth: data.dateOfBirth ?? undefined,
+        date_of_birth: data.dateOfBirth ?? undefined,
         gender: data.gender ?? undefined,
       };
       await userService.updateProfile(user.id as number, updateData);

@@ -1,7 +1,7 @@
 # Mini Forum — Backend
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 REST API Server — Node.js + Express + TypeScript + Prisma ORM.
 
@@ -20,6 +20,7 @@ REST API Server — Node.js + Express + TypeScript + Prisma ORM.
 | express-rate-limit | 7.4.1 | Rate limiting |
 | cors | 2.8.5 | Cross-origin support |
 | morgan | 1.10.0 | HTTP logging |
+| nodemailer | 8.0.1 | OTP email sending |
 
 ---
 
@@ -28,7 +29,7 @@ REST API Server — Node.js + Express + TypeScript + Prisma ORM.
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma          # Database schema (13 models, 11 enums)
+│   ├── schema.prisma          # Database schema (14 models, 12 enums)
 │   ├── seed.ts                # Seed data
 │   └── migrations/            # Migration files
 ├── src/
@@ -36,15 +37,16 @@ backend/
 │   ├── app.ts                 # Express app configuration
 │   ├── config/
 │   │   ├── index.ts           # Centralized config (env validation)
-│   │   └── database.ts        # Prisma client singleton
+│   │   ├── database.ts        # Prisma client singleton
+│   │   └── email.ts           # Nodemailer transporter
 │   ├── constants/
 │   │   └── roles.ts           # Role definitions & hierarchy
 │   ├── controllers/           # 12 request handlers
-│   ├── services/              # 13 business logic files
+│   ├── services/              # 15 business logic files
 │   ├── middlewares/            # 5 middleware files
 │   ├── routes/                # 13 route definitions
 │   ├── validations/           # 10 Zod schemas
-│   └── utils/                 # 4 helper files
+│   └── utils/                 # 6 helper files
 ├── scripts/
 │   └── clearData.ts           # Clear database script
 ├── package.json
@@ -74,7 +76,7 @@ Request
 
 | File | Module | Endpoints |
 |------|--------|:---------:|
-| authController.ts | Register, Login, Refresh, Logout | 8 |
+| authController.ts | Register, Login, Refresh, Logout, OTP | 13 |
 | userController.ts | Profile, Update, Posts, Comments | 10 |
 | postController.ts | CRUD, Pin, Lock, Featured | 13 |
 | commentController.ts | CRUD, Replies, Hide | 5 |
@@ -87,7 +89,7 @@ Request
 | tagController.ts | Tags CRUD | 8 |
 | adminController.ts | Dashboard, Management | 31 |
 
-### Services (13 files)
+### Services (15 files)
 
 | File | Business logic |
 |------|---------------|
@@ -104,6 +106,8 @@ Request
 | categoryService.ts | Category management |
 | tagService.ts | Tag operations |
 | auditLogService.ts | Admin action logging |
+| otpService.ts | OTP generation, verification, cleanup |
+| emailService.ts | Nodemailer email sending (OTP templates) |
 
 ### Middlewares (5 files)
 
@@ -171,17 +175,26 @@ JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173,http://localhost:5174
 COMMENT_EDIT_TIME_LIMIT=30       # Phút giới hạn edit comment
+
+# SMTP (tùy chọn, cần cho OTP email)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM_EMAIL=noreply@forum.com
+SMTP_FROM_NAME=Mini Forum
 ```
 
 ---
 
 ## API Overview
 
-**Base URL**: `http://localhost:5000/api/v1` — **116 endpoints**
+**Base URL**: `http://localhost:5000/api/v1` — **121 endpoints**
 
 | Prefix | Module | Endpoints |
 |--------|--------|:---------:|
-| /auth | Authentication | 8 |
+| /auth | Authentication + OTP | 13 |
 | /users | User Management | 10 |
 | /posts | Posts | 13 |
 | /comments | Comments | 5 |
@@ -204,7 +217,7 @@ COMMENT_EDIT_TIME_LIMIT=30       # Phút giới hạn edit comment
 - **Input Validation**: Zod schemas cho tất cả inputs
 - **Sanitization**: XSS prevention, NoSQL injection protection
 - **Headers**: Helmet (CSP, X-Frame-Options, HSTS, etc.)
-- **Password**: bcrypt (salt rounds: 10)
+- **Password**: bcrypt (salt rounds: 12)
 - **Audit**: AuditLog model (15 action types)
 
 > Chi tiết: [docs/09-SECURITY.md](../docs/09-SECURITY.md)
@@ -219,6 +232,8 @@ COMMENT_EDIT_TIME_LIMIT=30       # Phút giới hạn edit comment
 4. **Comment Edit Time**: Configurable qua env (default 30 phút)
 5. **Soft Delete**: Posts/Comments dùng status, Notifications dùng deletedAt
 6. **Graceful Shutdown**: SIGINT/SIGTERM handlers trong index.ts
+7. **OTP Email**: Nodemailer SMTP, OTP 6 số (hashed), max 5 attempts, 60s resend delay
+8. **Response Transform**: Global middleware chuyển snake_case → camelCase cho frontend
 
 ---
 

@@ -1,7 +1,7 @@
 # Tính năng hệ thống
 
-> **Version**: v1.16.0  
-> **Last Updated**: 2026-02-25
+> **Version**: v1.25.1  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -63,27 +63,30 @@ Ma trận tính năng cross-module — Backend (BE), Frontend (FE), Admin Client
 
 | Tính năng | BE | FE | AC | Ghi chú |
 |-----------|:--:|:--:|:--:|---------|
-| Dark/Light mode | — | ✅ | — | Lưu localStorage |
+| Dark/Light mode | — | ✅ | ✅ | Lưu localStorage |
+| Font size scale | — | ✅ | — | 5 mức: xs/sm/md/lg/xl |
 | Draft auto-save | — | ✅ | — | 30 giây interval |
 | Markdown support | — | ✅ | — | Renderer + Guide |
 | Emoji picker | — | ✅ | — | Posts & comments |
 | Skeleton loading | — | ✅ | — | Tất cả pages |
 | Animations (~30+) | — | ✅ | — | CSS keyframes |
 | Pinned posts modal | — | ✅ | — | Auto-popup, cooldown 10m |
-| Responsive design | — | ✅ | — | Mobile-first |
+| Responsive design | — | ✅ | ✅ | Mobile-first |
 | Dashboard stats | ✅ | — | ✅ | Stat cards + recent activities |
+| Mobile category bar | — | ✅ | — | Horizontal scroll, ≤ md |
 | Data tables | — | — | ✅ | Custom tables (shadcn/ui) |
 
 ---
 
 ## 2. Authentication & Authorization
 
-### 2.1 Registration Flow
+### 2.1 Registration Flow (OTP-based)
 
 ```
-Step 1: Nhập email     → GET /auth/check-email (kiểm tra trùng)
-Step 2: Nhập username   → GET /auth/check-username (kiểm tra trùng)
-Step 3: Nhập password   → POST /auth/register → JWT tokens
+Step 1: Nhập email      → POST /auth/send-otp-register (gửi OTP qua email)
+Step 2: Nhập OTP 6 số   → POST /auth/verify-otp-register (xác thực mã)
+Step 3: Nhập username    → GET /auth/check-username (kiểm tra trùng)
+       + password        → POST /auth/register → JWT tokens
 ```
 
 ### 2.2 Login Flow
@@ -167,9 +170,9 @@ Access token hết hạn (15m) → POST /auth/refresh (kèm refreshToken)
 
 | Option | Mô tả |
 |--------|-------|
-| Most Engaging | Nhiều tương tác nhất (votes + replies) |
-| Newest | Mới nhất trước |
 | Oldest | Cũ nhất trước |
+| Newest | Mới nhất trước |
+| Popular | Nhiều tương tác nhất (votes) |
 
 ### 4.3 Giới hạn
 
@@ -312,15 +315,18 @@ PENDING → REVIEWING → RESOLVED / DISMISSED
 
 ### 10.1 Dashboard
 
-- Thống kê: Total Users, Posts, Comments, Pending Reports
-- Charts: Posts over time, Users over time, Activity trends
-- Quick actions: Link to pending reports, recent activity
+- Thống kê: Total Users, Posts, Comments, Pending Reports, Active Users, Pinned Posts
+- Date-range filtering (startDate, endDate)
+- Recent audit logs
+- Pinned posts management
+- Recent activities feed
+- Category stats
 
 ### 10.2 Admin Client Pages
 
 | Trang | Chức năng chính |
 |-------|----------------|
-| Dashboard | Thống kê + charts |
+| Dashboard | Thống kê + date filtering + pinned posts mgmt |
 | Users | Bảng data table, ban/unban, đổi role |
 | Posts | Filter/search, pin/lock/hide/delete |
 | Comments | Filter, hide/delete, view masked content |

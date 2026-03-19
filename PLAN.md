@@ -1,807 +1,1272 @@
-﻿# PLAN.md — Mini Forum: Kế hoạch triển khai Sprint tiếp theo
+# 🚀 Deployment Plan: DA-Mini-Forum
 
-> **Scope**: Frontend người dùng (port 5173) + Backend (port 5000) khi cần. **Không** bao gồm admin-client.
-> **Phiên bản hiện tại**: v1.16.0
-> **Người soạn**: Senior Tech Lead / System Architect
-> **Ngày cập nhật**: 2026-03-06
-
----
-
-## Mục lục
-
-1. [Tổng quan & Đánh giá nhanh](#1-tổng-quan--đánh-giá-nhanh)
-2. [Task 1 — Loại bỏ AdminDashboard khỏi Frontend người dùng](#2-task-1--loại-bỏ-admindashboard-khỏi-frontend-người-dùng)
-3. [Task 2 — Tối ưu Responsive UI/UX Mobile](#3-task-2--tối-ưu-responsive-uiux-mobile)
-4. [Task 3 — Sửa Bug: Tính năng Chặn (Block)](#4-task-3--sửa-bug-tính-năng-chặn-block)
-5. [Task 4 — Live Search / Instant Search cho Tags (+ Multi-tag Filter)](#5-task-4--live-search--instant-search-cho-tags--multi-tag-filter)
-6. [Task 5 — Mobile: Category Fastlist Sidebar](#6-task-5--mobile-category-fastlist-sidebar)
-7. [Thứ tự ưu tiên & Effort ước tính](#7-thứ-tự-ưu-tiên--effort-ước-tính)
-8. [Nguyên tắc triển khai chung](#8-nguyên-tắc-triển-khai-chung)
+**Target Stack**: Node/Express FE (Vercel) → BE (Railway/Render) → DB (Supabase)  
+**Version**: 1.0.0  
+**Created**: 2026-03-19  
+**Estimated Cost**: $0-5/month (depends on usage)
 
 ---
 
-## 1. Tổng quan & Đánh giá nhanh
+## 📋 Mục lục
 
-### 1.1 Trạng thái hiện tại
-
-| Thành phần | Trạng thái | Vấn đề đang tồn tại |
-|---|---|---|
-| Frontend (User) | ✅ Functional | Admin pages vẫn còn; block filter chưa đúng; Mobile UX chưa hoàn chỉnh |
-| Backend API | ✅ Functional | Block filter chưa áp dụng triệt để trên một số endpoints |
-| Admin-Client | ✅ Functional | Không trong scope |
-
-### 1.2 Danh sách vấn đề phát hiện
-
-| # | Vấn đề | Tệp / Vị trí | Mức độ |
-|---|---|---|---|
-| P0 | Admin pages, routes, AdminLayout còn trong frontend người dùng | `src/app/App.tsx`, `src/pages/admin/`, `src/components/layout/AdminLayout.tsx` | 🔴 Cao |
-| P1 | Block feature: bài viết / profile / bình luận của người bị chặn vẫn hiển thị | `PostCard`, `ProfilePage`, `PostDetailPage`, BE services | 🔴 Cao |
-| P2 | BookmarksPage UI bị lỗi layout trên mobile (trang bài viết đã lưu) | `BookmarksPage.tsx` | 🟡 Trung bình |
-| P2 | HomePage UI layout issue trên màn hình nhỏ (filter bar vỡ layout) | `HomePage.tsx` | 🟡 Trung bình |
-| P2 | Mobile không có Category fastlist như desktop sidebar | `MobileNav.tsx` | 🟡 Trung bình |
-| P3 | TagsPage không có live search / instant filter | `TagsPage.tsx` | 🟡 Trung bình |
-| P3 | Sidebar tag list không hỗ trợ live filter, multi-tag UX thô | `Sidebar.tsx` | 🟡 Trung bình |
-| P3 | Responsive chưa tối ưu màn hình xoay ngang (landscape) | Layout components | 🟢 Thấp |
+1. [Phân tích dự án](#1-phân-tích-dự-án)
+2. [Architecture](#2-architecture)
+3. [Chuẩn bị code](#3-chuẩn-bị-code)
+4. [Setup Supabase](#4-setup-supabase)
+5. [Deploy Backend](#5-deploy-backend)
+6. [Deploy Frontend](#6-deploy-frontend)
+7. [Environment Variables](#7-environment-variables)
+8. [CI/CD Pipeline](#8-cicd-pipeline)
+9. [Monitoring & Logging](#9-monitoring--logging)
+10. [Timeline & Checklist](#10-timeline--checklist)
 
 ---
 
-## 2. Task 1 — Loại bỏ AdminDashboard khỏi Frontend người dùng
+## 1. Phân tích dự án
 
-### 2.1 Phân tích hiện trạng
-
-Dù `admin-client` (cổng 5174) đã tồn tại độc lập, `frontend` (cổng 5173) vẫn chứa toàn bộ admin code:
+### 1.1 Project Structure
 
 ```
-frontend/src/
-├── pages/admin/                        ← CẦN XÓA (5 trang)
-│   ├── AdminDashboardPage.tsx
-│   ├── AdminUsersPage.tsx
-│   ├── AdminPostsPage.tsx
-│   ├── AdminCommentsPage.tsx
-│   ├── AdminReportsPage.tsx
-│   └── index.ts
-├── components/layout/
-│   └── AdminLayout.tsx                 ← CẦN XÓA
-└── routes/
-    └── AdminRoute.tsx                  ← CẦN XÓA (nếu không còn dùng)
+DA-mini-forum/
+├── backend/                (Node.js + Express API)
+│   ├── src/
+│   ├── prisma/            (Database schema + migrations)
+│   ├── jest.config.js
+│   ├── package.json       (Main: ^18.0.0)
+│   └── .env.example
+├── frontend/              (React + Vite)
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+├── admin-client/          (React + Vite Admin Panel)
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+├── e2e/                   (Playwright tests)
+├── docker-compose.yml
+└── package.json           (monorepo root)
 ```
 
-`App.tsx` hiện đang:
-- Import `AdminLayout` và 5 admin pages
-- Khai báo route block `/admin/*` với `<AdminLayout>` và 5 children routes
+### 1.2 Tech Stack Analysis
 
-**Rủi ro nếu giữ**: Bundle size tăng; lộ UI admin cho user thường; duplicate logic với admin-client.
+| Component | Tech | Version | Deploy | Notes |
+|-----------|------|---------|--------|-------|
+| Backend | Express + TypeScript | ^4.21.1 | Railway/Render | Port: 5000 |
+| Frontend | React + Vite | ^18.2.0 | Vercel | SPA (Client-side routing) |
+| Admin | React + Vite | ^18.2.0 | Vercel/Netlify | Separate app |
+| Database | PostgreSQL | 15+ | Supabase | Prisma ORM |
+| Authentication | JWT | - | Backend | JWT tokens via API |
+| ORM | Prisma | ^5.22.0 | - | Migrations required |
 
-### 2.2 Phương án triển khai
+### 1.3 Dependencies Review
 
-> **Chiến lược**: Xóa clean (dead code removal). Truy cập `/admin` sẽ tự động rơi vào `<Route path="*">` → `NotFoundPage` đã có sẵn.
+**Backend Production Dependencies:**
+- `express` - API server
+- `@prisma/client` - Database ORM
+- `jsonwebtoken` - Auth
+- `bcrypt` - Password hashing
+- `cors` - Cross-origin
+- `helmet` - Security headers
+- `express-rate-limit` - Request throttling
+- `nodemailer` - Email service
+- `zod` - Input validation
+- `morgan` - Logging
 
-#### Bước 1 — Xóa import và routes trong `App.tsx`
+**Backend DevDependencies:**
+- `typescript` - Type safety
+- `jest` + `supertest` - Testing
+- `ts-jest` - TypeScript support for Jest
+- `nodemon` - Development reload
 
-**File**: `frontend/src/app/App.tsx`
+**Frontend Dependencies:**
+- `react`, `react-dom` - Frontend framework
+- `@tanstack/react-query` - Data fetching & caching
+- `axios` - HTTP client
+- `@radix-ui/` - UI components
+- `tailwindcss` - Styling
 
-Xóa các import:
-```tsx
-// XÓA:
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import {
-  AdminDashboardPage,
-  AdminUsersPage,
-  AdminPostsPage,
-  AdminCommentsPage,
-  AdminReportsPage,
-} from '@/pages/admin';
+### 1.4 Environment Requirements
+
+**Backend (.env)**
+```
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=postgresql://user:pass@host/db
+JWT_ACCESS_SECRET=(min 32 chars)
+JWT_REFRESH_SECRET=(min 32 chars)
+CORS_ORIGIN=https://yourdomain.com,https://admin.yourdomain.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM=noreply@yourdomain.com
 ```
 
-Xóa route block:
-```tsx
-// XÓA toàn bộ block:
-{/* Admin Routes */}
-<Route path="/admin" element={<AdminLayout />}>
-  <Route index element={<AdminDashboardPage />} />
-  <Route path="users" element={<AdminUsersPage />} />
-  <Route path="posts" element={<AdminPostsPage />} />
-  <Route path="comments" element={<AdminCommentsPage />} />
-  <Route path="reports" element={<AdminReportsPage />} />
-</Route>
+**Frontend (.env)**
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
 ```
 
-#### Bước 2 — Xóa files / thư mục
-
+**Admin (.env)**
 ```
-frontend/src/pages/admin/                    ← Xóa cả thư mục
-frontend/src/components/layout/AdminLayout.tsx  ← Xóa file
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
 ```
-
-#### Bước 3 — Kiểm tra `useAdmin.ts`
-
-**File**: `frontend/src/hooks/useAdmin.ts`
-
-- Kiểm tra xem hook này có được dùng ngoài admin pages không.
-- Nếu **chỉ** dùng cho admin pages → **xóa**.
-- Nếu có shared logic → giữ lại, refactor tên nếu cần.
-
-#### Bước 4 — Kiểm tra `AdminRoute.tsx`
-
-**File**: `frontend/src/routes/AdminRoute.tsx`
-
-- Tìm tất cả nơi import `AdminRoute` (grep toàn dự án).
-- Nếu không còn dùng → xóa file và cập nhật `routes/index.ts`.
-
-#### Bước 5 — Kiểm tra `Header.tsx` & `MobileNav.tsx`
-
-Tìm kiếm và loại bỏ bất kỳ link điều hướng nội bộ `/admin` nào dành cho user thường:
-
-```bash
-# Grep pattern cần tìm:
-# "/admin" | "AdminRoute" | navigate('/admin')
-```
-
-> **Lưu ý**: Giữ lại link ngoài đến `http://localhost:5174` (admin-client) nếu có, chỉ xóa internal SPA routes.
-
-### 2.3 Acceptance Criteria
-
-- [ ] `frontend` không còn import bất kỳ admin page / component / hook nào
-- [ ] Route `/admin/*` không tồn tại trong frontend SPA → trả về `NotFoundPage (404)`
-- [ ] Bundle size giảm (kiểm tra: `npm run build -- --report`)
-- [ ] Không có TypeScript compile error sau cleanup
-- [ ] Tất cả trang user bình thường vẫn hoạt động bình thường
 
 ---
 
-## 3. Task 2 — Tối ưu Responsive UI/UX Mobile
+## 2. Architecture
 
-### 3.1 Phân tích hiện trạng
+### 2.1 Deployment Architecture
 
-**Target screen sizes**:
-- Portrait: `720×1280` → `1080×1920`
-- Landscape: `720×1280` xoay ngang (`1280×720`) → `1920×1080`
-
-**Vấn đề đã xác định**:
-
-| Trang | Vấn đề cụ thể |
-|---|---|
-| **BookmarksPage** | PostCard trong bookmark list bị vỡ layout; text/meta tràn; pagination không căn giữa đúng |
-| **HomePage** | Filter bar (sort tabs + date picker) bị chèn chồng nhau ở màn hình < 400px; tag badges tràn ngang |
-| **Chung (landscape)** | Sidebar trái chiếm quá nhiều vp-height khi xoay ngang; header cứng không co giãn |
-
-### 3.2 Breakpoints cần nhắm
-
-| Breakpoint | Width | Mô tả |
-|---|---|---|
-| `xs` | < 480px | Điện thoại nhỏ (Galaxy S8, iPhone SE) |
-| `sm` | 480–639px | Điện thoại lớn / portrait flagship |
-| `md` | 640–767px | Landscape mobile / tablet nhỏ |
-| `lg` | 768px+ | Tablet / desktop → sidebar hiển thị |
-
-### 3.3 BookmarksPage — Chi tiết fix
-
-**File**: `frontend/src/pages/BookmarksPage.tsx`
-
-Vấn đề: container wrapping chưa có `max-w` phù hợp trên xs; spacing quá lớn.
-
-```tsx
-// Thay:
-<div className="space-y-4">
-// Thành:
-<div className="space-y-3 sm:space-y-4">
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         FRONTEND LAYER                      │
+├─────────────────────────┬──────────────────────────────────┤
+│ yourdomain.com (Vercel) │ admin.yourdomain.com (Vercel)    │
+│ - React App             │ - Admin Dashboard                │
+│ - Static hosting        │ - Static hosting                 │
+│ - Auto CI/CD from Git   │ - Auto CI/CD from Git            │
+└──────────────┬──────────┴────────────────┬──────────────────┘
+               │                          │
+               └──────────┬───────────────┘
+                          │ HTTPS
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│         api.yourdomain.com (Railway/Render)                 │
+│              Node.js + Express Server                        │
+│  - REST API endpoints                                        │
+│  - JWT Authentication                                        │
+│  - Business logic                                            │
+│  - Database connection                                       │
+│  - Rate limiting & Security                                 │
+└──────────┬───────────────────────────────────────────────────┘
+           │ DATABASE_URL (PostgreSQL connection string)
+           ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Supabase (PostgreSQL + Auth)                    │
+│  - Managed PostgreSQL database                              │
+│  - Automatic backups                                         │
+│  - Point-in-time recovery                                   │
+│  - 500MB free tier / $25/month for more                     │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-```tsx
-// Pagination container:
-// Thêm: mt-4 sm:mt-6 thay vì mt-6 cứng
-<div className="flex justify-center gap-2 mt-4 sm:mt-6 flex-wrap">
-```
+### 2.2 Data Flow
 
-**PostCard mobile fixes** (`frontend/src/components/PostCard.tsx`):
-- Avatar: `h-8 w-8 sm:h-10 sm:w-10`
-- Title: `text-sm sm:text-base` + `line-clamp-2`
-- Footer row: thêm `flex-wrap gap-1.5` để metadata không tràn
-- Tag/category badges: thêm `truncate max-w-[100px] sm:max-w-none`
+1. **User** → Accesses `yourdomain.com` (Vercel CDN)
+2. **Browser** → Loads React app (static files cached globally)
+3. **Frontend App** → Makes API calls to `api.yourdomain.com`
+4. **Backend** → Validates JWT, executes business logic
+5. **Backend** → Queries Supabase PostgreSQL via Prisma
+6. **Response** → Returns JSON → Frontend → Renders UI
 
-### 3.4 HomePage — Chi tiết fix
+### 2.3 Cost Breakdown
 
-**File**: `frontend/src/pages/HomePage.tsx`
-
-Vấn đề: Filter row dùng `flex` không `flex-wrap`:
-
-```tsx
-// Filter bar — thêm flex-wrap:
-<div className="flex flex-wrap gap-2 items-center">
-```
-
-Sort tabs trên mobile:
-- Ẩn label text, chỉ hiện icon trên xs: `<span className="hidden sm:inline">Mới nhất</span>`
-- Hoặc nhóm lại thành dropdown `<Select>` trên xs
-
-Date picker:
-- Nút trigger: thu gọn về icon-only trên xs: `<CalendarDays className="h-4 w-4" /><span className="hidden sm:inline ml-1">Ngày</span>`
-
-### 3.5 Landscape Mode Optimization
-
-**Hook mới**: `frontend/src/hooks/useMediaQuery.ts`
-
-```ts
-import { useState, useEffect } from 'react';
-
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const mql = window.matchMedia(query);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, [query]);
-  return matches;
-}
-```
-
-**File**: `frontend/src/components/layout/MainLayout.tsx`
-
-```tsx
-const isLandscapeMobile = useMediaQuery(
-  '(orientation: landscape) and (max-height: 500px)'
-);
-
-// Sử dụng:
-const shouldShowLeftSidebar = showLeftSidebar && !isLandscapeMobile;
-```
-
-Trên landscape mobile: ẩn sidebar trái → content chiếm full width, dùng `MobileNav` (hamburger) để truy cập danh mục.
-
-### 3.6 Acceptance Criteria
-
-- [ ] BookmarksPage không có horizontal overflow trên `375px`, `390px`, `412px`
-- [ ] HomePage filter bar tự wrap xuống dòng khi không đủ rộng
-- [ ] Landscape `800×360` (Galaxy S9 xoay): không layout collapse, không scroll ngang
-- [ ] Test thủ công trên Chrome DevTools: Galaxy S9 (360×800), Pixel 7 (412×915), iPhone 14 (390×844), landscape variant của cả 3
+| Service | Free Tier | Cost | Notes |
+|---------|-----------|------|-------|
+| **Vercel** | ✅ Included | $0 | Unlimited deployments, builds, edge functions |
+| **Railway/Render** | ⏸️ $5 credit | $5-15/mo | Billable when free tier exhausted (Bengal: $5/500gb-hrs) |
+| **Supabase** | ✅ Included | $0-25/mo | 500MB free, $25/mo = 8GB, Auto-scaling |
+| **Total** | - | ~$0-5/month* | *Low traffic apps stay in free tier |
 
 ---
 
-## 4. Task 3 — Sửa Bug: Tính năng Chặn (Block)
+## 3. Chuẩn bị code
 
-### 4.1 Phân tích nguyên nhân gốc rễ
+### 3.1 Code Changes Required
 
-**Vấn đề**: Sau khi User A chặn User B, nội dung của B (bài viết, bình luận, profile) vẫn hiển thị bình thường với A.
+#### ✅ Backend
 
-**Root cause**:
+**File: `backend/src/config/index.ts`**
+- Verify all environment variables are set
+- Add production defaults for optional configs
 
-1. **Backend** — `blockService.ts` có hàm `isUserBlocked()` nhưng:
-   - `postService.ts` → query lấy danh sách posts **không** join/filter `UserBlock`
-   - `commentService.ts` → query lấy comments **không** filter `UserBlock`
-   - `userController.ts` → endpoint `GET /users/:username` không trả về trạng thái block
-
-2. **Frontend** — Không có bất kỳ check block nào trong:
-   - `PostCard.tsx` (render mọi bài viết)
-   - `PostDetailPage.tsx` (render mọi comment)
-   - `ProfilePage.tsx` (render mọi profile)
-
-> **Nguyên tắc**: Fix tại Backend là bắt buộc (security). Frontend là UX layer bổ sung.
-
-### 4.2 Backend Fix
-
-> **Không** thay đổi schema. Tận dụng model `UserBlock` đã có.
-
-#### 4.2.1 Helper function tái sử dụng
-
-**File**: `backend/src/services/blockService.ts` (bổ sung)
-
-```typescript
-/**
- * Trả về danh sách userId mà requestingUser đã chặn.
- * Trả về mảng rỗng nếu không có user hoặc chưa chặn ai.
- */
-export async function getBlockedUserIds(requestingUserId: number | undefined): Promise<number[]> {
-  if (!requestingUserId) return [];
-  const blocks = await prisma.userBlock.findMany({
-    where: { blockerId: requestingUserId },
-    select: { blockedId: true },
-  });
-  return blocks.map(b => b.blockedId);
-}
-```
-
-#### 4.2.2 `GET /posts` — Filter bài viết của người bị chặn
-
-**File**: `backend/src/services/postService.ts`
-
-Trong hàm `getPosts()`, khi nhận `requestingUserId`:
-
-```typescript
-// Thêm vào đầu hàm:
-const blockedIds = await getBlockedUserIds(requestingUserId);
-
-// Thêm vào Prisma where clause:
-where: {
-  ...existingWhere,
-  ...(blockedIds.length > 0 && { authorId: { notIn: blockedIds } }),
-}
-```
-
-> **Performance note**: Query `getBlockedUserIds` chạy thêm 1 DB round-trip. Acceptable ở scale hiện tại. Nếu cần optimize sau: cache trong request context hoặc JOIN vào query chính.
-
-#### 4.2.3 `GET /posts/:id/comments` — Filter bình luận
-
-**File**: `backend/src/services/commentService.ts`
-
-Tương tự, thêm `authorId: { notIn: blockedIds }` vào query Prisma.
-
-**Xử lý comment tree**: Với bình luận dạng cây (root + replies), thay vì xóa hẳn node bị chặn (gây vỡ thread), thay nội dung:
-
-```typescript
-// Thay vì filter hard:
-// Option A — Soft replace (khuyến nghị):
-comments.map(comment => {
-  if (blockedIds.includes(comment.authorId)) {
-    return {
-      ...comment,
-      content: '[Nội dung đã bị ẩn]',
-      author: null,
-      isHiddenByBlock: true,
-    };
+**File: `backend/package.json`**
+```json
+{
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon",
+    "db:generate": "prisma generate",
+    "test": "jest"
   }
-  return comment;
+}
+```
+
+**File: `backend/.env.example` → Backend provider config**
+```
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=postgresql://user:pass@host:5432/db
+JWT_ACCESS_SECRET=your-secure-secret-at-least-32-chars-long
+JWT_REFRESH_SECRET=your-refresh-secret-at-least-32-chars-long
+CORS_ORIGIN=https://yourdomain.com,https://admin.yourdomain.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=app-specific-password
+SMTP_FROM=noreply@yourdomain.com
+```
+
+**File: `backend/tsconfig.json`**
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "lib": ["ES2020"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+#### ✅ Frontend & Admin
+
+**File: `frontend/package.json`**
+```json
+{
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  }
+}
+```
+
+**File: `frontend/.env.example`**
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
+```
+
+**File: `frontend/vite.config.ts`**
+```typescript
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: false, // Disable for production
+    minify: 'terser'
+  },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:5000'
+    }
+  }
 });
 ```
 
-#### 4.2.4 `GET /users/:username` — Profile của người bị chặn
+**File: `admin-client/.env.example`**
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
+```
 
-**File**: `backend/src/services/userService.ts` hoặc `userController.ts`
+### 3.2 Deployment Configuration Files
 
-Bổ sung trường `isBlockedByMe` vào response:
+#### Create `backend/Dockerfile`
+```dockerfile
+# Build stage
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+COPY . .
+RUN npm run build
+
+# Runtime stage
+FROM node:18-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY prisma ./prisma
+EXPOSE 5000
+CMD ["npm", "start"]
+```
+
+#### Create `backend/.dockerignore`
+```
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.git
+.gitignore
+README.md
+```
+
+### 3.3 Migration Strategy
+
+**Backend: Database Migrations**
+```bash
+# Local
+npm run db:generate    # Generate Prisma client
+npm run db:migrate    # Create migrations
+
+# Production (automatic during deployment)
+npm run db:push       # Push schema to Supabase
+npm run db:seed       # Optional: seed initial data
+```
+
+---
+
+## 4. Setup Supabase
+
+### 4.1 Create Supabase Project
+
+**Steps:**
+
+1. Go to [supabase.com](https://supabase.com) → Sign up/Login
+2. Click **"New Project"**
+3. Fill in:
+   - **Project Name**: `da-mini-forum-prod`
+   - **Password**: Generate strong password (save to password manager)
+   - **Region**: Select closest to your users (e.g., Singapore, Tokyo)
+4. **Create Project** (wait 5-10 minutes)
+
+### 4.2 Get Connection String
+
+1. Go to **Project Settings** → **Database**
+2. Find **Connection String** section
+3. Copy **URI** format:
+   ```
+   postgresql://[user]:[password]@[host]:5432/[database]
+   ```
+4. Store as `DATABASE_URL` environment variable
+
+### 4.3 Configure Prisma
+
+**File: `backend/prisma/schema.prisma`**
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ... rest of schema
+```
+
+### 4.4 Run Initial Migration
+
+```bash
+cd backend
+
+# Generate Prisma client
+npm run db:generate
+
+# Create & run migrations
+npm run db:migrate
+
+# Seed data (optional)
+npm run db:seed
+```
+
+### 4.5 Supabase Configuration
+
+**Recommended Settings:**
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| **Connection Pooling** | Enabled (PgBouncer) | Better connection management |
+| **Backups** | Daily | Point-in-time recovery |
+| **SSL** | Required | Encrypt data in transit |
+| **Network** | Restrict to Backend IP | Added security |
+
+**Enable in Supabase:**
+1. **Database** → **Connection Pooling**
+   - Mode: `Transaction` (for serverless backends)
+   - Set Min/Max connections
+2. **Database** → **Backups**
+   - Retention: 7 days (included in free tier)
+3. **Security** → **SSL enforcement**
+   - Set to "Require"
+
+---
+
+## 5. Deploy Backend
+
+### 5.1 Option A: Railway (Recommended)
+
+#### Setup
+
+1. Go to [railway.app](https://railway.app) → Sign up with GitHub
+2. **Create New Project** → **Deploy from GitHub**
+3. Select your repository
+4. Railway auto-detects Node.js project
+5. Follow the setup wizard
+
+#### Configuration
+
+**File: `railway.toml`** (optional)
+```toml
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm run build && npm start"
+restartPolicyMaxRetries = 5
+```
+
+**Environment Variables in Railway Dashboard:**
+
+| Variable | Value | Source |
+|----------|-------|--------|
+| `NODE_ENV` | `production` | Manual |
+| `PORT` | `5000` | Manual (Railway sets this) |
+| `DATABASE_URL` | `postgresql://...` | Supabase |
+| `JWT_ACCESS_SECRET` | (32+ char) | Generate: `openssl rand -base64 32` |
+| `JWT_REFRESH_SECRET` | (32+ char) | Generate: `openssl rand -base64 32` |
+| `CORS_ORIGIN` | `https://yourdomain.com,...` | Your domains |
+| `SMTP_HOST` | `smtp.gmail.com` | Gmail SMTP |
+| `SMTP_PORT` | `587` | Gmail port |
+| `SMTP_USER` | `your-email@gmail.com` | Your email |
+| `SMTP_PASSWORD` | (app password) | Gmail App Password |
+| `SMTP_FROM` | `noreply@yourdomain.com` | Your domain |
+
+#### Deploy Steps
+
+1. Click **Deploy** button
+2. Railway builds & deploys
+3. Get public URL: `https://*.railway.app`
+4. Test API: `https://*.railway.app/api/v1/health`
+
+#### Post-Deploy
+
+```bash
+# SSH into Railway container
+railway shell
+
+# Run migrations
+npm run db:migrate
+
+# Seed data (optional)
+npm run db:seed
+```
+
+### 5.2 Option B: Render
+
+#### Setup
+
+1. Go to [render.com](https://render.com)
+2. **New +** → **Web Service**
+3. Connect GitHub repository
+4. Select branch and service
+
+#### Configuration
+
+**Create `render.yaml` in root:**
+```yaml
+services:
+  - type: web
+    name: da-mini-forum-api
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: supabase
+          property: connectionString
+```
+
+**Manual Configuration in Render Dashboard:**
+
+1. **Build Command**: `npm run build`
+2. **Start Command**: `npm start`
+3. **Node Version**: `18`
+4. Add all environment variables (same as Railway)
+
+#### Deploy & Monitor
+
+1. Render auto-deploys on push to main branch
+2. View logs in Render Dashboard
+3. Get URL: `https://da-mini-forum-api.onrender.com`
+
+### 5.3 Backend Verification Post-Deploy
+
+```bash
+# Health check
+curl https://api.yourdomain.com/api/v1/health
+
+# Expected response:
+{
+  "success": true,
+  "message": "Server is running healthy"
+}
+
+# Database test
+curl -X GET https://api.yourdomain.com/api/v1/categories
+
+# Auth test
+curl -X POST https://api.yourdomain.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@forum.com","password":"Admin@123"}'
+```
+
+---
+
+## 6. Deploy Frontend
+
+### 6.1 Frontend on Vercel
+
+#### Setup
+
+1. Go to [vercel.com](https://vercel.com) → Sign in with GitHub
+2. Click **Add New...** → **Project**
+3. Select your GitHub repository
+4. **Import Project**
+
+#### Configuration
+
+Vercel auto-detects:
+- **Framework**: Vite
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+**Override if needed:**
+
+| Setting | Value |
+|---------|-------|
+| **Framework Present** | Detect |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
+| **Install Command** | `npm ci` |
+| **Node Version** | 18.x |
+
+#### Environment Variables
+
+In Vercel Dashboard → **Settings** → **Environment Variables**:
+
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
+```
+
+#### Deploy
+
+1. Click **Deploy**
+2. Vercel builds & deploys automatically
+3. Get URL: `https://yourdomain.vercel.app` (or your domain)
+
+### 6.2 Admin Dashboard on Vercel (Separate Project)
+
+#### Setup
+
+1. Create separate Vercel project for admin-client
+2. Same process as frontend
+3. Set environment variables:
+
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
+```
+
+#### URL Structure
+
+```
+└── Your Repository
+    ├── Frontend → yourdomain.com (Vercel)
+    └── Admin    → admin.yourdomain.com (Vercel)
+```
+
+**Option**: Deploy both from same repo → create separate Vercel projects → override **Root Directory**:
+- Frontend: `./frontend`
+- Admin: `./admin-client`
+
+### 6.3 Custom Domains
+
+#### Connect Domain to Vercel
+
+1. **Vercel Dashboard** → **Settings** → **Domains**
+2. Click **Add Domain**
+3. Enter `yourdomain.com`
+
+**Two Options:**
+
+**Option A: Vercel Nameservers (Recommended)**
+1. Copy Vercel nameservers
+2. Update domain registrar DNS pointing to Vercel
+3. Wait 24-48 hours for propagation
+
+**Option B: CNAME Record**
+1. Add CNAME: `yourdomain.com` → `cname.vercel-dns.com`
+2. Propagates faster (minutes)
+
+#### Configure Subdomain for Admin
+
+```
+admin.yourdomain.com → admin-vercel-project.vercel.app
+```
+
+Same process, use CNAME or NS records.
+
+### 6.4 HTTPS/SSL
+
+✅ **Automatic**: Vercel provides free SSL certificates (auto-renewed)
+
+### 6.5 Frontend Verification
+
+```bash
+# Test main frontend
+curl https://yourdomain.com
+
+# Test admin
+curl https://admin.yourdomain.com
+
+# Check API calls
+curl https://api.yourdomain.com/api/v1/health
+```
+
+---
+
+## 7. Environment Variables
+
+### 7.1 Backend Environment Variables
+
+**Railway/Render Environment Setup:**
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:pass@db.host:5432/db
+
+# Security
+NODE_ENV=production
+PORT=5000
+JWT_ACCESS_SECRET=your-secure-token-min-32-chars-abc123def456ghi789
+JWT_REFRESH_SECRET=your-refresh-token-min-32-chars-xyz789abc456def123
+
+# CORS
+CORS_ORIGIN=https://yourdomain.com,https://admin.yourdomain.com
+
+# Email Configuration (Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-specific-password
+SMTP_FROM=noreply@yourdomain.com
+
+# Optional
+LOG_LEVEL=info
+API_VERSION=v1
+```
+
+**Generate Secure Secrets:**
+
+```bash
+# macOS/Linux
+openssl rand -base64 32
+
+# Windows (PowerShell)
+[Convert]::ToBase64String([System.Security.Cryptography.RNGCryptoServiceProvider]::new().GetBytes(24))
+```
+
+### 7.2 Frontend Environment Variables
+
+**Vercel Environment:**
+
+```
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_USE_MOCK_API=false
+```
+
+### 7.3 Gmail SMTP Configuration (for production emails)
+
+1. **Enable 2FA** on Gmail account
+2. **Generate App Password**:
+   - Go to Google Account → Security
+   - Select "App passwords"
+   - Generate password for "Mail" + "Windows Computer"
+   - Copy to `SMTP_PASSWORD`
+3. Alternative: Use nodemailer-smtp-transport with OAuth2
+
+---
+
+## 8. CI/CD Pipeline
+
+### 8.1 GitHub Actions (Optional but Recommended)
+
+**File: `.github/workflows/backend-ci.yml`**
+
+```yaml
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'package*.json'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mini_forum_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Generate Prisma
+        run: |
+          cd backend
+          npm run db:generate
+
+      - name: Run tests
+        run: |
+          cd backend
+          npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mini_forum_test
+
+      - name: Build
+        run: |
+          cd backend
+          npm run build
+
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to Railway
+        run: |
+          npx railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+```
+
+**File: `.github/workflows/frontend-ci.yml`**
+
+```yaml
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'admin-client/**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Install admin dependencies
+        run: |
+          cd admin-client
+          npm ci
+
+      - name: Build admin
+        run: |
+          cd admin-client
+          npm run build
+
+  # Vercel auto-deploys on push, no manual deploy step needed
+```
+
+---
+
+## 9. Monitoring & Logging
+
+### 9.1 Backend Logging
+
+**File: `backend/src/config` - logging setup**
 
 ```typescript
-// Khi requestingUserId có:
-const isBlockedByMe = requestingUserId
-  ? await isUserBlocked(requestingUserId, profileUser.id)
-  : false;
-
-const hasBlockedMe = requestingUserId
-  ? await isUserBlocked(profileUser.id, requestingUserId)
-  : false;
-
-// Trả về trong response:
-return {
-  ...profileUser,
-  isBlockedByMe,
-  hasBlockedMe,
-};
-```
-
-### 4.3 Frontend Fix
-
-#### 4.3.1 `ProfilePage.tsx` — Hiển thị trạng thái bị chặn
-
-```tsx
-// Sau khi có profileData:
-if (profileData?.data?.isBlockedByMe) {
-  return <BlockedProfileView username={username} onUnblock={handleUnblock} />;
+// Production logging
+if (config.nodeEnv === 'production') {
+  // Log to stdout (Railway/Render captures automatically)
+  console.log('[INFO]', message);
+  console.error('[ERROR]', error);
+} else {
+  // Development detailed logging
+  console.log('[DEBUG]', message);
 }
 ```
 
-**Component `BlockedProfileView`** (tạo inline hoặc tách file):
-```tsx
-function BlockedProfileView({ username, onUnblock }: { username: string; onUnblock: () => void }) {
-  return (
-    <div className="flex flex-col items-center py-16 gap-4 text-center">
-      <UserX className="h-16 w-16 text-muted-foreground" />
-      <h2 className="text-xl font-semibold">@{username}</h2>
-      <p className="text-muted-foreground">Bạn đã chặn người dùng này. Nội dung của họ bị ẩn.</p>
-      <Button variant="outline" onClick={onUnblock}>Bỏ chặn</Button>
-    </div>
-  );
-}
-```
+### 9.2 Railway/Render Monitoring
 
-#### 4.3.2 Invalidate cache sau block/unblock
+**Railway Dashboard:**
+- **Logs**: View real-time logs
+- **Metrics**: CPU, Memory, Network
+- **Alerts**: Set up email notifications
 
-**File**: Nơi gọi block/unblock mutation (ProfilePage hoặc hook riêng):
+**Render Dashboard:**
+- **Logs**: Real-time streaming logs
+- **Metrics**: Environment metrics
+- **Health Checks**: Automatic endpoint monitoring
+
+### 9.3 Uptime Monitoring
+
+**Recommended: UptimeRobot** (free tier)
+
+1. Go to [uptimerobot.com](https://uptimerobot.com)
+2. Add Monitor → HTTP
+3. Set URL: `https://api.yourdomain.com/api/v1/health`
+4. Check Interval: 5 minutes
+5. Alerts: Email notification
+
+### 9.4 Error Tracking (Optional)
+
+**Sentry Integration:**
+
+1. Create account on [sentry.io](https://sentry.io)
+2. Create project (Node.js)
+3. Install: `npm install --save @sentry/node`
+4. Initialize in `backend/src/app.ts`:
 
 ```typescript
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ['posts'] });
-  queryClient.invalidateQueries({ queryKey: ['user', username] });
-  queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
-};
-```
-
-#### 4.3.3 `PostCard.tsx` — Không cần thay đổi
-
-Nếu Backend filter chuẩn, PostCard sẽ không nhận được posts từ blocked users. Frontend không cần thêm logic lọc.
-
-### 4.4 Acceptance Criteria
-
-- [ ] User A block User B → Posts của B không xuất hiện trong feed của A (reload page)
-- [ ] User A block User B → Comments của B trong post detail bị thay bằng `[Nội dung đã bị ẩn]`
-- [ ] User A block User B → Trang profile của B hiển thị `BlockedProfileView`
-- [ ] Bỏ chặn → Nội dung hiển thị lại bình thường (sau reload hoặc cache invalidation)
-- [ ] Block không ảnh hưởng đến guest (unauthenticated users thấy mọi nội dung bình thường)
-- [ ] API không trả về 500/400 bất thường khi block filter áp dụng
-- [ ] `getBlockedUserIds()` trả về `[]` khi `requestingUserId` là `undefined` (guest safety)
-
----
-
-## 5. Task 4 — Live Search / Instant Search cho Tags (+ Multi-tag Filter)
-
-### 5.1 Phân tích hiện trạng
-
-| Vị trí | Vấn đề |
-|---|---|
-| `TagsPage.tsx` | Hiển thị toàn bộ tags nhóm theo popularity, không có ô filter nhanh |
-| `Sidebar.tsx` | Popular tags được hiển thị nhưng không có input lọc |
-| `MobileNav.tsx` | Tags trong Sheet nhưng không có filter |
-| Multi-tag | URL params `?tags=a,b` đã support, nhưng UI chỉ click đơn lẻ; không có badge "đang lọc N tags" |
-
-### 5.2 Component `TagSearchInput` (tạo mới, tái sử dụng)
-
-**File**: `frontend/src/components/common/TagSearchInput.tsx`
-
-```tsx
-interface TagSearchInputProps {
-  tags: Tag[];
-  activeTags: string[];          // slugs đang active
-  onTagToggle: (slug: string) => void;
-  placeholder?: string;
-  maxDisplay?: number;           // giới hạn tag hiển thị, default: 20
-  showCount?: boolean;           // hiển thị (n) bài viết
-  compact?: boolean;             // mode compact cho sidebar
-}
-```
-
-**Logic cốt lõi**:
-1. `useState('')` cho search query
-2. Debounce 150ms bằng `useEffect` (không cần thư viện)
-3. `useMemo` filter tags theo debounced query (so sánh `toLowerCase()`)
-4. Active tag: `bg-primary text-primary-foreground`; inactive: `variant="outline"`
-
-**Debounce pattern** (không thêm thư viện):
-```tsx
-const [debouncedQuery, setDebouncedQuery] = useState('');
-useEffect(() => {
-  const t = setTimeout(() => setDebouncedQuery(searchQuery), 150);
-  return () => clearTimeout(t);
-}, [searchQuery]);
-
-const filteredTags = useMemo(
-  () => tags.filter(t => t.name.toLowerCase().includes(debouncedQuery.toLowerCase())),
-  [tags, debouncedQuery]
-);
-```
-
-### 5.3 Cập nhật `TagsPage.tsx`
-
-Thêm `TagSearchInput` phía trên phần grouping.
-
-**UI Layout**:
-```
-┌────────────────────────────────────┐
-│  🏷️ Tags                           │
-│  "Khám phá chủ đề..."              │
-│                                    │
-│  ┌──────────────────────────────┐  │
-│  │ 🔍  Tìm tag...               │  │
-│  └──────────────────────────────┘  │
-│                                    │
-│  Kết quả (n tag):                  │
-│  [#vue] [#react] [#nodejs] ...     │
-│                                    │
-│  (khi query rỗng: nhóm Nổi bật/   │
-│   Phổ biến/Thông thường như cũ)    │
-└────────────────────────────────────┘
-```
-
-Logic render:
-```tsx
-// Khi có search query → hiện flat list kết quả
-// Khi query rỗng → hiện grouped view như hiện tại
-{searchQuery.trim()
-  ? <FlatTagList tags={filteredTags} activeTags={...} />
-  : <GroupedTagView groups={groupedTags} activeTags={...} />
-}
-```
-
-### 5.4 Cập nhật `Sidebar.tsx` — Tag filter inline
-
-Trong phần "Tags phổ biến", thêm ô filter nhỏ:
-
-```tsx
-// Trên list tags:
-<Input
-  placeholder="Lọc tag..."
-  value={tagFilter}
-  onChange={e => setTagFilter(e.target.value)}
-  className="h-7 text-xs mb-2"
-/>
-
-// Sau filter:
-const filteredPopularTags = useMemo(
-  () => popularTags?.filter(t => t.name.toLowerCase().includes(tagFilter.toLowerCase())) ?? [],
-  [popularTags, tagFilter]
-);
-```
-
-**Multi-tag active indicator** (thêm vào sidebar):
-
-```tsx
-{activeTags.length > 0 && (
-  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1 mb-2">
-    <span>Đang lọc: <strong>{activeTags.length}</strong> tag</span>
-    <button
-      className="text-primary hover:underline"
-      onClick={clearAllTags}
-    >
-      Xóa hết
-    </button>
-  </div>
-)}
-```
-
-### 5.5 Cập nhật `MobileNav.tsx` — Tag filter trong Sheet
-
-Tái sử dụng `TagSearchInput` (compact mode):
-
-```tsx
-// Trong Sheet content, phần tags:
-<div className="space-y-2">
-  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags</p>
-  <TagSearchInput
-    tags={popularTags ?? []}
-    activeTags={activeTags}
-    onTagToggle={handleTagClick}
-    placeholder="Tìm tag..."
-    maxDisplay={12}
-    compact
-  />
-  {activeTags.length > 0 && (
-    <button className="text-xs text-primary" onClick={clearAllTagsMobile}>
-      Xóa tất cả tags ({activeTags.length})
-    </button>
-  )}
-</div>
-```
-
-### 5.6 Backend (không cần thay đổi ngay)
-
-API `GET /tags` đã trả về đủ data. Filter client-side phù hợp với scale hiện tại (< 200 tags).
-
-Nếu tương lai cần server-side search: `GET /tags?search=query&limit=20` (note cho backlog).
-
-### 5.7 Acceptance Criteria
-
-- [ ] TagsPage có input lọc realtime (< 200ms response)
-- [ ] Khi gõ query → hiện flat list kết quả; khi xóa → quay lại grouped view
-- [ ] Sidebar có inline filter trong popular tags section
-- [ ] MobileNav Sheet có tag filter
-- [ ] Click nhiều tags → URL `?tags=a,b,c` và filter bài viết
-- [ ] "Đang lọc N tags" badge + nút "Xóa hết" khi có active tags
-- [ ] Không gửi thêm API request khi filter (pure client-side)
-- [ ] UI tag filter trong MobileNav và Sidebar nhất quán về style
-
----
-
-## 6. Task 5 — Mobile: Category Fastlist Sidebar
-
-### 6.1 Phân tích hiện trạng
-
-| Platform | UX Category |
-|---|---|
-| Desktop (≥ 768px) | Sidebar trái với category list — click nhanh, luôn visible |
-| Mobile (< 768px) | Trong hamburger Sheet — phải mở Sheet → chọn → Sheet tự đóng → muốn đổi phải mở lại |
-
-**Gap**: Mobile thiếu "quick access" cho category mà không cần đi qua menu.
-
-### 6.2 Giải pháp: Horizontal Scrollable Category Bar
-
-> **Phương án**: Thêm một thanh category pill-buttons cuộn ngang, hiển thị **ngay trên feed** của HomePage, **chỉ trên mobile**.
-
-#### 6.2.1 Component `MobileCategoryBar` (tạo mới)
-
-**File**: `frontend/src/components/layout/MobileCategoryBar.tsx`
-
-```tsx
-interface MobileCategoryBarProps {
-  categories: Category[];
-  activeCategory: string | null;
-  onSelect: (slug: string | null) => void;
-}
-
-export function MobileCategoryBar({ categories, activeCategory, onSelect }: MobileCategoryBarProps) {
-  return (
-    <div
-      className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide"
-      role="tablist"
-      aria-label="Danh mục"
-    >
-      {/* "Tất cả" pill */}
-      <button
-        role="tab"
-        aria-selected={!activeCategory}
-        onClick={() => onSelect(null)}
-        className={cn(
-          "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-          !activeCategory
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-background border-border text-foreground hover:bg-muted"
-        )}
-      >
-        Tất cả
-      </button>
-
-      {categories.map(cat => (
-        <button
-          key={cat.id}
-          role="tab"
-          aria-selected={activeCategory === cat.slug}
-          onClick={() => onSelect(cat.slug)}
-          className={cn(
-            "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap",
-            activeCategory === cat.slug
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background border-border text-foreground hover:bg-muted"
-          )}
-        >
-          {cat.name}
-          {cat.postCount > 0 && (
-            <span className="ml-1 text-[10px] opacity-60">({cat.postCount})</span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-```
-
-**CSS scrollbar-hide** (thêm vào `frontend/src/styles/globals.css` hoặc Tailwind plugin):
-```css
-.scrollbar-hide {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-```
-
-#### 6.2.2 Tích hợp vào `HomePage.tsx`
-
-**Vị trí**: Ngay dưới heading/filter bar, trước danh sách bài viết.
-
-```tsx
-// Import:
-import { MobileCategoryBar } from '@/components/layout/MobileCategoryBar';
-import { useCategories } from '@/hooks/useCategories';
-
-// Inside HomePage:
-const { data: categories } = useCategories(); // đã fetch, không thêm request mới
-
-// Filter visible categories (permission check):
-const visibleCategories = useMemo(() =>
-  categories?.filter(cat => {
-    if (!cat.viewPermission || cat.viewPermission === 'ALL') return true;
-    if (!isAuthenticated) return false;
-    return checkPermissionLevel(user?.role, cat.viewPermission);
-  }) ?? [],
-  [categories, isAuthenticated, user]
-);
-
-// Handler:
-const handleMobileCategorySelect = (slug: string | null) => {
-  const newParams = new URLSearchParams(searchParams);
-  if (slug) newParams.set('category', slug);
-  else newParams.delete('category');
-  newParams.delete('page'); // reset về trang 1
-  setSearchParams(newParams);
-};
-
-// Render (ngay trên danh sách bài viết):
-<MobileCategoryBar
-  categories={visibleCategories}
-  activeCategory={categorySlug ?? null}
-  onSelect={handleMobileCategorySelect}
-/>
-```
-
-> **Lưu ý**: `useCategories()` đã được gọi trong Sidebar và MobileNav, React Query sẽ cache — không có thêm HTTP request.
-
-#### 6.2.3 Không cần sticky (mặc định)
-
-Scroll ngang tĩnh là đủ cho UX. Tránh sticky để không chiếm viewport height di động.
-
-Nếu muốn sticky sau khi test UX → thêm sau:
-```tsx
-<div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-2 -mx-4 px-4 mb-3">
-  <MobileCategoryBar ... />
-</div>
-```
-
-### 6.3 Acceptance Criteria
-
-- [ ] Trên < 768px: category bar xuất hiện ngay trên feed ở HomePage
-- [ ] Trên ≥ 768px: category bar ẩn hoàn toàn (`hidden md:hidden`) — sidebar đảm nhận
-- [ ] Tap một pill → filter bài viết ngay, không cần mở menu
-- [ ] Active category: pill highlight màu primary
-- [ ] Scroll ngang mượt, không scrollbar visible
-- [ ] Categories với permission bị ẩn với user không đủ quyền
-- [ ] URL params đồng bộ (chọn từ MobileCategoryBar hay Sidebar đều cho cùng kết quả lọc)
-- [ ] Không phát sinh HTTP request mới (dùng cached categories data)
-
----
-
-## 7. Thứ tự ưu tiên & Effort ước tính
-
-| # | Task | Ưu tiên | Effort | Rủi ro | Ghi chú |
-|---|---|:---:|:---:|:---:|---|
-| 1 | Loại bỏ Admin code khỏi FE | 🔴 P0 | ~1–2h | Thấp | Chỉ xóa, không thêm |
-| 2 | Block fix — Backend | 🔴 P0 | ~4–6h | Trung bình | Cần test query performance |
-| 3 | Block fix — Frontend | 🔴 P0 | ~2–3h | Thấp | Phụ thuộc Task 2 BE xong |
-| 4 | Responsive: BookmarksPage | 🟡 P1 | ~1–2h | Thấp | CSS + layout tweaks |
-| 5 | Responsive: HomePage | 🟡 P1 | ~1–2h | Thấp | flex-wrap + sort UI |
-| 6 | Landscape optimization | 🟡 P1 | ~2–3h | Thấp | Hook mới + conditional |
-| 7 | Live Search Tags (TagsPage) | 🟡 P1 | ~2–3h | Thấp | Client-side filter |
-| 8 | Tag filter trong Sidebar | 🟡 P1 | ~1h | Thấp | Tái sử dụng component |
-| 9 | Mobile Category Fastlist | 🟡 P1 | ~3–4h | Thấp | Component mới |
-| 10 | Multi-tag UX (badge + clear) | 🟢 P2 | ~1h | Thấp | UX polish |
-| 11 | Tag filter trong MobileNav | 🟢 P2 | ~1h | Thấp | Tái sử dụng TagSearchInput |
-
-**Tổng effort ước tính**: ~19–28 giờ kỹ thuật
-
-### 7.1 Thứ tự sprint đề xuất
-
-```
-Sprint 1 (Critical):
-  [1] Admin cleanup (1–2h)
-  [2+3] Block feature fix BE + FE (6–9h)
-
-Sprint 2 (UX/Responsive):
-  [4+5+6] Responsive fixes (4–7h)
-  [7+8] Tag search (3–4h)
-  [9] Mobile category bar (3–4h)
-
-Sprint 3 (Polish):
-  [10+11] Multi-tag UX + MobileNav tag filter (2h)
+import * as Sentry from "@sentry/node";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 1.0,
+});
+
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.errorHandler());
 ```
 
 ---
 
-## 8. Nguyên tắc triển khai chung
+## 10. Timeline & Checklist
 
-### 8.1 Code Standards
+### Phase 1: Preparation (Day 1-2)
 
-- **TypeScript strict**: Không dùng `as any` trong code mới; dùng proper type guards và generics
-- **Component nhỏ & tái sử dụng**: JSX > 80 dòng → cân nhắc tách component; ưu tiên tạo shared component thay vì duplicate
-- **Custom hooks cho logic**: Business / data logic trong hooks, không inline trong JSX
-- **Naming convention**: theo pattern hiện có — `use` prefix cho hooks, `.tsx` cho components, `Page` suffix cho pages
+- [ ] Create SSH keys for deployments
+- [ ] Generate JWT secrets (32+ chars)
+- [ ] Prepare Gmail app password for SMTP
+- [ ] Review environment variables
+- [ ] Test `.env` locally
+- [ ] Test database migrations locally
+- [ ] Run full test suite locally
 
-### 8.2 Không phá kiến trúc
+### Phase 2: Database Setup (Day 2)
 
-- **Không thay đổi** `backend/prisma/schema.prisma` cho các task này (không cần migration)
-- **Không thay đổi** API contract hiện có — chỉ **thêm** optional fields (`isBlockedByMe`) hoặc **thêm** filter logic; không đổi format response
-- Giữ nguyên routing pattern (React Router v7 `<Route>`)
-- Không thêm npm packages mới nếu có thể implement bằng utilities đã có
+- [ ] Create Supabase account
+- [ ] Create project in Supabase
+- [ ] Get `DATABASE_URL` connection string
+- [ ] Enable connection pooling
+- [ ] Configure backups
+- [ ] Test connection locally
+- [ ] Run migrations locally
+- [ ] Seed initial data
 
-### 8.3 Testing checklist trước merge
+### Phase 3: Backend Deployment (Day 3)
 
+- [ ] Create Railway account (or Render)
+- [ ] Connect GitHub repository
+- [ ] Set all environment variables
+- [ ] Deploy backend
+- [ ] Test API endpoints
+- [ ] Run migrations on production
+- [ ] Verify database is working
+- [ ] Test authentication flows
+
+### Phase 4: Frontend Deployment (Day 3-4)
+
+- [ ] Create Vercel account
+- [ ] Import frontend repository
+- [ ] Set environment variables
+- [ ] Deploy frontend
+- [ ] Test frontend on Vercel domain
+- [ ] Configure custom domain
+- [ ] Test API integration
+
+### Phase 5: Admin Dashboard (Day 4)
+
+- [ ] Create second Vercel project for admin-client
+- [ ] Set environment variables
+- [ ] Deploy admin dashboard
+- [ ] Configure subdomain (admin.yourdomain.com)
+- [ ] Test admin functionality
+
+### Phase 6: Monitoring & Security (Day 5)
+
+- [ ] Setup UptimeRobot monitoring
+- [ ] Configure SSL/HTTPS (auto-done by Vercel)
+- [ ] Setup error tracking (Sentry)
+- [ ] Enable CORS properly
+- [ ] Enable rate limiting
+- [ ] Review security headers
+- [ ] Test with production data
+
+### Phase 7: Go Live (Day 5-6)
+
+- [ ] All tests passing
+- [ ] All endpoints verified
+- [ ] Performance acceptable
+- [ ] Monitoring in place
+- [ ] Backup strategy confirmed
+- [ ] DNS pointing to Vercel
+- [ ] Domain SSL active
+- [ ] Launch announcement
+
+---
+
+## 11. Cost Calculation
+
+### Year 1 Estimate (Low Traffic: <1000 users/month)
+
+| Service | Free Tier | Extra Cost | Notes |
+|---------|-----------|-----------|-------|
+| **Vercel** | Unlimited | $0 | Includes builds, deployments, edge functions |
+| **Railway** | $5 credit | $0-5/month* | After $5 credit exhausted |
+| **Supabase** | 500MB | $0** | Enough for most small forums |
+| **UptimeRobot** | Free | $0 | Basic monitoring included |
+| **Domain** | - | $10-15/year | .com domain via Namecheap, etc. |
+| **Email (Gmail)** | Free | $0 | Unlimited SMTP with app password |
+| **Total/Month** | - | **$0-5*** | Depends on backend usage |
+| **Total/Year** | - | **$0-65*** | Plus domain registration |
+
+\* Railway (Bengal): $5 per 500GB-hours. Low-traffic app ~$0/month
+\** Supabase: First 500MB free, upgrade to $25/month = 8GB
+
+### Scale Up Estimate (Medium: 10k-100k users/month)
+
+| Service | Free Tier | Cost | Monthly Total |
+|---------|-----------|------|----------------|
+| **Vercel** | - | $20/month | Pro plan for 100GB bandwidth |
+| **Railway** | - | $10-20/month | Based on usage |
+| **Supabase** | - | $25-100/month | 8GB-32GB storage |
+| **Email Service** | - | $10-20/month | SendGrid/Mailgun for reliability |
+| **Monitoring** | - | $0/month | UptimeRobot free tier |
+| **Total/Month** | - | **$65-165** | Scales with usage |
+
+---
+
+## 12. Troubleshooting Guide
+
+### Issue: Database Connection Timeout
+
+**Symptoms**: Backend crashes on startup with "connection timeout"
+
+**Solutions:**
+1. Verify `DATABASE_URL` is correct
+2. Check Supabase project is active (not sleeping)
+3. Enable connection pooling in Supabase
+4. Whitelist Railway/Render IP in Supabase firewall
+
+### Issue: CORS Errors in Frontend
+
+**Symptoms**: Browser console shows "Access to XMLHttpRequest blocked by CORS policy"
+
+**Solution**: Update backend `CORS_ORIGIN` environment variable
+```bash
+CORS_ORIGIN=https://yourdomain.com,https://admin.yourdomain.com,https://*.vercel.app
 ```
-□ Build thành công: npm run build (không có error/warning mới)
-□ TypeScript: npx tsc --noEmit (0 errors)
-□ Smoke test thủ công trên Chrome DevTools:
-  - Galaxy S9 (360×800) — portrait + landscape
-  - Pixel 7 (412×915)
-  - iPhone 14 Pro (393×852)
-□ Block feature: test với 2 tài khoản (john@example.com + thêm 1 tài khoản test)
-□ Admin route /admin → 404 NotFoundPage (không phải blank/error)
-□ Tag search: gõ ký tự → filter ngay, xóa → grouped view trở lại
-□ Mobile category bar: cuộn ngang mượt, tap đổi category, URL sync đúng
+
+### Issue: JWT Token Invalid
+
+**Symptoms**: Login works locally but fails on production
+
+**Solution:**
+1. Verify `JWT_ACCESS_SECRET` in production matches locally
+2. Ensure secrets are exactly 32+ characters
+3. Check backend is using environment variables (not hardcoded)
+
+### Issue: Email Not Sending
+
+**Symptoms**: Forgot password email not working
+
+**Solutions:**
+1. Enable "Less secure app access" in Gmail
+2. Use app-specific password (2FA enabled)
+3. Check `SMTP_*` variables are set correctly
+4. Test with: `npm run test:email` (if available)
+
+### Issue: High Database Costs
+
+**Symptoms**: Supabase bill unexpectedly high
+
+**Solutions:**
+1. Enable query optimization
+2. Add database indexes on frequently queried columns
+3. Archive old logs/audit_logs
+4. Monitor query performance with Supabase analytics
+
+### Issue: Slow Frontend Performance
+
+**Symptoms**: Website slow to load
+
+**Solutions:**
+1. Enable Vercel Analytics (see performance metrics)
+2. Check bundle size: `npm run build -- --report`
+3. Optimize images (use WebP format)
+4. Enable gzip compression (Vercel auto-enables)
+5. Use Vercel Edge Caching
+
+### Issue: 502 Bad Gateway
+
+**Symptoms**: "502 Bad Gateway" from Railway/Render
+
+**Solutions:**
+1. Check backend logs for crashes
+2. Verify database connection string
+3. Ensure environment variables are set
+4. Restart backend service
+5. Check Railway/Render quota not exceeded
+
+---
+
+## 13. Production Checklist
+
+### Pre-Launch
+
+- [ ] All environment variables configured
+- [ ] Database migrations run successfully
+- [ ] Backup strategy confirmed (Supabase daily backups)
+- [ ] SSL/HTTPS working on all domains
+- [ ] CORS configured for all frontend domains
+- [ ] Rate limiting enabled
+- [ ] Security headers configured (Helmet.js)
+- [ ] Error handling working properly
+- [ ] Logging in place
+- [ ] Uptime monitoring active
+
+### Performance
+
+- [ ] Frontend: Lighthouse score >90
+- [ ] Backend: Response time <200ms
+- [ ] Database: Query execution <100ms
+- [ ] No console errors in Chrome DevTools
+- [ ] All images optimized
+- [ ] Unnecessary dependencies removed
+
+### Security
+
+- [ ] SSL/HTTPS enforced
+- [ ] CORS whitelist only trusted domains
+- [ ] Rate limiting on all API routes
+- [ ] JWT secrets are strong & unique
+- [ ] No secrets hardcoded in code
+- [ ] No admin credentials in public repos
+- [ ] HTTPS on all connections
+- [ ] Input validation on all endpoints
+
+### Testing
+
+- [ ] Unit tests pass (Jest)
+- [ ] Integration tests pass
+- [ ] E2E tests pass (Playwright)
+- [ ] All API endpoints tested
+- [ ] Authentication flows verified
+- [ ] Error cases handled
+
+---
+
+## 14. Deployment Commands Quick Reference
+
+### Backend Deployment
+
+```bash
+# Local testing
+cd backend
+npm install
+npm run db:generate
+npm run db:migrate
+npm run dev
+
+# Build for production
+npm run build
+
+# Manual deployment to Railway
+railway up
+
+# View logs
+railway logs
+
+# SSH into Railway container
+railway shell
 ```
 
-### 8.4 Files KHÔNG được sửa trong sprint này
+### Frontend Deployment
 
+```bash
+cd frontend
+
+# Build
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# Deploy to Vercel (if using CLI)
+vercel --prod
 ```
-backend/prisma/schema.prisma     ← No migration
-docs/                            ← Cập nhật sau khi feature hoàn thành
-admin-client/                    ← Ngoài scope
-e2e/                             ← Cập nhật sau nếu cần
+
+### Admin Dashboard Deployment
+
+```bash
+cd admin-client
+npm run build
+vercel --prod
+```
+
+### Database Management
+
+```bash
+cd backend
+
+# Generate Prisma client
+npm run db:generate
+
+# Run migrations
+npm run db:migrate
+
+# Create migration
+npx prisma migrate dev --name migration_name
+
+# Reset database (⚠️ DANGEROUS - deletes all data)
+npx prisma migrate reset
+
+# Open Prisma Studio (local only)
+npm run db:studio
 ```
 
 ---
 
-*PLAN.md — Phiên bản đặc tả kỹ thuật đầy đủ*
-*Soạn bởi: Senior Tech Lead / System Architect — 2026-03-06*
+## 15. Maintenance & Updates
+
+### Regular Tasks
+
+**Weekly:**
+- [ ] Check uptime monitoring alerts
+- [ ] Monitor error tracking (if using Sentry)
+- [ ] Review API performance metrics
+
+**Monthly:**
+- [ ] Update dependencies: `npm update`
+- [ ] Review database backups in Supabase
+- [ ] Check Vercel & Railway metrics
+- [ ] Review CORS configuration
+
+**Quarterly:**
+- [ ] Security audit
+- [ ] Performance optimization
+- [ ] Update Node.js if new LTS available
+- [ ] Blue-green deployment testing
+
+### Keeping Updated
+
+**Node.js LTS:**
+```bash
+# Check current version
+node --version
+
+# Update in Railway/Render:
+# 1. Update runtime in configuration
+# 2. Rebuild and redeploy
+# 3. Test thoroughly
+```
+
+**Dependencies:**
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update minor versions
+npm update
+
+# Update major versions (breaking changes)
+npm install package-name@latest
+npm test  # Verify nothing broke
+```
+
+---
+
+## References
+
+- **Railway Docs**: https://docs.railway.app
+- **Render Docs**: https://render.com/docs
+- **Vercel Docs**: https://vercel.com/docs
+- **Supabase Docs**: https://supabase.com/docs
+- **Prisma Docs**: https://www.prisma.io/docs
+- **Express Security**: https://expressjs.com/en/advanced/best-practice-security.html
+- **Node.js Security**: https://nodejs.org/en/docs/guides/security
+
+---
+
+**Next Steps:**
+1. Review this plan with team
+2. Create accounts (Supabase, Railway/Render, Vercel)
+3. Start Phase 1: Preparation
+4. Update timeline based on team capacity
+
+**Questions?** - Update this plan as you discover new requirements!
+
+---
+
+*Last Updated: 2026-03-19*  
+*Version: 1.0.0*

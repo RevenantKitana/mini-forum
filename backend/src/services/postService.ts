@@ -3,6 +3,7 @@ import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors.
 import { CreatePostInput, UpdatePostInput, UpdatePostStatusInput, ListPostsQuery } from '../validations/postValidation.js';
 import { generateSlug } from '../utils/slug.js';
 import { PostStatus } from '@prisma/client';
+import { getBlockedUserIds } from './blockService.js';
 
 /**
  * Generate unique slug
@@ -150,10 +151,15 @@ export async function getPosts(query: ListPostsQuery, requestingUserId?: number,
   const { page, limit, category, tag, tags, author, sort, status, search, dateFrom, dateTo } = query;
   const skip = (page - 1) * limit;
 
+  // Get blocked user IDs to filter out their posts
+  const blockedIds = requestingUserId ? await getBlockedUserIds(requestingUserId) : [];
+
   // Build where clause
   const where: Record<string, any> = {
     // Only show published posts to non-authors
     ...(status ? { status: status as PostStatus } : { status: 'PUBLISHED' }),
+    // Filter out posts from blocked users
+    ...(blockedIds.length > 0 && { author_id: { notIn: blockedIds } }),
   };
 
   // Filter by category view_permission based on user role
