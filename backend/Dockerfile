@@ -3,7 +3,7 @@
 # ─── Stage 1: Production deps (native compilation here only) ─────────────────
 FROM node:20-alpine AS deps
 
-RUN apk add --no-cache python3 make g++ openssl openssl-dev openssl-libs
+RUN apk add --no-cache python3 make g++ openssl openssl-dev
 
 WORKDIR /app
 
