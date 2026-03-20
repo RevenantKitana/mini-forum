@@ -130,16 +130,6 @@ export function LoginPage() {
                 </Link>
               </div>
             </div>
-
-            {/* Demo Credentials */}
-            <div className="rounded-lg bg-muted p-4 text-sm animate-stagger hover:bg-muted/80 transition-colors" style={{ '--stagger-index': 2 } as React.CSSProperties}>
-              <p className="font-medium mb-2">Tài khoản demo:</p>
-              <div className="space-y-1 text-muted-foreground">
-                <p>Admin: admin@forum.com / Admin@123</p>
-                <p>Moderator: mod@forum.com / Moderator@123</p>
-                <p>Member: john@example.com / Member@123</p>
-              </div>
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full btn-interactive" disabled={isSubmitting}>
