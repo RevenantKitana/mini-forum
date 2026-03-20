@@ -16,12 +16,6 @@ const smtpConfig: SMTPTransport.Options = {
   },
   connectionTimeout: 10000,  // 10 seconds
   socketTimeout: 10000,      // 10 seconds
-  pool: {
-    maxConnections: 5,
-    maxMessages: 100,
-    rateDelta: 1000,
-    rateLimit: 14,
-  },
 };
 
 const transporter = nodemailer.createTransport(smtpConfig);
