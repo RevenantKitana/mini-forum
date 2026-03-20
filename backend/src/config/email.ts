@@ -1,11 +1,12 @@
 import nodemailer from 'nodemailer';
+import type { SMTPTransport } from 'nodemailer';
 import config from './index.js';
 
 /**
  * Create Nodemailer transporter
  * Supports SMTP (Gmail, SendGrid, Mailgun, etc.)
  */
-const transporter = nodemailer.createTransport({
+const smtpConfig: SMTPTransport.Options = {
   host: config.smtp.host,
   port: config.smtp.port,
   secure: config.smtp.secure,
@@ -21,7 +22,9 @@ const transporter = nodemailer.createTransport({
     rateDelta: 1000,
     rateLimit: 14,
   },
-});
+};
+
+const transporter = nodemailer.createTransport(smtpConfig);
 
 /**
  * Verify SMTP connection on startup (non-blocking)
