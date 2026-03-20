@@ -1,12 +1,5 @@
 /**
  * ================================================================
- * COMPREHENSIVE SEED DATA — Mini Forum
- * ================================================================
- * Phủ toàn bộ các module cho manual testing:
- *   Users (12), Categories (7), Tags (15), Posts (20),
- *   Comments (35+), Votes (60+), Bookmarks (13),
- *   Notifications (20), Reports (10), Blocks (4), Audit Logs (18)
- * ================================================================
  * Run:  cd backend && npm run db:seed
  * ================================================================
  */
@@ -14,25 +7,11 @@
 import {
   PrismaClient,
   Role,
-  PostStatus,
-  CommentStatus,
-  VoteTarget,
-  NotificationType,
-  ReportTarget,
-  ReportStatus,
-  PinType,
-  AuditAction,
-  AuditTarget,
-  PermissionLevel,
 } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
-
-// ─── Time helpers ───────────────────────────────────────────────
-const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
-const hoursAgo = (n: number) => new Date(Date.now() - n * 3_600_000);
 
 // ================================================================
 // MAIN
@@ -60,37 +39,31 @@ async function main() {
   // ─────────────────────────────────────────────────────────────
   // USERS
   // ─────────────────────────────────────────────────────────────
-  console.log('👥 Creating users...');
+  console.log('👥 Creating user account...');
 
-  const [adminPwd, modPwd, memberPwd] = await Promise.all([
-    bcrypt.hash('Admin@123', SALT_ROUNDS),
-    bcrypt.hash('Moderator@123', SALT_ROUNDS),
-    bcrypt.hash('Member@123', SALT_ROUNDS),
-  ]);
+  const userPwd = await bcrypt.hash('Admin@123', SALT_ROUNDS);
 
-  const admin = await prisma.users.upsert({
-    where: { email: 'admin@forum.com' },
+  await prisma.users.upsert({
+    where: { email: 'hainamh961@gmail.com' },
     update: {},
     create: {
-      email: 'admin@forum.com',
-      username: 'admin',
-      password_hash: adminPwd,
-      display_name: 'Administrator',
+      email: 'hainamh961@gmail.com',
+      username: 'hainamh961',
+      password_hash: userPwd,
+      display_name: 'Quốc Khánh',
       role: Role.ADMIN,
       is_verified: true,
       is_active: true,
-      reputation: 1000,
-      bio: 'Quản trị viên diễn đàn — Managing the community since day one.',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+      reputation: 0,
+      bio: 'Admin of Mini Forum',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=khanh',
       gender: 'male',
-      created_at: daysAgo(180),
-      last_active_at: hoursAgo(1),
+      created_at: new Date(),
+      last_active_at: new Date(),
     },
   });
 
-  // NOTE: Per request, keep only the admin account. Skip all other seed data.
-  console.log('✅ Admin account ensured. Skipping other seeds per request.');
-  return;
+  console.log('✅ User account created successfully.');
 }
 
 main()
