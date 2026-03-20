@@ -1,4 +1,4 @@
-import transporter from '../config/email.js';
+import sgMail from '@sendgrid/mail';
 import config from '../config/index.js';
 
 /**
@@ -18,28 +18,38 @@ interface SendOtpEmailOptions {
 export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> {
   const { to, otp, purpose, expiresInMinutes } = options;
 
-  // Validate SMTP credentials before attempting to send
-  if (!config.smtp.user || !config.smtp.pass) {
+  // Validate SendGrid API key before attempting to send
+  if (!config.sendGrid.apiKey) {
     throw new Error(
-      'SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS environment variables. ' +
-      'Example: SMTP_USER=your-email@gmail.com, SMTP_PASS=your-app-password'
+      'SendGrid API key not configured. Please set SENDGRID_API_KEY environment variable. ' +
+      'Get your API key from: https://app.sendgrid.com/settings/api_keys'
     );
   }
 
   const subject = purpose === 'register'
-    ? `${config.smtp.fromName} - Mã xác thực đăng ký`
-    : `${config.smtp.fromName} - Mã xác thực đặt lại mật khẩu`;
+    ? `${config.sendGrid.fromName} - Mã xác thực đăng ký`
+    : `${config.sendGrid.fromName} - Mã xác thực đặt lại mật khẩu`;
 
   const html = purpose === 'register'
     ? createRegisterOtpTemplate(otp, expiresInMinutes)
     : createResetOtpTemplate(otp, expiresInMinutes);
 
-  await transporter.sendMail({
-    from: `"${config.smtp.fromName}" <${config.smtp.fromEmail}>`,
-    to,
-    subject,
-    html,
-  });
+  try {
+    await sgMail.send({
+      to,
+      from: {
+        email: config.sendGrid.fromEmail,
+        name: config.sendGrid.fromName,
+      },
+      subject,
+      html,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to send email via SendGrid: ${error.message}`);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -57,7 +67,7 @@ function createRegisterOtpTemplate(otp: string, expiresInMinutes: number): strin
       <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background-color: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">Chào mừng đến với ${config.smtp.fromName}! 🎉</h1>
+            <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">Chào mừng đến với ${config.sendGrid.fromName}! 🎉</h1>
           </div>
           
           <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">

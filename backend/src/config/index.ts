@@ -19,12 +19,8 @@ interface Config {
   comment: {
     editTimeLimit: number; // Time limit in minutes for editing comments
   };
-  smtp: {
-    host: string;
-    port: number;
-    secure: boolean;
-    user: string;
-    pass: string;
+  sendGrid: {
+    apiKey: string;
     fromEmail: string;
     fromName: string;
   };
@@ -61,14 +57,10 @@ const config: Config = {
   comment: {
     editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT || '30', 10), // Default 30 minutes
   },
-  smtp: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-    fromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@example.com',
-    fromName: process.env.SMTP_FROM_NAME || 'Mini Forum',
+  sendGrid: {
+    apiKey: process.env.SENDGRID_API_KEY || '',
+    fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@example.com',
+    fromName: process.env.SENDGRID_FROM_NAME || 'Mini Forum',
   },
   otp: {
     length: parseInt(process.env.OTP_LENGTH || '6', 10),

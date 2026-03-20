@@ -1,49 +1,33 @@
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+import sgMail from '@sendgrid/mail';
 import config from './index.js';
 
 /**
- * Create Nodemailer transporter
- * Supports SMTP (Gmail, SendGrid, Mailgun, etc.)
+ * Initialize SendGrid Mail Client
+ * Supports sending emails via SendGrid Web API
  */
-const smtpConfig: SMTPTransport.Options = {
-  host: config.smtp.host,
-  port: config.smtp.port,
-  secure: config.smtp.secure,
-  auth: {
-    user: config.smtp.user,
-    pass: config.smtp.pass,
-  },
-  connectionTimeout: 10000,  // 10 seconds
-  socketTimeout: 10000,      // 10 seconds
-};
 
-const transporter = nodemailer.createTransport(smtpConfig);
+// Initialize SendGrid with API key
+if (config.sendGrid.apiKey) {
+  sgMail.setApiKey(config.sendGrid.apiKey);
+}
 
 /**
- * Verify SMTP connection on startup (non-blocking)
+ * Verify SendGrid configuration on startup (non-blocking)
  */
 export async function verifyEmailConnection(): Promise<boolean> {
   try {
-    if (!config.smtp.user || !config.smtp.pass) {
-      console.warn('⚠️  Missing SMTP credentials. OTP emails will fail.');
-      console.warn('   Please set SMTP_USER and SMTP_PASS in backend/.env');
-      console.warn('   Example:');
-      console.warn('     SMTP_HOST=smtp.gmail.com');
-      console.warn('     SMTP_PORT=587');
-      console.warn('     SMTP_SECURE=false');
-      console.warn('     SMTP_USER=your-email@gmail.com');
-      console.warn('     SMTP_PASS=your-app-password');
+    if (!config.sendGrid.apiKey) {
+      console.warn('⚠️  SendGrid API key not configured. OTP emails will fail.');
+      console.warn('   Please set SENDGRID_API_KEY in backend/.env');
+      console.warn('   Get your API key from: https://app.sendgrid.com/settings/api_keys');
       return false;
     }
-    await transporter.verify();
-    console.log('✅ SMTP connection verified successfully');
+    console.log('✅ SendGrid configuration loaded successfully');
     return true;
   } catch (error) {
-    console.error('❌ SMTP connection failed:', error);
-    console.error('   Please verify SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in backend/.env');
+    console.error('❌ SendGrid initialization failed:', error);
     return false;
   }
 }
 
-export default transporter;
+export default sgMail;
