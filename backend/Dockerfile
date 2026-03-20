@@ -41,8 +41,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install OpenSSL runtime (required by Prisma)
-RUN apk add --no-cache libssl3 openssl
+# Install OpenSSL runtime (required by Prisma) and su-exec (to switch users)
+RUN apk add --no-cache libssl3 openssl su-exec
 
 # Copy pre-built prod node_modules (bcrypt native binary + Prisma client included)
 COPY --from=deps /app/node_modules ./node_modules
@@ -55,19 +55,18 @@ COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY package.json ./
 COPY prisma ./prisma
 
-# Ensure proper file permissions for migrations and Prisma engines
-RUN chmod -R 755 /app && \
-    chown -R root:root /app
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
+# Create unprivileged user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Run migrations as root before switching to appuser
-# (Prisma needs write access to node_modules for engines cache)
-RUN npx prisma migrate deploy || true
-
-# Switch to non-root user
-USER appuser
+# Fix Prisma engines permissions
+RUN mkdir -p /app/node_modules/@prisma/engines && \
+    chmod 755 /app/node_modules/@prisma/engines
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+# Run entrypoint as root (handles migrations), then switches to appuser for app
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
