@@ -28,3 +28,28 @@ npm-debug.log*
 
 # Prisma
 **/prisma/migrations/*.sql.bak
+prisma/*.db
+prisma/*.db-journal
+
+# Build Cache
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# Test & Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Playwright (E2E tests)
+test-results/
+blob-report/
+playwright-report/
+
+# Docker
+docker-compose.override.yml
+
+# Lock files (optional - uncomment if not committing)
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock

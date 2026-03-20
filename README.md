@@ -1,4 +1,4 @@
-# Mini Forum
+# Mini Forum Web
 
 > **Version**: v1.25.1 — MVP hoàn thành (55/55 tasks)
 
