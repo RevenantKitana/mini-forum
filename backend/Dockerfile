@@ -3,7 +3,7 @@
 # ─── Stage 1: Production deps (native compilation here only) ─────────────────
 FROM node:20-alpine AS deps
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ openssl openssl-dev openssl-libs
 
 WORKDIR /app
 
@@ -41,6 +41,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install OpenSSL runtime (required by Prisma)
+RUN apk add --no-cache libssl3 openssl
+
 # Copy pre-built prod node_modules (bcrypt native binary + Prisma client included)
 COPY --from=deps /app/node_modules ./node_modules
 # Copy compiled JS output
@@ -52,9 +55,19 @@ COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY package.json ./
 COPY prisma ./prisma
 
+# Ensure proper file permissions for migrations and Prisma engines
+RUN chmod -R 755 /app && \
+    chown -R root:root /app
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Run migrations as root before switching to appuser
+# (Prisma needs write access to node_modules for engines cache)
+RUN npx prisma migrate deploy || true
+
+# Switch to non-root user
 USER appuser
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["node", "dist/index.js"]
