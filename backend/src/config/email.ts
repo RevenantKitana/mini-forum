@@ -13,6 +13,14 @@ const transporter = nodemailer.createTransport({
     user: config.smtp.user,
     pass: config.smtp.pass,
   },
+  connectionTimeout: 10000,  // 10 seconds
+  socketTimeout: 10000,      // 10 seconds
+  pool: {
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 14,
+  },
 });
 
 /**
