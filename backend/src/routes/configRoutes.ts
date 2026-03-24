@@ -11,4 +11,12 @@ const router = Router();
  */
 router.get('/comment', configController.getCommentConfig);
 
+/**
+ * @route   GET /api/v1/config/db-ping
+ * @desc    Lightweight database ping to keep free tier DB alive
+ * @access  Public (no authentication required)
+ * @return  { status: 'ok', timestamp: string, responseTime: string }
+ */
+router.get('/db-ping', configController.pingDatabase as any);
+
 export default router;
