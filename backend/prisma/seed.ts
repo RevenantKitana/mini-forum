@@ -7,6 +7,33 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   try {
+    // Seed Admin User FIRST (required for audit logs)
+    console.log('👤 Seeding admin user...');
+    const hashedPassword = await bcrypt.hash('Admin@123', 10);
+
+    const adminUser = await prisma.users.upsert({
+      where: { email: 'sfw.forum@atomicmail.io' },
+      update: {
+        username: 'admin',
+        password_hash: hashedPassword,
+        role: Role.ADMIN,
+        display_name: 'Admin',
+        is_verified: true,
+        is_active: true,
+      },
+      create: {
+        email: 'sfw.forum@atomicmail.io',
+        username: 'admin',
+        password_hash: hashedPassword,
+        role: Role.ADMIN,
+        display_name: 'Admin',
+        is_verified: true,
+        is_active: true,
+        reputation: 0,
+      },
+    });
+    console.log('✅ Admin user seeded successfully');
+
     // Seed Categories
     const categories = [
       {
@@ -90,33 +117,6 @@ async function main() {
       });
     }
     console.log('✅ Categories seeded successfully');
-
-    // Seed Admin User
-    console.log('👤 Seeding admin user...');
-    const hashedPassword = await bcrypt.hash('Admin@123', 10);
-
-    await prisma.users.upsert({
-      where: { email: 'sfw_forum@proton.me' },
-      update: {
-        username: 'admin',
-        password_hash: hashedPassword,
-        role: Role.ADMIN,
-        display_name: 'Admin',
-        is_verified: true,
-        is_active: true,
-      },
-      create: {
-        email: 'sfw_forum@proton.me',
-        username: 'admin',
-        password_hash: hashedPassword,
-        role: Role.ADMIN,
-        display_name: 'Admin',
-        is_verified: true,
-        is_active: true,
-        reputation: 0,
-      },
-    });
-    console.log('✅ Admin user seeded successfully');
 
     console.log('🎉 Seed completed successfully!');
   } catch (error) {
