@@ -90,7 +90,8 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
     
     const userRole = user.role?.toUpperCase() || 'MEMBER';
     const roleHierarchy = ['MEMBER', 'MODERATOR', 'ADMIN'];
-    const userLevel = roleHierarchy.indexOf(userRole);
+    const effectiveRole = userRole === 'BOT' ? 'MEMBER' : userRole;
+    const userLevel = roleHierarchy.indexOf(effectiveRole);
     const requiredLevelIndex = roleHierarchy.indexOf(requiredLevel);
     
     return userLevel >= requiredLevelIndex;
@@ -101,6 +102,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
     MEMBER: 'thành viên',
     MODERATOR: 'điều hành viên',
     ADMIN: 'quản trị viên',
+    BOT: 'bot',
   };
 
   // Filter tags that user has permission to use

@@ -1,75 +1,130 @@
-/**
- * ================================================================
- * Run:  cd backend && npm run db:seed
- * ================================================================
- */
-
-import {
-  PrismaClient,
-  Role,
-} from '@prisma/client';
+import { PrismaClient, Role, PermissionLevel } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
-const SALT_ROUNDS = 10;
 
-// ================================================================
-// MAIN
-// ================================================================
 async function main() {
-  console.log('🌱 Starting comprehensive seed...\n');
+  console.log('🌱 Starting seed...');
 
-  // ─────────────────────────────────────────────────────────────
-  // CLEANUP  (respect FK order)
-  // ─────────────────────────────────────────────────────────────
-  console.log('🗑️  Cleaning existing data...');
-  await prisma.audit_logs.deleteMany();
-  await prisma.votes.deleteMany();
-  await prisma.bookmarks.deleteMany();
-  await prisma.notifications.deleteMany();
-  await prisma.reports.deleteMany();
-  await prisma.user_blocks.deleteMany();
-  await prisma.comments.deleteMany();
-  await prisma.post_tags.deleteMany();
-  await prisma.posts.deleteMany();
-  await prisma.tags.deleteMany();
-  await prisma.categories.deleteMany();
-  console.log('✅ Cleaned\n');
+  try {
+    // Seed Categories
+    const categories = [
+      {
+        name: 'Nội Quy - Thông báo',
+        slug: 'noi-quy-thong-bao',
+        description: 'Các quy định, thông báo chung của diễn đàn',
+        color: '#FF6B6B',
+        sort_order: 1,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.ADMIN,
+        comment_permission: PermissionLevel.ADMIN,
+      },
+      {
+        name: 'Ý kiến - Phản Hồi',
+        slug: 'y-kien-phan-hoi',
+        description: 'Chia sẻ ý kiến, phản hồi về diễn đàn',
+        color: '#4ECDC4',
+        sort_order: 2,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+      {
+        name: 'Chia sẻ & Kinh nghiệm',
+        slug: 'chia-se-kinh-nghiem',
+        description: 'Chia sẻ kinh nghiệm, học hỏi lẫn nhau',
+        color: '#45B7D1',
+        sort_order: 3,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+      {
+        name: 'Kể chuyện',
+        slug: 'ke-chuyen',
+        description: 'Kể những câu chuyện, trải nghiệm của bạn',
+        color: '#FFA07A',
+        sort_order: 4,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+      {
+        name: 'Bàn luận & Góc nhìn',
+        slug: 'ban-luan-goc-nhin',
+        description: 'Bàn luận về các chủ đề, chia sẻ góc nhìn riêng',
+        color: '#9B59B6',
+        sort_order: 5,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+      {
+        name: 'Hỏi đáp',
+        slug: 'hoi-dap',
+        description: 'Hỏi đáp câu hỏi, giải đáp thắc mắc',
+        color: '#3498DB',
+        sort_order: 6,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+      {
+        name: 'Off-topic',
+        slug: 'off-topic',
+        description: 'Thảo luận về các chủ đề ngoài lề',
+        color: '#95A5A6',
+        sort_order: 7,
+        view_permission: PermissionLevel.ALL,
+        post_permission: PermissionLevel.MEMBER,
+        comment_permission: PermissionLevel.MEMBER,
+      },
+    ];
 
-  // ─────────────────────────────────────────────────────────────
-  // USERS
-  // ─────────────────────────────────────────────────────────────
-  console.log('👥 Creating user account...');
+    console.log('📝 Seeding categories...');
+    for (const category of categories) {
+      await prisma.categories.upsert({
+        where: { slug: category.slug },
+        update: category,
+        create: category,
+      });
+    }
+    console.log('✅ Categories seeded successfully');
 
-  const userPwd = await bcrypt.hash('Admin@123', SALT_ROUNDS);
+    // Seed Admin User
+    console.log('👤 Seeding admin user...');
+    const hashedPassword = await bcrypt.hash('Admin@123', 10);
 
-  await prisma.users.upsert({
-    where: { email: 'hainamh961@gmail.com' },
-    update: {},
-    create: {
-      email: 'hainamh961@gmail.com',
-      username: 'hainamh961',
-      password_hash: userPwd,
-      display_name: 'Quốc Khánh',
-      role: Role.ADMIN,
-      is_verified: true,
-      is_active: true,
-      reputation: 0,
-      bio: 'Admin of Mini Forum',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=khanh',
-      gender: 'male',
-      created_at: new Date(),
-      last_active_at: new Date(),
-    },
-  });
+    await prisma.users.upsert({
+      where: { email: 'sfw_forum@proton.me' },
+      update: {
+        username: 'admin',
+        password_hash: hashedPassword,
+        role: Role.ADMIN,
+        display_name: 'Admin',
+        is_verified: true,
+        is_active: true,
+      },
+      create: {
+        email: 'sfw_forum@proton.me',
+        username: 'admin',
+        password_hash: hashedPassword,
+        role: Role.ADMIN,
+        display_name: 'Admin',
+        is_verified: true,
+        is_active: true,
+        reputation: 0,
+      },
+    });
+    console.log('✅ Admin user seeded successfully');
 
-  console.log('✅ User account created successfully.');
+    console.log('🎉 Seed completed successfully!');
+  } catch (error) {
+    console.error('❌ Seed error:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .then(async () => { await prisma.$disconnect(); })
-  .catch(async (e) => {
-    console.error('❌ Seed failed:', e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main();

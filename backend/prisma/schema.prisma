@@ -322,6 +322,7 @@ enum Role {
   MEMBER
   MODERATOR
   ADMIN
+  BOT
 }
 
 enum VoteTarget {

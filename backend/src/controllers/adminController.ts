@@ -122,6 +122,7 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
       MEMBER: 0,
       MODERATOR: 0,
       ADMIN: 0,
+      BOT: 0,
     };
     usersByRole.forEach((item) => {
       rolesMap[item.role] = item._count.role;
@@ -399,7 +400,7 @@ export async function changeUserRole(req: AuthRequest, res: Response, next: Next
     const { role } = req.body;
 
     // Validate role
-    if (!['MEMBER', 'MODERATOR', 'ADMIN'].includes(role)) {
+    if (!['MEMBER', 'MODERATOR', 'ADMIN', 'BOT'].includes(role)) {
       throw new BadRequestError('Invalid role');
     }
 

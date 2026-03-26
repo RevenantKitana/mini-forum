@@ -8,31 +8,31 @@ async function clearDatabase() {
 
     // Delete in order to respect foreign key constraints
     console.log('Deleting votes...');
-    await prisma.vote.deleteMany();
+    await prisma.votes.deleteMany();
 
     console.log('Deleting bookmarks...');
-    await prisma.bookmark.deleteMany();
+    await prisma.bookmarks.deleteMany();
 
     console.log('Deleting comments...');
-    await prisma.comment.deleteMany();
+    await prisma.comments.deleteMany();
 
     console.log('Deleting reports...');
-    await prisma.report.deleteMany();
+    await prisma.reports.deleteMany();
 
     console.log('Deleting notifications...');
-    await prisma.notification.deleteMany();
+    await prisma.notifications.deleteMany();
 
     console.log('Deleting posts...');
-    await prisma.post.deleteMany();
+    await prisma.posts.deleteMany();
 
     console.log('Deleting audit logs...');
-    await prisma.auditLog.deleteMany();
+    await prisma.audit_logs.deleteMany();
 
     console.log('Deleting categories...');
-    await prisma.category.deleteMany();
+    await prisma.categories.deleteMany();
 
     console.log('Deleting tags...');
-    await prisma.tag.deleteMany();
+    await prisma.tags.deleteMany();
 
     console.log('Database cleanup completed successfully!');
     console.log('All data except users has been deleted.');

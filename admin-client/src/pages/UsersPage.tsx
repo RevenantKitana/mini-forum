@@ -116,6 +116,8 @@ export function UsersPage() {
         return <Badge variant="destructive" className="bg-red-600">Admin</Badge>;
       case 'MODERATOR':
         return <Badge variant="secondary" className="bg-blue-600 text-white">Mod</Badge>;
+      case 'BOT':
+        return <Badge variant="secondary" className="bg-emerald-600 text-white">Bot</Badge>;
       default:
         return <Badge variant="outline">Member</Badge>;
     }
@@ -193,6 +195,7 @@ export function UsersPage() {
             <SelectItem value="ADMIN">Admin</SelectItem>
             <SelectItem value="MODERATOR">Moderator</SelectItem>
             <SelectItem value="MEMBER">Member</SelectItem>
+            <SelectItem value="BOT">Bot</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -302,6 +305,12 @@ export function UsersPage() {
                               disabled={user.role === 'ADMIN'}
                             >
                               Admin
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleChangeRole(user.id, 'BOT')}
+                              disabled={user.role === 'BOT'}
+                            >
+                              Bot
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>

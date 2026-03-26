@@ -54,6 +54,8 @@ export function PostCard({ post }: PostCardProps) {
         return <Badge variant="destructive" className="gap-1 text-responsive-xs"><Shield className="h-3 w-3" /> Admin</Badge>;
       case 'MODERATOR':
         return <Badge variant="default" className="gap-1 bg-blue-600 text-responsive-xs"><Shield className="h-3 w-3" /> Mod</Badge>;
+      case 'BOT':
+        return <Badge variant="default" className="gap-1 bg-emerald-600 text-responsive-xs"><Shield className="h-3 w-3" /> Bot</Badge>;
       default:
         return null;
     }

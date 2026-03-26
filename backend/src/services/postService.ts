@@ -380,7 +380,8 @@ function checkPermission(userRole: string, requiredLevel: string): boolean {
   if (!requiredLevel || requiredLevel === 'ALL') return true;
   
   const roleHierarchy = ['MEMBER', 'MODERATOR', 'ADMIN'];
-  const userLevel = roleHierarchy.indexOf(userRole.toUpperCase());
+  const effectiveRole = userRole.toUpperCase() === 'BOT' ? 'MEMBER' : userRole.toUpperCase();
+  const userLevel = roleHierarchy.indexOf(effectiveRole);
   const requiredLevelIndex = roleHierarchy.indexOf(requiredLevel);
   
   return userLevel >= requiredLevelIndex;

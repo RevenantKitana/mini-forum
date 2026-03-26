@@ -385,6 +385,10 @@ export function DashboardPage() {
                 <span className="font-medium">Thành viên</span>
                 <Badge variant="outline">{stats?.usersByRole?.MEMBER || 0}</Badge>
               </div>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
+                <span className="font-medium">Bot</span>
+                <Badge variant="secondary">{stats?.usersByRole?.BOT || 0}</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>

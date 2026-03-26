@@ -1,6 +1,6 @@
 // Types cho Forum Application
 
-export type UserRole = 'MEMBER' | 'MODERATOR' | 'ADMIN';
+export type UserRole = 'MEMBER' | 'MODERATOR' | 'ADMIN' | 'BOT';
 
 export type NotificationType = 'COMMENT' | 'REPLY' | 'UPVOTE' | 'MENTION' | 'SYSTEM';
 

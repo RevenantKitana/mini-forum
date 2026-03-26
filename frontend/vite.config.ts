@@ -20,5 +20,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     historyApiFallback: true,
+    proxy: {
+      '/api': {
+        target: 'https://mini-forum-backend-kkxu.onrender.com/',
+        changeOrigin: true,
+      },
+    },
   },
 })

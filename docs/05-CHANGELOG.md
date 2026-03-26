@@ -1,12 +1,55 @@
 # Changelog — Mini Forum
 
-> **Version**: v1.26.0  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-26
 
 Tất cả các thay đổi lớn của dự án này sẽ được ghi lại trong file này.
 
 
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) và dự án này tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.27.0] - 2026-03-26
+
+### Feature — Thêm vai trò người dùng BOT
+
+Thêm vai trò thứ 4 `BOT` vào hệ thống, bên cạnh ADMIN / MODERATOR / MEMBER. BOT kế thừa toàn bộ tính chất và quyền hạn của MEMBER (hierarchy level 1).
+
+**Đặc điểm vai trò BOT**:
+- Cùng cấp quyền với MEMBER trong role hierarchy (level 1)
+- Có thể tạo bài viết, bình luận, vote, bookmark giống MEMBER
+- Tuân theo category permissions (view/post/comment) như MEMBER
+- Bị giới hạn thời gian chỉnh sửa comment như MEMBER
+- Không thể truy cập admin-client
+- Hiển thị badge riêng "Bot" (màu emerald) trên PostCard và ProfilePage
+- Admin có thể gán/thay đổi role BOT từ admin-client
+
+**Files changed**:
+- **Database**:
+  - `backend/prisma/schema.prisma`: Thêm `BOT` vào enum `Role`
+  - `backend/prisma/migrations/20260326052535_add_bot_role/`: Migration SQL
+
+- **Backend**:
+  - `backend/src/constants/roles.ts`: Thêm `BOT` vào ROLES constant và ROLE_HIERARCHY (level 1)
+  - `backend/src/controllers/adminController.ts`: Thêm `BOT` vào danh sách role hợp lệ trong `changeUserRole()` và `rolesMap` dashboard stats
+  - `backend/src/services/postService.ts`: Xử lý BOT trong `checkPermission()` - map BOT → MEMBER
+  - `backend/src/services/commentService.ts`: Xử lý BOT trong `checkPermission()` và locked post check
+
+- **Frontend**:
+  - `frontend/src/types/index.ts`: Thêm `'BOT'` vào `UserRole` type
+  - `frontend/src/components/PostCard.tsx`: Thêm BOT badge (emerald) trong `getAuthorBadge()`
+  - `frontend/src/pages/ProfilePage.tsx`: Thêm BOT badge trong `getRoleBadge()`
+  - `frontend/src/pages/PostDetailPage.tsx`: Thêm BOT vào `permissionLabels`, xử lý BOT trong `checkPermissionLevel()`
+  - `frontend/src/pages/HomePage.tsx`: Không cần thay đổi (BOT tự động hoạt động đúng với MEMBER logic)
+  - `frontend/src/components/layout/Sidebar.tsx`: Thêm BOT vào `permissionLabels`, xử lý BOT trong `checkPermissionLevel()`
+  - `frontend/src/components/common/CreatePostDialog.tsx`: Xử lý BOT trong permission check + `permissionLabels`
+  - `frontend/src/components/common/PostFormDialog.tsx`: Xử lý BOT trong permission check + `permissionLabels`
+
+- **Admin-client**:
+  - `admin-client/src/api/services/adminService.ts`: Thêm `BOT` vào `DashboardStats` interface
+  - `admin-client/src/pages/UsersPage.tsx`: Thêm BOT badge, filter option, role change menu item
+  - `admin-client/src/pages/DashboardPage.tsx`: Thêm BOT vào user role stats display
 
 ---
 

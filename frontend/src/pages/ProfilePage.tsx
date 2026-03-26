@@ -122,6 +122,13 @@ export function ProfilePage() {
             Moderator
           </Badge>
         );
+      case 'BOT':
+        return (
+          <Badge variant="default" className="gap-1 bg-emerald-600">
+            <Shield className="h-3 w-3" />
+            Bot
+          </Badge>
+        );
       default:
         return null;
     }

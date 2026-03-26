@@ -58,6 +58,7 @@ const permissionLabels: Record<string, string> = {
   MEMBER: 'thành viên',
   MODERATOR: 'điều hành viên',
   ADMIN: 'quản trị viên',
+  BOT: 'bot',
 };
 
 const commentSchema = z.object({
@@ -75,7 +76,8 @@ function checkPermissionLevel(
   if (!userRole) return false;
 
   const roleHierarchy = ['MEMBER', 'MODERATOR', 'ADMIN'];
-  const userLevel = roleHierarchy.indexOf(userRole.toUpperCase());
+  const effectiveRole = userRole.toUpperCase() === 'BOT' ? 'MEMBER' : userRole.toUpperCase();
+  const userLevel = roleHierarchy.indexOf(effectiveRole);
   const requiredLevelIndex = roleHierarchy.indexOf(requiredLevel);
 
   return userLevel >= requiredLevelIndex;

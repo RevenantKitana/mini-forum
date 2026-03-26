@@ -26,6 +26,7 @@ export interface DashboardStats {
     MEMBER: number;
     MODERATOR: number;
     ADMIN: number;
+    BOT: number;
   };
   topCategories: Array<{
     id: number;
