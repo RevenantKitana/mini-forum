@@ -30,6 +30,7 @@ const config = {
     geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
     cerebrasApiKey: process.env.CEREBRAS_API_KEY || '',
+    nvidiaApiKey: process.env.NVIDIA_API_KEY || '',
     providerTimeoutMs: parseInt(process.env.PROVIDER_TIMEOUT_MS || '30000', 10),
   },
   botPassword: process.env.BOT_PASSWORD || 'BotUser@123',
