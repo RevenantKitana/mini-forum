@@ -1,90 +1,58 @@
-# syntax=docker/dockerfile:1
-
-# ─── Stage 1: Production deps (native compilation here only) ─────────────────
-FROM node:20-alpine AS deps
-
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-
-# BuildKit cache mount: reuses ~/.npm across rebuilds → much faster
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --no-audit --no-fund
-
-# Generate Prisma client
-COPY prisma ./prisma
-RUN npx prisma generate
-
-# ─── Stage 2: TypeScript compiler ────────────────────────────────────────────
+# Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json tsconfig.json ./
+# Copy package files
+COPY package*.json ./
 
-# --ignore-scripts: skip bcrypt native build — only types needed for tsc
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --ignore-scripts --no-audit --no-fund
+# Install dependencies
+RUN npm ci
 
-# Overlay generated Prisma types so tsc has correct types
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
-
+# Copy source code
+COPY tsconfig.json ./
 COPY src ./src
+COPY seed ./seed
 COPY prisma ./prisma
+
+# Build TypeScript
 RUN npm run build
 
-# ─── Stage 3: Production runtime (no build tools at all) ─────────────────────
-FROM node:20-alpine AS production
+# Stage 2: Production
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Set Node environment
 ENV NODE_ENV=production
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    libssl3 \
-    openssl \
-    su-exec \
-    tini
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Copy package files
+COPY package*.json ./
 
-# Copy pre-built prod node_modules (bcrypt native binary + Prisma client included)
-COPY --from=deps /app/node_modules ./node_modules
+# Install production dependencies only
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy compiled JS output
+# Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy Prisma schema & generated client (critical for runtime)
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
+# Copy prompts and seed files for reference
+COPY prompts ./prompts
+COPY seed ./seed
 COPY prisma ./prisma
 
-# Copy .env.example as template (actual .env should be provided at runtime)
-COPY .env.example ./
-
-# Create logs directory for winston
-RUN mkdir -p logs && \
-    chown -R nodejs:nodejs /app
-
-# Use non-root user
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
 
-# Docker health check
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:4000/status || exit 1
+    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 4000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Use tini as init process for proper signal handling
-ENTRYPOINT ["/sbin/tini", "--"]
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
 
-# Start the app
+# Start application
 CMD ["node", "dist/src/index.js"]
-
-# Docker labels
-LABEL maintainer="Mini Forum Team"
-LABEL description="Vibe Content Generation Service - Production"
-LABEL version="1.0.0"
