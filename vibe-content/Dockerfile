@@ -48,11 +48,12 @@ COPY --from=builder /app/dist ./dist
 COPY prompts ./prompts
 COPY prisma ./prisma
 
+# Create non-root user first (before chown)
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
 # Create logs directory and give nodejs user ownership of all app files
 RUN mkdir -p dist/logs && chown -R nodejs:nodejs /app
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
 
 # Health check
