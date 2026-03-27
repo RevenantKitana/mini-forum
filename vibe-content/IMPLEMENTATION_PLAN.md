@@ -56,14 +56,15 @@ vibe-content/
     │   ├── index.ts                    ← entry point, HTTP server + cron
     │   ├── config/
     │   │   ├── index.ts                ← load env vars
-    │   │   └── llm.ts                  ← LLM provider config
+    │   │   └── llm.ts                  ← LLM stack config
     │   ├── services/
     │   │   ├── llm/
-    │   │   │   ├── LLMProviderManager.ts   ← fallback logic
-    │   │   │   ├── OpenAIProvider.ts
-    │   │   │   ├── AnthropicProvider.ts
+    │   │   │   ├── ILLMProvider.ts     ← interface chung
+    │   │   │   ├── LLMProviderManager.ts   ← fallback stack logic
     │   │   │   ├── GeminiProvider.ts
-    │   │   │   └── TemplateProvider.ts     ← fallback khi tất cả LLM fail
+    │   │   │   ├── GroqProvider.ts
+    │   │   │   ├── CerebrasProvider.ts
+    │   │   │   └── TemplateProvider.ts     ← fallback guarantee
     │   │   ├── ActionSelectorService.ts    ← chọn action ngẫu nhiên
     │   │   ├── ContextGathererService.ts   ← thu thập context từ DB
     │   │   ├── PromptBuilderService.ts     ← xây dựng prompt
@@ -175,7 +176,7 @@ Setup `tsconfig.json`, `.env.example`, entry point cơ bản.
 
 ---
 
-### PHASE 1: MVP — Single LLM, POST Only — 7-10 ngày
+### PHASE 1: MVP — Single LLM, POST Only
 
 **Mục tiêu:** Có thể trigger tự động 1 lần → chọn bot user → sinh 1 bài post → đăng lên forum. Prove the concept.
 
@@ -215,22 +216,23 @@ export interface ActionResult {
 }
 ```
 
-#### 1.2 — OpenAI LLM Provider
-**File:** `src/services/llm/OpenAIProvider.ts`
+#### 1.2 —  LLM Provider Interface
+**File:** `src/services/llm/ILLMProvider.ts`
 
 ```typescript
-// Chỉ cần gọi chat completion API
-// Model: gpt-3.5-turbo (rẻ nhất)
-// Timeout: 30s
-// Retry: 3 lần với exponential backoff
-
-interface LLMProvider {
+interface ILLMProvider {
+  id: string;                           // "gemini-flash" | "groq-70b" | ...
   generate(prompt: string): Promise<LLMOutput>;
-  isAvailable(): boolean;
+  isAvailable(): Promise<boolean>;       // check quota, API key, connectivity
+  getRemainingQuota(): Promise<number>;
 }
+
+// Error handling: Rate limit (429), Auth error (401), Timeout → throw cụ thể
+// Timeout: 30s
+// Retry ở LLMProviderManager level (không ở provider level)
 ```
 
-Xử lý errors: Rate limit (429), Auth error (401), Timeout → throw cụ thể để caller biết
+**Phase 1 MVP:** Chỉ cần 1 provider hoạt động (có thể là Gemini hoặc Groq)
 
 #### 1.3 — Context Gatherer Service
 **File:** `src/services/ContextGathererService.ts`
@@ -287,6 +289,12 @@ function validatePostOutput(raw: string): ValidationResult {
   // 5. Tags: tất cả phải tồn tại trong DB (query confirm)
   // 6. Không chứa English stopwords lạ hoặc JSON artifacts
 }
+
+// Chuẩn bị base class để Phase 2+ mở rộng:
+// abstract ValidationService với subclasses:
+//   - PostValidator (Phase 1)
+//   - CommentValidator (Phase 2)
+//   - VoteValidator (Phase 2) → check: shouldVote, voteType, reason
 ```
 
 #### 1.6 — API Executor Service
@@ -308,15 +316,20 @@ Gọi backend Forum API với JWT token của bot user:
 
 ```typescript
 async function runOnce(): Promise<ActionResult> {
+  // Phase 1 MVP: chỉ POST action
   // 1. Chọn random bot user từ danh sách active
-  // 2. GatherContext(userId)
-  // 3. BuildPrompt(context)
+  // 2. GatherContext(userId) → POST context only
+  // 3. BuildPrompt(context) → POST prompt only
   // 4. LLM.generate(prompt) → raw output
   // 5. Validate(raw) → nếu fail → log & return failed result
   // 6. APIExecutor.createPost(userId, validated) → call forum API
   // 7. Log kết quả
   // 8. Return ActionResult
 }
+
+// Phase 2 sẽ mở rộng: 
+// - gọi selectNextAction() để chọn action type (POST, COMMENT, VOTE)
+// - dispatch đến service tương ứng
 ```
 
 #### 1.8 — HTTP Trigger + Cron
@@ -337,6 +350,7 @@ async function runOnce(): Promise<ActionResult> {
 - `POST /trigger` → sinh 1 bài post, đăng lên forum
 - Sau 30 phút → tự động đăng tiếp
 - Log chi tiết từng bước ra console
+- ⚠️ Ghi chú: Vote action chưa có ở Phase 1 (sẽ thêm ở Phase 2 với LLM-based decision)
 
 ---
 
@@ -346,60 +360,171 @@ async function runOnce(): Promise<ActionResult> {
 
 **Bổ sung so với Phase 1:**
 - ✅ Actions: **POST + COMMENT + REPLY + VOTE**
-- ✅ Multi-provider fallback: OpenAI → Anthropic → Gemini → Template
+- ✅ **Model Stack (Fallback Chain):**
+  1. **Gemini 2.5 Flash** (`gemini-2.5-flash`)
+  2. **Groq Llama 3.3 70B** (`llama-3.3-70b-versatile`)
+  3. **Groq Llama 3.1 8B** (`llama-3.1-8b-instant`)
+  4. **Cerebras Qwen 3 235B** (`qwen-3-235b-a22b`)
+  5. **Cerebras Llama 3.1 8B** (`llama-3.1-8b`)
+  6. **Template Provider** (fallback guarantee)
 - ✅ Weighted action selection (POST 40%, COMMENT 35%, VOTE 25%)
-- ✅ Rate limiting: max 3 posts/day, 6 comments/day per bot user
+- ✅ Rate limiting: max 5 posts/day, 10 comments/day per bot user
 - ✅ Per-provider quota tracking
 
-#### 2.1 — LLM Provider Manager
-**File:** `src/services/llm/LLMProviderManager.ts`
+#### 2.1 — LLM Provider Manager (Stack-based Fallback)
+**File:** `src/services/llm/LLMProviderManager.ts`, `src/config/llm.ts`
 
 ```typescript
+// Config stack như priority queue
+const LLM_STACK = [
+  { id: 'gemini-flash', provider: GeminiProvider, model: 'gemini-2.5-flash' },
+  { id: 'groq-70b', provider: GroqProvider, model: 'llama-3.3-70b-versatile' },
+  { id: 'groq-8b', provider: GroqProvider, model: 'llama-3.1-8b-instant' },
+  { id: 'cerebras-qwen', provider: CerebrasProvider, model: 'qwen-3-235b-a22b' },
+  { id: 'cerebras-llama', provider: CerebrasProvider, model: 'llama-3.1-8b' },
+  { id: 'template', provider: TemplateProvider, model: 'template' }, // no fail
+];
+
 class LLMProviderManager {
-  private providers: LLMProvider[] = [
-    new OpenAIProvider(),
-    new AnthropicProvider(),
-    new GeminiProvider(),
-    new TemplateProvider(), // không fail bao giờ
-  ];
+  private stack: LLMProvider[] = []; // initialized from LLM_STACK
 
   async generate(prompt: string): Promise<{ output: LLMOutput; provider: string }> {
-    for (const provider of this.providers) {
-      if (!provider.isAvailable()) continue; // quota hết → skip
+    // Iterate through stack in order
+    for (const provider of this.stack) {
       try {
-        const output = await provider.generate(prompt);
-        return { output, provider: provider.name };
+        const available = await provider.isAvailable(); // check quota + connectivity
+        if (!available) {
+          this.logProviderStatus(provider.id, 'quota_exhausted'); // log skip
+          continue;
+        }
+        
+        const output = await this.callWithRetry(provider, prompt, 3); // 3 retries
+        this.logProviderStatus(provider.id, 'success');
+        return { output, provider: provider.id };
+        
       } catch (err) {
-        this.handleProviderError(provider, err);
-        // continue to next provider
+        this.logProviderError(provider.id, err);
+        // continue to next in stack
       }
     }
-    throw new Error('All providers failed');
+    // Should never reach here vì TemplateProvider không fail
+    throw new Error('All LLM providers in stack failed (critical error)');
+  }
+
+  private async callWithRetry(provider: ILLMProvider, prompt: string, maxRetries: number) {
+    let lastError;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await provider.generate(prompt);
+      } catch (err) {
+        lastError = err;
+        const backoff = Math.pow(2, attempt) * 1000; // exponential backoff
+        if (attempt < maxRetries - 1 && this.isRetryable(err)) {
+          await sleep(backoff);
+          continue;
+        }
+        break;
+      }
+    }
+    throw lastError;
+  }
+
+  private isRetryable(err: any): boolean {
+    // Retry on timeout, 429 (rate limit)
+    // Don't retry on 401 (auth), 4xx validation errors
+    return err.code === 'TIMEOUT' || err.status === 429;
   }
 }
 ```
 
-#### 2.2 — Anthropic + Gemini Providers
-**File:** `src/services/llm/AnthropicProvider.ts`, `GeminiProvider.ts`
+**Logic:**
+1. Lặp qua stack theo thứ tự priority
+2. Check provider có available không (`isAvailable()` → check quota + API key + connectivity)
+3. Nếu available → gọi LLM (với 3 retries + exponential backoff)
+4. Nếu success → return
+5. Nếu fail → log error → next provider
+6. TemplateProvider luôn last → guarantee không fail hoàn toàn
 
-Cùng interface `LLMProvider`, cùng error handling pattern.
+#### 2.2 — Provider Implementations
+**Files:** `src/services/llm/GeminiProvider.ts`, `GroqProvider.ts`, `CerebrasProvider.ts`, `TemplateProvider.ts`
 
-Models:
-- Anthropic: `claude-3-haiku-20240307` (rẻ nhất)
-- Gemini: `gemini-1.5-flash` (free tier tốt nhất)
+Mỗi provider implement interface `ILLMProvider`:
 
-#### 2.3 — Template Provider (Fallback an toàn)
-**File:** `src/services/llm/TemplateProvider.ts`
-
-Khi tất cả LLM fail → sinh content từ templates cứng:
 ```typescript
-// Pool của ~20-30 post templates dạng fill-in-the-blank
-// Pool của ~30-40 comment templates
-// Chọn ngẫu nhiên + fill context
-// Đủ để keep-alive mà không cần LLM
+// GeminiProvider.ts
+class GeminiProvider implements ILLMProvider {
+  id = 'gemini-flash';
+  model = 'gemini-2.5-flash';
+  
+  async isAvailable(): boolean {
+    // Check: API_KEY set, quota remaining (đọc từ tracking)
+    return this.quotaRemaining > 0 && this.apiKey;
+  }
+  
+  async generate(prompt: string): Promise<LLMOutput> {
+    // Gọi Google Generative AI API
+    // Timeout: 30s
+    // Throw: TimeoutError, RateLimitError, AuthError, ValidationError...
+  }
+}
+
+// GroqProvider.ts
+class GroqProvider implements ILLMProvider {
+  id: string; // 'groq-70b' or 'groq-8b'
+  model: string;
+  
+  async isAvailable(): boolean {
+    // Check: API_KEY set, quota remaining
+    return this.quotaRemaining > 0 && this.apiKey;
+  }
+  
+  async generate(prompt: string): Promise<LLMOutput> {
+    // Gọi Groq API (compatible with OpenAI SDK)
+    // Models: llama-3.3-70b-versatile, llama-3.1-8b-instant
+  }
+}
+
+// CerebrasProvider.ts
+class CerebrasProvider implements ILLMProvider {
+  id: string; // 'cerebras-qwen' or 'cerebras-llama'
+  model: string;
+  
+  async isAvailable(): boolean {
+    // Check: API_KEY set, quota remaining
+    return this.quotaRemaining > 0 && this.apiKey;
+  }
+  
+  async generate(prompt: string): Promise<LLMOutput> {
+    // Gọi Cerebras API
+    // Models: qwen-3-235b-a22b, llama-3.1-8b
+  }
+}
+
+// TemplateProvider.ts
+class TemplateProvider implements ILLMProvider {
+  id = 'template';
+  model = 'template';
+  
+  async isAvailable(): boolean {
+    // Luôn available - không cần API key
+    return true;
+  }
+  
+  async generate(prompt: string): Promise<LLMOutput> {
+    // Pool của ~20-30 post templates dạng fill-in-the-blank
+    // Pool của ~30-40 comment templates
+    // Chọn ngẫu nhiên + fill context
+    // Đủ để keep-alive mà không cần LLM
+    // Không bao giờ throw error
+  }
+}
 ```
 
-#### 2.4 — Comment & Reply Actions
+**Error Handling:**
+- 429 (Rate Limit) → retryable
+- 401 (Auth Error) → not retryable, switch provider
+- TIMEOUT → retryable
+- Validation error (malformed response) → not retryable, switch provider
 **File:** `src/services/ContextGathererService.ts` (mở rộng), `prompts/comment.template.txt`
 
 Để sinh comment:
@@ -412,31 +537,77 @@ Khi tất cả LLM fail → sinh content từ templates cứng:
 1. Lấy comment gần đây trong 1 thread đang active
 2. Trả lời đúng vào comment đó (parent_id)
 
-#### 2.5 — Vote Action
-**File:** `src/services/VoteActionService.ts`
+#### 2.5 — Vote Action (với LLM Decision)
+**File:** `src/services/VoteActionService.ts`, `src/services/ValidationService.ts` (thêm method), `prompts/vote.template.txt` (new)
 
-Vote đơn giản hơn (không cần LLM generate content):
+Vote dựa vào **nội dung + tính cách user** (không chỉ random xác suất):
+
+**Flow:**
 1. Lấy random post/comment gần đây
-2. Xác suất: 70% upvote, 30% downvote
-3. Kiểm tra bot user chưa vote bài đó
-4. Kiểm tra không tự vote (self-vote)
-5. `POST /api/votes { targetType, targetId, value }`
+2. Kiểm tra bot user chưa vote bài đó
+3. Kiểm tra không tự vote (self-vote)
+4. **Lấy personality vector của user** từ `user_content_context`
+   - Phase 2: extract từ user bio (đơn giản)
+   - Phase 3: cập nhật từ recent content + vote_logs
+5. **Gọi LLM** với prompt (xem `prompts/vote.template.txt`):
+   ```
+   Bạn là {DISPLAY_NAME}. Bio: {BIO}
+   Tính cách: {TRAITS}, Tone: {TONE}
+   Chủ đề quan tâm: {TOPICS}
+   
+   Content được xem xét:
+   Title: {TARGET_TITLE}
+   Content: {TARGET_CONTENT_EXCERPT} (100 ký tự)
+   Author: {AUTHOR_NAME}
+   Category: {CATEGORY}
+   
+   NHIỆM VỤ: Dựa vào tính cách + chủ đề quan tâm,
+   bạn có muốn vote cho nó không?
+   - Nếu KHÔNG → shouldVote: false
+   - Nếu CÓ → upvote hay downvote?
+   
+   Output JSON ONLY (không comment thêm):
+   { "shouldVote": boolean, "voteType": "upvote"|"downvote"|null, "reason": "..." }
+   ```
+6. **Validate LLM output** via `ValidationService.validateVoteOutput(raw: string)`:
+   - Parse JSON → nếu fail → reject
+   - Check: shouldVote is boolean, voteType in ["upvote", "downvote", null]
+   - Reject nếu format sai
+7. **Nếu shouldVote = true** → gọi `POST /api/votes { targetType, targetId, value }`
+8. **Nếu shouldVote = false** → skip (không vote lần này)
+9. Log LLM reason → store cho Phase 3 learn personality patterns
 
-#### 2.6 — Rate Limiter
+**Ưu điểm:**
+- Vote phản ánh quan điểm thực sự (dựa trên tính cách)
+- Không spam vote, tránh nội dung không liên quan
+- LLM reason → input cho Phase 3 personality learning
+
+**Cập nhật cần thiết:**
+- `PromptBuilderService.buildVotePrompt(context, targetContent, targetAuthor): string`
+- `ValidationService.validateVoteOutput(raw: string): ValidationResult` (new method)
+- `ContextGathererService.gatherVoteContext(userId, targetType): GenerationContext` (new method)
+- `VoteActionService.executeVoteAction(userId, context): Promise<ActionResult>` (new)
+
+#### 2.6 — Rate Limiter (Updated)
 **File:** `src/tracking/RateLimiter.ts`
 
 Simple in-memory tracker (đủ cho MVP):
 ```typescript
 // Giới hạn per bot user per ngày:
-// - POST: max 3/ngày
-// - COMMENT: max 6/ngày
-// - VOTE: max 15/ngày
+// - POST: max 5/ngày
+// - COMMENT: max 10/ngày
+// - VOTE: max 20/ngày (LLM call) → nhiều hơn vì cần cover nhiều content
 
-// Giới hạn per LLM provider per ngày:
-// - OpenAI: 50 requests/ngày (free tier)
-// - Anthropic: 40 requests/ngày
-// - Gemini: 60 requests/ngày
+// Giới hạn per LLM provider per ngày (shared quota):
+// - Gemini: 15,000 requests/phút (free tier), ~21.6M requests/ngày
+// - Groq 70B: variable (thường 1000s per phút free)
+// - Groq 8B: variable
+// - Cerebras Qwen: variable (thường 1000s per phút free)
+// - Cerebras Llama: variable
+// - TemplateProvider: unlimited (fallback)
 
+// Total quota = shared pool across all action types
+// Per-provider tracking: { provider_id => { count, resetAt: 00:00 UTC } }
 // Reset lúc 00:00 UTC mỗi ngày
 ```
 
@@ -469,25 +640,52 @@ async function selectNextAction(): Promise<SelectedAction | null> {
 
 **Mục tiêu:** Content trông "có hồn" hơn, nhất quán với profile user, ít bị reject hơn.
 
-#### 3.1 — User Personality Vector
+#### 3.1 — User Personality Vector (Mở rộng từ Phase 2)
 **File:** `src/services/PersonalityService.ts`
 
 Đọc từ `user_content_context` table (đã tạo ở Phase 0):
 ```typescript
 interface PersonalityVector {
-  traits: string[];     // ["hay hỏi", "thẳng thắn", "khiêm tốn"]
-  tone: string;         // "casual" | "formal" | "emotional"
-  topics: string[];     // ["công việc", "tâm lý", "học tập"]
-  writingStyle: string; // "ngắn gọn" | "dài dòng" | "dùng dấu ..."
+  traits: string[];          // ["hay hỏi", "thẳng thắn", "khiêm tốn"]
+  tone: string;              // "casual" | "formal" | "emotional"
+  topics: string[];          // ["công việc", "tâm lý", "học tập"]
+  writingStyle: string;      // "ngắn gọn" | "dài dòng" | "dùng dấu ..."
+  votePatterns?: {
+    likeTopics: string[];    // Từ vote decision logs: topics hay upvote
+    dislikeTopics: string[];
+    voteFrequency: number;   // % bài view mà có vote
+    upvoteBias: number;      // 0-100%, lean upvote hay downvote
+  }
 }
 
 // Cập nhật sau mỗi 5 actions của user
 async function updatePersonalityVector(userId: number): Promise<void> {
+  // 1. Extract từ posts/comments (đã có từ Phase 3.0)
   const recent = await getRecentPostsAndComments(userId, 5);
   // Gọi LLM để extract personality từ recent content
+  
+  // 2. NEW Phase 2→3: Parse vote decision logs
+  const voteDecisions = await getRecentVoteDecisions(userId, 20); // logs từ Phase 2
+  // Extract:
+  //   - topics user thường vote (category/tags của content)
+  //   - upvote vs downvote frequency
+  //   - confidence score
+  
+  // 3. Merge personalities từ cả posts + votes
   // Lưu vào user_content_context
 }
+
+// Phase 2 Vote action log format:
+// {
+//   timestamp, userId, actionId,
+//   shouldVote, voteType,
+//   targetCategory, targetTags,
+//   reason, // LLM explanation
+//   cost_tokens
+// }
 ```
+
+**Note:** Phase 2 Vote action đã ghi lại LLM reason & metadata → Phase 3 dùng để learn & improve personality
 
 #### 3.2 — Consistency-Aware Prompts
 **File:** `src/services/PromptBuilderService.ts` (mở rộng)
@@ -711,25 +909,48 @@ PHASE 3 (Quality)           PHASE 4 (Robustness)
 FORUM_API_URL=http://localhost:3000/api
 FORUM_DB_URL=postgresql://...    # Direct DB access (Prisma - read only)
 
-# LLM Providers (chỉ cần ít nhất 1)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=...
+# LLM Provider Stack (Fallback Chain)
+# Cần ít nhất 1 API key. Nếu có nhiều → sẽ fallback theo thứ tự
+
+# 1. Gemini (Priority 1)
+GOOGLE_API_KEY=...               # Google Generative AI
+# Quota: ~15,000 req/phút free tier
+
+# 2. Groq (Priority 2)
+GROQ_API_KEY=...                 # Groq API key
+# Models: llama-3.3-70b-versatile, llama-3.1-8b-instant
+# Quota: variable, thường 1000s req/phút free
+
+# 3. Cerebras (Priority 3)
+CEREBRAS_API_KEY=...             # Cerebras API key
+# Models: qwen-3-235b-a22b, llama-3.1-8b
+# Quota: variable, thường 1000s req/phút free
+
+# Template Provider bao giờ cũng có (không cần key)
 
 # Scheduler
-CRON_SCHEDULE=*/30 * * * *      # Mỗi 30 phút
+CRON_SCHEDULE=*/30 * * * *       # Mỗi 30 phút
 BATCH_SIZE=1                     # Số actions mỗi lần trigger
 
-# Limits
-MAX_POSTS_PER_USER_DAY=3
-MAX_COMMENTS_PER_USER_DAY=6
-MAX_VOTES_PER_USER_DAY=15
-DAILY_LLM_BUDGET_USD=0.50        # Dừng gọi LLM khi vượt ngân sách
+# Limits per bot user per ngày
+MAX_POSTS_PER_USER_DAY=5
+MAX_COMMENTS_PER_USER_DAY=10
+MAX_VOTES_PER_USER_DAY=20
+
+# Budget & Thresholds
+DAILY_LLM_BUDGET_USD=1.00        # Dừng LLM calls khi vượt → switch template
+PROVIDER_FALLBACK_ON_ERROR=true  # Tự động fallback khi provider fail
 
 # Service
 PORT=4000
 NODE_ENV=development
 LOG_LEVEL=info
+LOG_DIR=./logs
+
+# Retry Config
+MAX_RETRIES=3
+RETRY_BACKOFF_MULTIPLIER=2       # Exponential backoff (2^attempt * 1000ms)
+PROVIDER_TIMEOUT_MS=30000        # 30 seconds per provider call
 ```
 
 ---
@@ -751,12 +972,41 @@ LOG_LEVEL=info
 
 **Ngoại lệ:** Đọc DB trực tiếp bằng Prisma cho context gathering (performance) - read-only, an toàn.
 
-### 3. Template Provider là safety net bắt buộc
+### 3. Model Stack (Fallback Chain) — Không phụ thuộc 1 provider
+**Design:** LLM stack như priority queue
+```
+Gemini 2.5 Flash
+    ↓ (fail/quota hết)
+Groq Llama 3.3 70B
+    ↓ (fail/quota hết)
+Groq Llama 3.1 8B
+    ↓ (fail/quota hết)
+Cerebras Qwen 3 235B
+    ↓ (fail/quota hết)
+Cerebras Llama 3.1 8B
+    ↓ (fail/quota hết)
+Template Provider (không fail)
+```
+
+**Ưu điểm:**
+- Không ai model fail → vẫn tạo được content (từ template)
+- Tối ưu cost: dùng provider rẻ/free trước
+- Reliability: nếu Gemini down → Groq, v.v.
+- Easy to add: thêm provider mới chỉ cần implement `ILLMProvider`
+
+**Implementation:**
+- Stack được config trong `.env` (list API keys)
+- `LLMProviderManager` lặp qua stack, retry 3 lần mỗi provider
+- Exponential backoff: 1s, 2s, 4s trước khi switch next
+- Log mỗi provider call: success/fail/skip (quota hết)
+
+### 4. Template Provider là safety net bắt buộc
 **Lý do:**
 - Đảm bảo keep-alive function không bao giờ fail hoàn toàn
 - Khi tất cả LLM provider offline → vẫn tạo được content (chất lượng thấp hơn, nhưng đủ dùng)
+- Content từ template: ~1-2 sentences, generic nhưng hợp lệ
 
-### 4. Không dùng Bull/BullMQ ở Phase 1-2
+### 5. Không dùng Bull/BullMQ ở Phase 1-2
 **Lý do:**
 - Over-engineering cho use case này
 - Simple in-memory queue đủ dùng

@@ -1,0 +1,32 @@
+{
+  "name": "vibe-content-service",
+  "version": "1.0.0",
+  "description": "Vibe Content Generation Service for Mini Forum",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "db:generate": "copy /Y ..\\..\\backend\\prisma\\schema.prisma prisma\\schema.prisma && prisma generate",
+    "seed:bots": "tsx seed/botUsers.ts",
+    "seed:tags": "tsx seed/tags.ts",
+    "seed:all": "npm run seed:bots && npm run seed:tags"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.7.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.9.0",
+    "@types/node-cron": "^3.0.11",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
