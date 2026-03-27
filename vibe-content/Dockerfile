@@ -12,8 +12,9 @@ RUN npm ci
 # Copy source code
 COPY tsconfig.json ./
 COPY src ./src
-COPY seed ./seed
 COPY prisma ./prisma
+# Copy seed if it exists (optional)
+COPY seed ./seed 2>/dev/null || true
 
 # Build TypeScript
 RUN npm run build
@@ -40,8 +41,9 @@ COPY --from=builder /app/dist ./dist
 
 # Copy prompts and seed files for reference
 COPY prompts ./prompts
-COPY seed ./seed
 COPY prisma ./prisma
+# Copy seed if it exists (optional)
+COPY seed ./seed 2>/dev/null || true
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
