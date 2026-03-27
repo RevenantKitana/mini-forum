@@ -92,12 +92,47 @@ export class APIExecutorService {
       const post = res.data.data || res.data;
       return { success: true, postId: post.id };
     } catch (error: any) {
+      console.error('   [DEBUG] API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        code: error.code,
+      });
+
       const status = error.response?.status;
-      const message = error.response?.data?.message || error.message;
+      const responseData = error.response?.data;
+      let message = 'Unknown error';
+
+      // Handle connection errors
+      if (error.code === 'ECONNREFUSED') {
+        return {
+          success: false,
+          error: `Cannot connect to Forum API at ${config.forumApiUrl}/v1 — backend may not be running`,
+        };
+      }
+
+      if (responseData?.message) {
+        message = responseData.message;
+      } else if (responseData?.error) {
+        message = responseData.error;
+      } else if (error.message) {
+        message = error.message;
+      }
 
       if (status === 429) {
         return { success: false, error: `Rate limited: ${message}` };
       }
+      if (status === 401) {
+        return { success: false, error: `Auth failed (401): ${message}` };
+      }
+      if (status === 403) {
+        return { success: false, error: `Forbidden (403): ${message}` };
+      }
+      if (status === 400) {
+        return { success: false, error: `Bad request (400): ${message}` };
+      }
+
       return { success: false, error: `API error (${status}): ${message}` };
     }
   }

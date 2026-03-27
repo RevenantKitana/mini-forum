@@ -49,6 +49,7 @@ export class ContentGeneratorService {
       // 4. Build prompt
       console.log('   🔨 Building prompt...');
       const prompt = await this.promptBuilder.buildPostPrompt(context);
+      console.log(`   [DEBUG] Full prompt:\n${prompt}`);
 
       // 5. Call LLM
       console.log(`   🤖 Calling ${this.llmProvider.id}...`);

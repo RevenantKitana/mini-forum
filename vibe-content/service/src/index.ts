@@ -56,8 +56,8 @@ app.get('/status', (_req, res) => {
   });
 });
 
-// Manual trigger
-app.post('/trigger', async (_req, res) => {
+// Manual trigger — supports both GET (browser) and POST
+async function handleTrigger(_req: express.Request, res: express.Response) {
   console.log('\n🔫 Manual trigger received');
   try {
     const result = await generator.runOnce();
@@ -72,7 +72,10 @@ app.post('/trigger', async (_req, res) => {
     stats.failedCount++;
     res.status(500).json({ error: error.message });
   }
-});
+}
+
+app.get('/trigger', handleTrigger);
+app.post('/trigger', handleTrigger);
 
 // Start server + cron
 app.listen(config.port, () => {
