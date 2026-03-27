@@ -44,8 +44,10 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy prompts and prisma files for reference
-COPY prompts ./prompts
+# Copy prompts into dist folder (required at runtime)
+COPY prompts ./dist/prompts
+
+# Copy prisma files for reference
 COPY prisma ./prisma
 
 # Create non-root user first (before chown)
