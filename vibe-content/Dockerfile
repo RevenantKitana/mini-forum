@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install ALL dependencies (including dev for building)
 RUN npm ci
 
 # Copy source code
@@ -44,13 +44,17 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy prompts into dist folder (required at runtime)
+# Copy prompts into dist folder (required at runtime by PromptBuilderService)
 COPY prompts ./dist/prompts
 
-# Copy prisma files for reference
+# Copy prisma schema (for reference and potential migrations)
 COPY prisma ./prisma
 
-# Create non-root user first (before chown)
+# Copy and configure entrypoint script
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
+# Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 # Create logs directory and give nodejs user ownership of all app files
@@ -62,8 +66,8 @@ USER nodejs
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 4000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+# Use dumb-init to handle signals properly, passing them through entrypoint
+ENTRYPOINT ["dumb-init", "--", "/app/docker-entrypoint.sh"]
 
 # Start application
 CMD ["node", "dist/src/index.js"]
