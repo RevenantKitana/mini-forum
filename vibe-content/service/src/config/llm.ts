@@ -1,6 +1,6 @@
 export interface LLMStackEntry {
   id: string;
-  providerType: 'gemini' | 'groq' | 'cerebras' | 'template';
+  providerType: 'gemini' | 'groq' | 'cerebras';
   model: string;
 }
 
@@ -10,5 +10,4 @@ export const LLM_STACK: LLMStackEntry[] = [
   { id: 'groq-8b', providerType: 'groq', model: 'llama-3.1-8b-instant' },
   { id: 'cerebras-qwen', providerType: 'cerebras', model: 'qwen-3-235b-a22b' },
   { id: 'cerebras-llama', providerType: 'cerebras', model: 'llama-3.1-8b' },
-  { id: 'template', providerType: 'template', model: 'template' },
 ];

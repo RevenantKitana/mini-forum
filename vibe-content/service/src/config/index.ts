@@ -24,7 +24,6 @@ const config = {
     maxPostsPerUserDay: parseInt(process.env.MAX_POSTS_PER_USER_DAY || '3', 10),
     maxCommentsPerUserDay: parseInt(process.env.MAX_COMMENTS_PER_USER_DAY || '6', 10),
     maxVotesPerUserDay: parseInt(process.env.MAX_VOTES_PER_USER_DAY || '15', 10),
-    dailyLlmBudgetUsd: parseFloat(process.env.DAILY_LLM_BUDGET_USD || '0.50'),
   },
   llm: {
     geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',

@@ -136,7 +136,7 @@ export class ContextGathererService {
         where: {
           post_id: post.id,
           author_id: { not: userId },
-          is_deleted: false,
+          status: 'VISIBLE',
           parent_id: null, // only top-level comments as reply targets
         },
         orderBy: { created_at: 'desc' },
@@ -233,7 +233,7 @@ export class ContextGathererService {
       // Find a recent comment this user hasn't voted on
       const comments = await prisma.comments.findMany({
         where: {
-          is_deleted: false,
+          status: 'VISIBLE',
           author_id: { not: userId },
         },
         orderBy: { created_at: 'desc' },
@@ -242,7 +242,7 @@ export class ContextGathererService {
           id: true,
           content: true,
           users: { select: { display_name: true } },
-          post: {
+          posts: {
             select: {
               title: true,
               categories: { select: { name: true } },
@@ -278,10 +278,10 @@ export class ContextGathererService {
         personality,
         targetType: 'comment',
         targetId: selectedComment.id,
-        targetTitle: selectedComment.post?.title || '',
+        targetTitle: selectedComment.posts?.title || '',
         targetContent: selectedComment.content.substring(0, 300),
         targetAuthor: selectedComment.users?.display_name || 'Unknown',
-        targetCategory: selectedComment.post?.categories?.name || '',
+        targetCategory: selectedComment.posts?.categories?.name || '',
       };
     }
   }

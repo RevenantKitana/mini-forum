@@ -287,39 +287,60 @@ export class ContentGeneratorService {
     }
     console.log(`   🗳️  Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
 
-    // 2. Build prompt
-    console.log('   🔨 Building vote prompt...');
-    const prompt = this.promptBuilder.buildVotePrompt(context);
+    // 2. Decide strategy: random voting rate vs. LLM-based (personality-driven)
+    const isRandomVoter = Math.random() < 0.3;
+    let voteType: 'up' | 'down';
+    let reason: string;
+    let provider: string;
 
-    // 3. Call LLM
-    console.log('   🤖 Calling LLM stack...');
-    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
-    console.log(`   ✅ LLM response (via ${provider})`);
+    if (isRandomVoter) {
+      // --- Random Voting ("like dạo") --- 77% upvote, 23% downvote
+      console.log('   🎲 Strategy: random voter (like dạo)');
+      voteType = Math.random() < 0.77 ? 'up' : 'down';
+      reason = 'random_voter';
+      provider = 'none';
+    } else {
+      // --- LLM-Based Voting (personality-based) ---
+      console.log('   🧠 Strategy: LLM-based (personality)');
 
-    // 4. Validate
-    console.log('   🔍 Validating vote decision...');
-    const validation = this.validator.validateVoteOutput({
-      shouldVote: llmOutput.shouldVote ?? false,
-      voteType: llmOutput.voteType,
-      reason: llmOutput.reason,
-    });
+      // Build prompt
+      console.log('   🔨 Building vote prompt...');
+      const prompt = this.promptBuilder.buildVotePrompt(context);
 
-    if (!validation.valid) {
-      const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
-      console.log(`   ❌ ${errMsg}`);
-      return {
-        success: false, actionType: 'vote', userId, provider,
-        latencyMs: Date.now() - startTime, error: errMsg,
-      };
+      // Call LLM
+      console.log('   🤖 Calling LLM stack...');
+      const llmResult = await this.llmManager.generate(prompt);
+      provider = llmResult.provider;
+      console.log(`   ✅ LLM response (via ${provider})`);
+
+      // Validate
+      console.log('   🔍 Validating vote decision...');
+      const validation = this.validator.validateVoteOutput({
+        shouldVote: llmResult.output.shouldVote ?? false,
+        voteType: llmResult.output.voteType,
+        reason: llmResult.output.reason,
+      });
+
+      if (!validation.valid) {
+        const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
+        console.log(`   ❌ ${errMsg}`);
+        return {
+          success: false, actionType: 'vote', userId, provider,
+          latencyMs: Date.now() - startTime, error: errMsg,
+        };
+      }
+
+      if (!validation.data!.shouldVote) {
+        const latencyMs = Date.now() - startTime;
+        console.log(`   ⏭️  LLM decided not to vote. Reason: ${validation.data!.reason}`);
+        return { success: true, actionType: 'vote', userId, provider, latencyMs };
+      }
+
+      voteType = validation.data!.voteType!;
+      reason = validation.data!.reason ?? '';
     }
 
-    // 5. Execute vote (or skip)
-    if (!validation.data!.shouldVote) {
-      const latencyMs = Date.now() - startTime;
-      console.log(`   ⏭️  LLM decided not to vote. Reason: ${validation.data!.reason}`);
-      return { success: true, actionType: 'vote', userId, provider, latencyMs };
-    }
-
+    // 3. Cast vote via API
     console.log('   📤 Casting vote via API...');
     const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
     if (!user) throw new Error(`Bot user #${userId} not found`);
@@ -327,7 +348,7 @@ export class ContentGeneratorService {
     const apiResult = await this.apiExecutor.castVote(user.id, user.email, {
       targetType: context.targetType,
       targetId: context.targetId,
-      voteType: validation.data!.voteType!,
+      voteType,
     });
 
     if (!apiResult.success) {
@@ -339,8 +360,9 @@ export class ContentGeneratorService {
     }
 
     const latencyMs = Date.now() - startTime;
-    console.log(`   🎉 Vote cast! ${validation.data!.voteType} on ${context.targetType} #${context.targetId} (${latencyMs}ms)`);
-    console.log(`   💡 Reason: ${validation.data!.reason}`);
+    const strategyLabel = isRandomVoter ? 'random' : 'personality_based';
+    console.log(`   🎉 Vote cast! ${voteType} on ${context.targetType} #${context.targetId} (${latencyMs}ms)`);
+    console.log(`   💡 Strategy: ${strategyLabel} | Reason: ${reason}`);
 
     return { success: true, actionType: 'vote', userId, provider, latencyMs };
   }

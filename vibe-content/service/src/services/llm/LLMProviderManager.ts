@@ -4,7 +4,6 @@ import { LLMOutput } from '../../types/index.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
 import { CerebrasProvider } from './CerebrasProvider.js';
-import { TemplateProvider } from './TemplateProvider.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,9 +29,6 @@ export class LLMProviderManager {
         case 'cerebras':
           this.providers.push(new CerebrasProvider(entry.id, entry.model));
           break;
-        case 'template':
-          this.providers.push(new TemplateProvider());
-          break;
       }
     }
   }
@@ -54,8 +50,8 @@ export class LLMProviderManager {
         // continue to next provider
       }
     }
-    // Should never reach here because TemplateProvider never fails
-    throw new Error('All LLM providers in stack failed (critical error)');
+    // All LLM providers exhausted or unavailable
+    throw new Error('All LLM providers exhausted - no quota remaining');
   }
 
   private async callWithRetry(
