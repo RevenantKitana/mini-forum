@@ -1,0 +1,77 @@
+{
+  "name": "vibe-content",
+  "description": "Vibe Content Generation Service for Mini Forum",
+  "buildCommand": "npm ci && npm run build",
+  "startCommand": "node dist/src/index.js",
+  "envVars": [
+    {
+      "key": "NODE_ENV",
+      "value": "production",
+      "description": "Node environment (must be production)"
+    },
+    {
+      "key": "PORT",
+      "value": "4000",
+      "description": "Service port"
+    },
+    {
+      "key": "FORUM_API_URL",
+      "description": "Forum backend API URL"
+    },
+    {
+      "key": "DATABASE_URL",
+      "description": "PostgreSQL connection string with SSL"
+    },
+    {
+      "key": "GEMINI_API_KEY",
+      "description": "Google Gemini API key (primary LLM provider)"
+    },
+    {
+      "key": "GROQ_API_KEY",
+      "description": "Groq API key (fallback provider #1)"
+    },
+    {
+      "key": "CEREBRAS_API_KEY",
+      "description": "Cerebras API key (fallback provider #2)"
+    },
+    {
+      "key": "BOT_PASSWORD",
+      "description": "Bot user password (must match seeded password)"
+    },
+    {
+      "key": "CRON_SCHEDULE",
+      "value": "*/30 * * * *",
+      "description": "Cron schedule for content generation"
+    },
+    {
+      "key": "BATCH_SIZE",
+      "value": "1",
+      "description": "Actions to generate per batch (1-2 recommended)"
+    },
+    {
+      "key": "MAX_POSTS_PER_USER_DAY",
+      "value": "3",
+      "description": "Daily post limit per bot user"
+    },
+    {
+      "key": "MAX_COMMENTS_PER_USER_DAY",
+      "value": "6",
+      "description": "Daily comment limit per bot user"
+    },
+    {
+      "key": "MAX_VOTES_PER_USER_DAY",
+      "value": "15",
+      "description": "Daily vote limit per bot user"
+    },
+    {
+      "key": "PROVIDER_TIMEOUT_MS",
+      "value": "30000",
+      "description": "LLM provider request timeout in milliseconds"
+    },
+    {
+      "key": "LOG_LEVEL",
+      "value": "info",
+      "description": "Log level: error, warn, info, http, debug"
+    }
+  ]
+}
