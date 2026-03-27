@@ -5,7 +5,7 @@ services:
     plan: standard
     
     # Build configuration
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: Dockerfile
     
     # Port configuration  
     ports:

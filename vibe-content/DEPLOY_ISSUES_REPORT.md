@@ -158,6 +158,8 @@ import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 
 ## 📖 FILES CHANGED/CREATED
 
+**2026-03-27 UPDATE**: Files moved from `service/` to `vibe-content/` root  
+
 | File | Action | Purpose |
 |------|--------|---------|
 | Dockerfile | ✏️ Modified | Fixed port 3000→4000, added .prisma copy |

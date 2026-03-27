@@ -23,7 +23,7 @@
 4. **Name**: `vibe-content-service`
 5. **Region**: Choose closest to your users (e.g., Singapore, US-East)
 6. **Branch**: `main` (or your production branch)
-7. **Root Directory**: `vibe-content/service/`
+7. **Root Directory**: `vibe-content` (or leave blank and specify Dockerfile Path)
 
 ### Step 2: Build & Run Configuration
 

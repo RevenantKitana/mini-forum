@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc --outDir dist",
     "start:prod": "node dist/src/index.js",
-    "db:generate": "copy /Y ..\\..\\backend\\prisma\\schema.prisma prisma\\schema.prisma && prisma generate",
+    "db:generate": "copy /Y ..\\backend\\prisma\\schema.prisma prisma\\schema.prisma && prisma generate",
     "seed:bots": "tsx seed/botUsers.ts",
     "seed:tags": "tsx seed/tags.ts",
     "seed:all": "npm run seed:bots && npm run seed:tags"
