@@ -1,4 +1,4 @@
-import { GenerationContext } from '../types/index.js';
+import { GenerationContext, CommentContext, VoteContext } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import fs from 'fs';
 import path from 'path';
@@ -8,12 +8,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class PromptBuilderService {
   private postTemplate: string;
+  private commentTemplate: string;
+  private voteTemplate: string;
   private contextGatherer: ContextGathererService;
 
   constructor(contextGatherer: ContextGathererService) {
     this.contextGatherer = contextGatherer;
-    const templatePath = path.resolve(__dirname, '../../prompts/post.template.txt');
-    this.postTemplate = fs.readFileSync(templatePath, 'utf-8');
+    const promptsDir = path.resolve(__dirname, '../../prompts');
+    this.postTemplate = fs.readFileSync(path.join(promptsDir, 'post.template.txt'), 'utf-8');
+    this.commentTemplate = fs.readFileSync(path.join(promptsDir, 'comment.template.txt'), 'utf-8');
+    this.voteTemplate = fs.readFileSync(path.join(promptsDir, 'vote.template.txt'), 'utf-8');
   }
 
   async buildPostPrompt(context: GenerationContext): Promise<string> {
@@ -46,6 +50,53 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{CATEGORY_DESCRIPTION}/g, category.description || '');
     prompt = prompt.replace(/{RECENT_POSTS_SNIPPETS}/g, recentSnippets);
     prompt = prompt.replace(/{TAG_POOL}/g, tagPool);
+
+    return prompt;
+  }
+
+  async buildCommentPrompt(context: CommentContext): Promise<string> {
+    const { user, targetPost, parentComment } = context;
+
+    const personality = await this.contextGatherer.getPersonality(user.id);
+    const traits = personality?.traits?.join(', ') || 'bình thường';
+    const tone = personality?.tone || 'casual';
+
+    let parentSection = '';
+    if (parentComment) {
+      parentSection = `Bạn đang trả lời comment của ${parentComment.authorName}:\n"${parentComment.content}"`;
+    }
+
+    let prompt = this.commentTemplate;
+    prompt = prompt.replace(/{DISPLAY_NAME}/g, user.display_name);
+    prompt = prompt.replace(/{BIO}/g, user.bio || '');
+    prompt = prompt.replace(/{TRAITS}/g, traits);
+    prompt = prompt.replace(/{TONE}/g, tone);
+    prompt = prompt.replace(/{POST_TITLE}/g, targetPost.title);
+    prompt = prompt.replace(/{POST_EXCERPT}/g, targetPost.excerpt || '(không có excerpt)');
+    prompt = prompt.replace(/{POST_AUTHOR}/g, targetPost.authorName);
+    prompt = prompt.replace(/{PARENT_COMMENT_SECTION}/g, parentSection);
+
+    return prompt;
+  }
+
+  buildVotePrompt(context: VoteContext): string {
+    const { user, personality, targetType, targetTitle, targetContent, targetAuthor, targetCategory } = context;
+
+    const traits = personality?.traits?.join(', ') || 'bình thường';
+    const tone = personality?.tone || 'casual';
+    const topics = personality?.topics?.join(', ') || '';
+
+    let prompt = this.voteTemplate;
+    prompt = prompt.replace(/{DISPLAY_NAME}/g, user.display_name);
+    prompt = prompt.replace(/{BIO}/g, user.bio || '');
+    prompt = prompt.replace(/{TRAITS}/g, traits);
+    prompt = prompt.replace(/{TONE}/g, tone);
+    prompt = prompt.replace(/{TOPICS}/g, topics);
+    prompt = prompt.replace(/{TARGET_TYPE}/g, targetType === 'post' ? 'Bài viết' : 'Bình luận');
+    prompt = prompt.replace(/{TARGET_TITLE}/g, targetTitle);
+    prompt = prompt.replace(/{TARGET_CONTENT}/g, targetContent);
+    prompt = prompt.replace(/{TARGET_AUTHOR}/g, targetAuthor);
+    prompt = prompt.replace(/{TARGET_CATEGORY}/g, targetCategory);
 
     return prompt;
   }

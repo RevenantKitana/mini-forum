@@ -136,4 +136,73 @@ export class APIExecutorService {
       return { success: false, error: `API error (${status}): ${message}` };
     }
   }
+
+  async createComment(
+    userId: number,
+    email: string,
+    data: { postId: number; content: string; parentId?: number },
+  ): Promise<{ success: boolean; commentId?: number; error?: string }> {
+    try {
+      const token = await this.getToken(userId, email);
+
+      const body: Record<string, any> = { content: data.content };
+      if (data.parentId) {
+        body.parent_id = data.parentId;
+      }
+
+      const res = await this.client.post(
+        `/posts/${data.postId}/comments`,
+        body,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      const comment = res.data.data || res.data;
+      return { success: true, commentId: comment.id };
+    } catch (error: any) {
+      return this.handleApiError(error, 'createComment');
+    }
+  }
+
+  async castVote(
+    userId: number,
+    email: string,
+    data: { targetType: 'post' | 'comment'; targetId: number; voteType: 'up' | 'down' },
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const token = await this.getToken(userId, email);
+
+      const url = data.targetType === 'post'
+        ? `/posts/${data.targetId}/vote`
+        : `/comments/${data.targetId}/vote`;
+
+      await this.client.post(
+        url,
+        { voteType: data.voteType },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      return { success: true };
+    } catch (error: any) {
+      return this.handleApiError(error, 'castVote');
+    }
+  }
+
+  private handleApiError(error: any, context: string): { success: boolean; error: string } {
+    console.error(`   [DEBUG] API Error (${context}):`, {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      code: error.code,
+    });
+
+    if (error.code === 'ECONNREFUSED') {
+      return { success: false, error: `Cannot connect to Forum API — backend may not be running` };
+    }
+
+    const status = error.response?.status;
+    const responseData = error.response?.data;
+    let message = responseData?.message || responseData?.error || error.message || 'Unknown error';
+
+    return { success: false, error: `API error (${status}): ${message}` };
+  }
 }

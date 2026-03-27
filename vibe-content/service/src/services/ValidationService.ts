@@ -11,6 +11,18 @@ export interface ValidationResult {
   errors: string[];
 }
 
+export interface CommentValidationResult {
+  valid: boolean;
+  data?: { content: string };
+  errors: string[];
+}
+
+export interface VoteValidationResult {
+  valid: boolean;
+  data?: { shouldVote: boolean; voteType: 'up' | 'down' | null; reason: string };
+  errors: string[];
+}
+
 export class ValidationService {
   async validatePostOutput(raw: LLMPostOutput): Promise<ValidationResult> {
     const errors: string[] = [];
@@ -89,6 +101,64 @@ export class ValidationService {
     };
   }
 
+  validateCommentOutput(raw: LLMCommentOutput): CommentValidationResult {
+    const errors: string[] = [];
+
+    if (!raw.content || typeof raw.content !== 'string') {
+      errors.push('Missing or invalid content');
+      return { valid: false, errors };
+    }
+
+    const content = raw.content.trim();
+
+    if (content.length < 5 || content.length > 5000) {
+      errors.push(`Content length ${content.length} not in range [5, 5000]`);
+    }
+
+    // Check for JSON artifacts
+    const jsonArtifacts = ['```json', '```', '{"content"', '"content":'];
+    for (const artifact of jsonArtifacts) {
+      if (content.includes(artifact)) {
+        errors.push(`Content contains JSON artifact: ${artifact}`);
+      }
+    }
+
+    if (errors.length > 0) {
+      return { valid: false, errors };
+    }
+
+    return { valid: true, data: { content }, errors: [] };
+  }
+
+  validateVoteOutput(raw: LLMVoteOutput): VoteValidationResult {
+    const errors: string[] = [];
+
+    if (typeof raw.shouldVote !== 'boolean') {
+      errors.push('shouldVote must be a boolean');
+      return { valid: false, errors };
+    }
+
+    if (raw.shouldVote) {
+      if (raw.voteType !== 'up' && raw.voteType !== 'down') {
+        errors.push(`voteType must be "up" or "down", got "${raw.voteType}"`);
+      }
+    }
+
+    if (errors.length > 0) {
+      return { valid: false, errors };
+    }
+
+    return {
+      valid: true,
+      data: {
+        shouldVote: raw.shouldVote,
+        voteType: raw.shouldVote ? (raw.voteType as 'up' | 'down') : null,
+        reason: raw.reason || '',
+      },
+      errors: [],
+    };
+  }
+
   async disconnect(): Promise<void> {
     await prisma.$disconnect();
   }
@@ -99,4 +169,15 @@ interface LLMPostOutput {
   content: string;
   tags: string[];
   explain?: string;
+}
+
+interface LLMCommentOutput {
+  content: string;
+  explain?: string;
+}
+
+interface LLMVoteOutput {
+  shouldVote: boolean;
+  voteType?: string | null;
+  reason?: string;
 }

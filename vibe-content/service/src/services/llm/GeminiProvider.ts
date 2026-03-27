@@ -80,6 +80,9 @@ export class GeminiProvider implements ILLMProvider {
         content: parsed.content,
         tags: Array.isArray(parsed.tags) ? parsed.tags : [],
         explain: parsed.explain,
+        shouldVote: parsed.shouldVote,
+        voteType: parsed.voteType,
+        reason: parsed.reason,
       };
     } catch (error: any) {
       if (error.name === 'AbortError') {

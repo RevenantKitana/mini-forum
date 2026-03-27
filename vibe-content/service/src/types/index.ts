@@ -22,6 +22,22 @@ export interface Tag {
   slug: string;
 }
 
+export interface PostTarget {
+  id: number;
+  title: string;
+  excerpt: string;
+  authorName: string;
+  categoryName: string;
+}
+
+export interface CommentTarget {
+  id: number;
+  content: string;
+  authorName: string;
+  postId: number;
+  postTitle: string;
+}
+
 export interface GenerationContext {
   user: BotUser;
   category: Category;
@@ -29,11 +45,39 @@ export interface GenerationContext {
   recentPosts?: { title: string; excerpt: string }[];
 }
 
+export interface CommentContext {
+  user: BotUser;
+  targetPost: PostTarget;
+  parentComment?: CommentTarget;
+}
+
+export interface VoteContext {
+  user: BotUser;
+  personality: PersonalityInfo | null;
+  targetType: 'post' | 'comment';
+  targetId: number;
+  targetTitle: string;
+  targetContent: string;
+  targetAuthor: string;
+  targetCategory: string;
+}
+
+export interface PersonalityInfo {
+  traits: string[];
+  tone: string;
+  topics: string[];
+  writingStyle?: string;
+}
+
 export interface LLMOutput {
   content: string;
   title?: string;
   tags?: string[];
   explain?: string;
+  // Vote-specific fields
+  shouldVote?: boolean;
+  voteType?: string | null;
+  reason?: string;
 }
 
 export interface ActionResult {
@@ -49,4 +93,5 @@ export interface SelectedAction {
   userId: number;
   actionType: ActionType;
   targetId?: number;
+  targetType?: 'post' | 'comment';
 }

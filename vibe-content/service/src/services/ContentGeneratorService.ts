@@ -1,132 +1,356 @@
-import { ActionResult, BotUser } from '../types/index.js';
+import { ActionResult, BotUser, ActionType } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import { PromptBuilderService } from './PromptBuilderService.js';
 import { ValidationService } from './ValidationService.js';
 import { APIExecutorService } from './APIExecutorService.js';
-import { ILLMProvider } from './llm/ILLMProvider.js';
-import { GeminiProvider } from './llm/GeminiProvider.js';
+import { LLMProviderManager } from './llm/LLMProviderManager.js';
+import { ActionSelectorService } from './ActionSelectorService.js';
+import { RateLimiter } from '../tracking/RateLimiter.js';
 
 export class ContentGeneratorService {
   private contextGatherer: ContextGathererService;
   private promptBuilder: PromptBuilderService;
   private validator: ValidationService;
   private apiExecutor: APIExecutorService;
-  private llmProvider: ILLMProvider;
+  private llmManager: LLMProviderManager;
+  private actionSelector: ActionSelectorService;
+  private rateLimiter: RateLimiter;
 
   constructor() {
     this.contextGatherer = new ContextGathererService();
     this.promptBuilder = new PromptBuilderService(this.contextGatherer);
     this.validator = new ValidationService();
     this.apiExecutor = new APIExecutorService();
-    this.llmProvider = new GeminiProvider();
+    this.llmManager = new LLMProviderManager();
+    this.rateLimiter = new RateLimiter();
+    this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter);
   }
 
   async runOnce(): Promise<ActionResult> {
     const startTime = Date.now();
-    let selectedUser: BotUser | null = null;
 
     try {
-      // 1. Get all bot users and pick one randomly
-      const botUsers = await this.contextGatherer.getAllBotUsers();
-      if (botUsers.length === 0) {
-        throw new Error('No active bot users found. Run seed:bots first.');
-      }
-      selectedUser = botUsers[Math.floor(Math.random() * botUsers.length)];
-      console.log(`\n📝 Selected bot: ${selectedUser.display_name} (@${selectedUser.username})`);
-
-      // 2. Check LLM availability
-      const available = await this.llmProvider.isAvailable();
-      if (!available) {
-        throw new Error('LLM provider not available. Check GEMINI_API_KEY.');
-      }
-
-      // 3. Gather context
-      console.log('   📦 Gathering context...');
-      const context = await this.contextGatherer.gatherPostContext(selectedUser.id);
-      console.log(`   📂 Category: ${context.category.name}`);
-      console.log(`   🏷️  Tags pool: ${context.availableTags.length} available`);
-
-      // 4. Build prompt
-      console.log('   🔨 Building prompt...');
-      const prompt = await this.promptBuilder.buildPostPrompt(context);
-      console.log(`   [DEBUG] Full prompt:\n${prompt}`);
-
-      // 5. Call LLM
-      console.log(`   🤖 Calling ${this.llmProvider.id}...`);
-      const llmOutput = await this.llmProvider.generate(prompt);
-      console.log(`   ✅ LLM response received — title: "${llmOutput.title}"`);
-
-      // 6. Validate
-      console.log('   🔍 Validating output...');
-      const validation = await this.validator.validatePostOutput({
-        title: llmOutput.title || '',
-        content: llmOutput.content || '',
-        tags: llmOutput.tags || [],
-        explain: llmOutput.explain,
-      });
-
-      if (!validation.valid) {
-        const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
-        console.log(`   ❌ ${errMsg}`);
+      // 1. Select action (user + action type) respecting rate limits
+      const selected = await this.actionSelector.selectNextAction();
+      if (!selected) {
         return {
           success: false,
           actionType: 'post',
-          userId: selectedUser.id,
-          provider: this.llmProvider.id,
+          userId: 0,
+          provider: 'none',
           latencyMs: Date.now() - startTime,
-          error: errMsg,
+          error: 'No available action (all users rate-limited or no bot users)',
         };
       }
 
-      // 7. Call Forum API to create post
-      console.log('   📤 Creating post via API...');
-      const apiResult = await this.apiExecutor.createPost(
-        selectedUser.id,
-        selectedUser.email,
-        {
-          title: validation.data!.title,
-          content: validation.data!.content,
-          categoryId: context.category.id,
-          tags: validation.data!.tags,
-        },
-      );
+      console.log(`\n🎯 Selected action: ${selected.actionType} for user #${selected.userId}`);
 
-      if (!apiResult.success) {
-        console.log(`   ❌ API error: ${apiResult.error}`);
-        return {
-          success: false,
-          actionType: 'post',
-          userId: selectedUser.id,
-          provider: this.llmProvider.id,
-          latencyMs: Date.now() - startTime,
-          error: apiResult.error,
-        };
+      // 2. Dispatch to action handler
+      let result: ActionResult;
+      switch (selected.actionType) {
+        case 'post':
+          result = await this.executePost(selected.userId, startTime);
+          break;
+        case 'comment':
+          result = await this.executeComment(selected.userId, startTime);
+          break;
+        case 'vote':
+          result = await this.executeVote(selected.userId, startTime);
+          break;
+        default:
+          throw new Error(`Unknown action type: ${selected.actionType}`);
       }
 
-      const latencyMs = Date.now() - startTime;
-      console.log(`   🎉 Post created! ID: ${apiResult.postId} (${latencyMs}ms)`);
-      console.log(`   📌 Title: "${validation.data!.title}"`);
-      console.log(`   🏷️  Tags: [${validation.data!.tags.join(', ')}]`);
+      // 3. Record in rate limiter on success
+      if (result.success) {
+        this.rateLimiter.record(selected.userId, selected.actionType);
+      }
 
-      return {
-        success: true,
-        actionType: 'post',
-        userId: selectedUser.id,
-        provider: this.llmProvider.id,
-        latencyMs,
-      };
+      return result;
     } catch (error: any) {
-      const latencyMs = Date.now() - startTime;
       console.error(`   ❌ Error: ${error.message}`);
       return {
         success: false,
         actionType: 'post',
-        userId: selectedUser?.id || 0,
-        provider: this.llmProvider.id,
-        latencyMs,
+        userId: 0,
+        provider: 'unknown',
+        latencyMs: Date.now() - startTime,
         error: error.message,
       };
     }
+  }
+
+  async runOnceForAction(actionType: ActionType): Promise<ActionResult> {
+    const startTime = Date.now();
+
+    try {
+      // Get list of active bot users
+      const botUsers = await this.contextGatherer.getAllBotUsers();
+      if (botUsers.length === 0) {
+        return {
+          success: false,
+          actionType,
+          userId: 0,
+          provider: 'none',
+          latencyMs: Date.now() - startTime,
+          error: 'No active bot users found',
+        };
+      }
+
+      // Check rate limits and find first available user
+      let selectedUserId: number | null = null;
+      for (const user of botUsers) {
+        if (this.rateLimiter.canPerform(user.id, actionType)) {
+          selectedUserId = user.id;
+          break;
+        }
+      }
+
+      if (!selectedUserId) {
+        return {
+          success: false,
+          actionType,
+          userId: 0,
+          provider: 'none',
+          latencyMs: Date.now() - startTime,
+          error: `All bot users are rate-limited for ${actionType} action`,
+        };
+      }
+
+      console.log(`\n🎯 Selected action: ${actionType} for user #${selectedUserId}`);
+
+      // Execute the specific action
+      let result: ActionResult;
+      switch (actionType) {
+        case 'post':
+          result = await this.executePost(selectedUserId, startTime);
+          break;
+        case 'comment':
+          result = await this.executeComment(selectedUserId, startTime);
+          break;
+        case 'vote':
+          result = await this.executeVote(selectedUserId, startTime);
+          break;
+        default:
+          throw new Error(`Unknown action type: ${actionType}`);
+      }
+
+      // Record in rate limiter on success
+      if (result.success) {
+        this.rateLimiter.record(selectedUserId, actionType);
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error(`   ❌ Error: ${error.message}`);
+      return {
+        success: false,
+        actionType,
+        userId: 0,
+        provider: 'unknown',
+        latencyMs: Date.now() - startTime,
+        error: error.message,
+      };
+    }
+  }
+
+  private async executePost(userId: number, startTime: number): Promise<ActionResult> {
+    // 1. Gather context
+    console.log('   📦 Gathering post context...');
+    const context = await this.contextGatherer.gatherPostContext(userId);
+    console.log(`   📂 Category: ${context.category.name}`);
+    console.log(`   🏷️  Tags pool: ${context.availableTags.length} available`);
+
+    // 2. Build prompt
+    console.log('   🔨 Building prompt...');
+    const prompt = await this.promptBuilder.buildPostPrompt(context);
+
+    // 3. Call LLM (with fallback stack)
+    console.log('   🤖 Calling LLM stack...');
+    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
+    console.log(`   ✅ LLM response — title: "${llmOutput.title}" (via ${provider})`);
+
+    // 4. Validate
+    console.log('   🔍 Validating output...');
+    const validation = await this.validator.validatePostOutput({
+      title: llmOutput.title || '',
+      content: llmOutput.content || '',
+      tags: llmOutput.tags || [],
+      explain: llmOutput.explain,
+    });
+
+    if (!validation.valid) {
+      const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
+      console.log(`   ❌ ${errMsg}`);
+      return {
+        success: false, actionType: 'post', userId, provider,
+        latencyMs: Date.now() - startTime, error: errMsg,
+      };
+    }
+
+    // 5. Call Forum API
+    console.log('   📤 Creating post via API...');
+    const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
+    if (!user) throw new Error(`Bot user #${userId} not found`);
+
+    const apiResult = await this.apiExecutor.createPost(user.id, user.email, {
+      title: validation.data!.title,
+      content: validation.data!.content,
+      categoryId: context.category.id,
+      tags: validation.data!.tags,
+    });
+
+    if (!apiResult.success) {
+      console.log(`   ❌ API error: ${apiResult.error}`);
+      return {
+        success: false, actionType: 'post', userId, provider,
+        latencyMs: Date.now() - startTime, error: apiResult.error,
+      };
+    }
+
+    const latencyMs = Date.now() - startTime;
+    console.log(`   🎉 Post created! ID: ${apiResult.postId} (${latencyMs}ms)`);
+    console.log(`   📌 Title: "${validation.data!.title}"`);
+    console.log(`   🏷️  Tags: [${validation.data!.tags.join(', ')}]`);
+
+    return { success: true, actionType: 'post', userId, provider, latencyMs };
+  }
+
+  private async executeComment(userId: number, startTime: number): Promise<ActionResult> {
+    // 1. Gather context
+    console.log('   📦 Gathering comment context...');
+    const context = await this.contextGatherer.gatherCommentContext(userId);
+    const isReply = !!context.parentComment;
+    console.log(`   📝 Target post: "${context.targetPost.title}" (${isReply ? 'reply' : 'top-level'})`);
+
+    // 2. Build prompt
+    console.log('   🔨 Building comment prompt...');
+    const prompt = await this.promptBuilder.buildCommentPrompt(context);
+
+    // 3. Call LLM
+    console.log('   🤖 Calling LLM stack...');
+    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
+    console.log(`   ✅ LLM response (via ${provider})`);
+
+    // 4. Validate
+    console.log('   🔍 Validating comment...');
+    const validation = this.validator.validateCommentOutput({
+      content: llmOutput.content || '',
+      explain: llmOutput.explain,
+    });
+
+    if (!validation.valid) {
+      const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
+      console.log(`   ❌ ${errMsg}`);
+      return {
+        success: false, actionType: 'comment', userId, provider,
+        latencyMs: Date.now() - startTime, error: errMsg,
+      };
+    }
+
+    // 5. Call Forum API
+    console.log('   📤 Creating comment via API...');
+    const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
+    if (!user) throw new Error(`Bot user #${userId} not found`);
+
+    const apiResult = await this.apiExecutor.createComment(user.id, user.email, {
+      postId: context.targetPost.id,
+      content: validation.data!.content,
+      parentId: context.parentComment?.id,
+    });
+
+    if (!apiResult.success) {
+      console.log(`   ❌ API error: ${apiResult.error}`);
+      return {
+        success: false, actionType: 'comment', userId, provider,
+        latencyMs: Date.now() - startTime, error: apiResult.error,
+      };
+    }
+
+    const latencyMs = Date.now() - startTime;
+    console.log(`   🎉 Comment created! ID: ${apiResult.commentId} (${latencyMs}ms)`);
+    console.log(`   💬 "${validation.data!.content.substring(0, 80)}..."`);
+
+    return { success: true, actionType: 'comment', userId, provider, latencyMs };
+  }
+
+  private async executeVote(userId: number, startTime: number): Promise<ActionResult> {
+    // 1. Gather context
+    console.log('   📦 Gathering vote context...');
+    const context = await this.contextGatherer.gatherVoteContext(userId);
+    if (!context) {
+      console.log('   ⏭️  No unvoted content found, skipping');
+      return {
+        success: false, actionType: 'vote', userId, provider: 'none',
+        latencyMs: Date.now() - startTime, error: 'No unvoted content available',
+      };
+    }
+    console.log(`   🗳️  Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
+
+    // 2. Build prompt
+    console.log('   🔨 Building vote prompt...');
+    const prompt = this.promptBuilder.buildVotePrompt(context);
+
+    // 3. Call LLM
+    console.log('   🤖 Calling LLM stack...');
+    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
+    console.log(`   ✅ LLM response (via ${provider})`);
+
+    // 4. Validate
+    console.log('   🔍 Validating vote decision...');
+    const validation = this.validator.validateVoteOutput({
+      shouldVote: llmOutput.shouldVote ?? false,
+      voteType: llmOutput.voteType,
+      reason: llmOutput.reason,
+    });
+
+    if (!validation.valid) {
+      const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
+      console.log(`   ❌ ${errMsg}`);
+      return {
+        success: false, actionType: 'vote', userId, provider,
+        latencyMs: Date.now() - startTime, error: errMsg,
+      };
+    }
+
+    // 5. Execute vote (or skip)
+    if (!validation.data!.shouldVote) {
+      const latencyMs = Date.now() - startTime;
+      console.log(`   ⏭️  LLM decided not to vote. Reason: ${validation.data!.reason}`);
+      return { success: true, actionType: 'vote', userId, provider, latencyMs };
+    }
+
+    console.log('   📤 Casting vote via API...');
+    const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
+    if (!user) throw new Error(`Bot user #${userId} not found`);
+
+    const apiResult = await this.apiExecutor.castVote(user.id, user.email, {
+      targetType: context.targetType,
+      targetId: context.targetId,
+      voteType: validation.data!.voteType!,
+    });
+
+    if (!apiResult.success) {
+      console.log(`   ❌ API error: ${apiResult.error}`);
+      return {
+        success: false, actionType: 'vote', userId, provider,
+        latencyMs: Date.now() - startTime, error: apiResult.error,
+      };
+    }
+
+    const latencyMs = Date.now() - startTime;
+    console.log(`   🎉 Vote cast! ${validation.data!.voteType} on ${context.targetType} #${context.targetId} (${latencyMs}ms)`);
+    console.log(`   💡 Reason: ${validation.data!.reason}`);
+
+    return { success: true, actionType: 'vote', userId, provider, latencyMs };
+  }
+
+  getRateLimiterStats() {
+    return this.rateLimiter.getTodayStats();
+  }
+
+  getLLMProviders(): string[] {
+    return this.llmManager.getProviderIds();
   }
 
   async disconnect(): Promise<void> {
