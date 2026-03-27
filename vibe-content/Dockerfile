@@ -14,6 +14,9 @@ COPY tsconfig.json ./
 COPY src ./src
 COPY prisma ./prisma
 
+# Generate Prisma client before TypeScript compilation
+RUN npx prisma generate
+
 # Build TypeScript
 RUN npm run build
 
@@ -33,6 +36,10 @@ COPY package*.json ./
 
 # Install production dependencies only
 RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy generated Prisma client from builder (after npm ci to prevent overwrite)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist

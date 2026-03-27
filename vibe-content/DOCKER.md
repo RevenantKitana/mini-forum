@@ -3,10 +3,10 @@
 ## 📋 Chuẩn Bị
 
 ### Các file cần thiết trong folder `vibe-content/`:
-- ✅ `Dockerfile` - Multi-stage production build
-- ✅ `.dockerignore` - Loại bỏ file không cần thiết
+- ✅ `Dockerfile` - Multi-stage production build (with Prisma generation)
+- ✅ `.dockerignore` - Loại bỏ file không cần thiết (giữ package-lock.json)
 - ✅ `docker-entrypoint.sh` - Script khởi động
-- ✅ `package.json` & `package-lock.json`
+- ✅ `package.json` & `package-lock.json` - Dependencies with lock file
 - ✅ `tsconfig.json`
 - ✅ `src/`, `seed/`, `prisma/` folders
 - ✅ `.env.example` - Template environment variables
@@ -36,6 +36,14 @@ docker build -t vibe-content:1.0.0 .
 # Build with multiple tags
 docker build -t vibe-content:latest -t vibe-content:1.0.0 .
 ```
+
+### Multi-Stage Build Process
+
+1. **Builder Stage:** Compiles TypeScript and generates Prisma client
+2. **Production Stage:** Minimal image with only runtime dependencies
+   - Copies compiled output
+   - Copies generated Prisma client to ensure ORM is initialized
+   - Removes dev dependencies for smaller image
 
 ## 🚀 Chạy Container
 
