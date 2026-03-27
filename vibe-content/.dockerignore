@@ -13,13 +13,12 @@
 .env.local
 .env.*.local
 
-# Dependencies
+# Dependencies (keep package-lock.json for reproducible builds)
 node_modules
 npm-debug.log
 npm-error.log
 yarn-error.log
 pnpm-debug.log
-package-lock.json
 
 # Build outputs
 dist

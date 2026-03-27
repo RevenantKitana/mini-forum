@@ -13,12 +13,28 @@
 
 ## 🐳 Build Image
 
+**Important:** The `package-lock.json` file must be included in Docker build context for `npm ci` to work.
+
+```bash
+# Build from vibe-content directory (recommended)
+cd vibe-content
+docker build -t vibe-content:latest .
+
+# Or build from repository root with context specified
+docker build -f vibe-content/Dockerfile -t vibe-content:latest vibe-content/
+```
+
+### Build Tags
+
 ```bash
 # Build production image
 docker build -t vibe-content:latest .
 
-# Build with specific tag
+# Build with specific version tag
 docker build -t vibe-content:1.0.0 .
+
+# Build with multiple tags
+docker build -t vibe-content:latest -t vibe-content:1.0.0 .
 ```
 
 ## 🚀 Chạy Container
