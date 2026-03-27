@@ -60,7 +60,8 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy compiled JS output
 COPY --from=builder /app/dist ./dist
 
-# Copy Prisma schema (needed for migrations/introspection)
+# Copy Prisma schema & generated client (critical for runtime)
+COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
 
 # Copy .env.example as template (actual .env should be provided at runtime)
@@ -75,7 +76,7 @@ USER nodejs
 
 # Docker health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/status', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode);})"
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4000/status || exit 1
 
 # Use tini as init process for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]
