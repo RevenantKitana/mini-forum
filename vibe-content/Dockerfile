@@ -37,11 +37,11 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy prompts and seed files for reference
-COPY prompts ./prompts
-COPY prisma ./prismfiles for reference
+# Copy prompts and prisma files for reference
 COPY prompts ./prompts
 COPY prisma ./prisma
+
+# Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
 
