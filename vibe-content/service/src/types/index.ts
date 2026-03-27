@@ -62,11 +62,29 @@ export interface VoteContext {
   targetCategory: string;
 }
 
+export interface VotePatterns {
+  likeTopics: string[];
+  dislikeTopics: string[];
+  voteFrequency: number;
+  upvoteBias: number; // 0-100
+}
+
 export interface PersonalityInfo {
   traits: string[];
   tone: string;
   topics: string[];
   writingStyle?: string;
+  votePatterns?: VotePatterns;
+}
+
+export interface QualityScore {
+  lengthOk: boolean;
+  languageOk: boolean;
+  tagsValid: boolean;
+  noJsonArtifacts: boolean;
+  notDuplicate: boolean;
+  overallPass: boolean;
+  details: string[];
 }
 
 export interface LLMOutput {

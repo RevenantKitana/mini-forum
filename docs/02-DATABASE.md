@@ -1,7 +1,7 @@
 # Database Schema — Mini Forum
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ## Mục đích
 
@@ -25,7 +25,7 @@ Tài liệu mô tả chi tiết database schema, quan hệ giữa các bảng, e
 |--------|-------|
 | ORM | Prisma 5.22.0 |
 | Database | PostgreSQL 15+ |
-| Models | 14 |
+| Models | 15 |
 | Enums | 12 |
 | Schema file | `backend/prisma/schema.prisma` |
 
@@ -56,6 +56,8 @@ erDiagram
 
     comments ||--o{ comments : "parent_id (nested)"
     comments ||--o{ comments : "quoted_comment_id"
+
+    users ||--o| user_content_context : "user_id"
 ```
 
 ---
@@ -322,6 +324,24 @@ erDiagram
 
 ---
 
+### 3.15 `user_content_context` — Ngữ cảnh nội dung bot
+
+| Column | Type | Constraints | Mô tả |
+|--------|------|-------------|--------|
+| id | Int | PK, auto-increment | |
+| user_id | Int | FK → users (cascade), **Unique** | Bot user |
+| personality | Json | Required | Dữ liệu tính cách bot |
+| last_posts | Json | Default: `[]` | Bài viết gần đây |
+| last_comments | Json | Default: `[]` | Bình luận gần đây |
+| action_count | Int | Default: `0` | Tổng số hành động |
+| updated_at | DateTime | Auto-update | |
+
+**Indexes**: `user_id`
+
+> Model này được sử dụng bởi Vibe Content Service để theo dõi tính cách và lịch sử hoạt động của các bot user.
+
+---
+
 ## 4. Enums
 
 ### 4.1 Role — Vai trò người dùng
@@ -331,6 +351,7 @@ erDiagram
 | `MEMBER` | Thành viên (default) |
 | `MODERATOR` | Người kiểm duyệt |
 | `ADMIN` | Quản trị viên |
+| `BOT` | Tài khoản bot tự động (cùng quyền MEMBER) |
 
 ### 4.2 PostStatus — Trạng thái bài viết
 
@@ -475,9 +496,9 @@ Seed file: `backend/prisma/seed.ts`
 
 | Email | Password | Role | Username |
 |-------|----------|------|----------|
-| admin@forum.com | Admin@123 | ADMIN | admin |
+| sfw.forum@atomicmail.io | Admin@123 | ADMIN | admin |
 
-> **Lưu ý**: Seed hiện tại chỉ tạo tài khoản Admin. Các dữ liệu mẫu khác (categories, tags, posts, comments...) được định nghĩa nhưng bị skip (`return` sớm) trong code.
+> **Lưu ý**: Seed hiện tại tạo tài khoản Admin, categories với permissions, và dữ liệu mẫu (posts, comments, notifications). Ngoài ra, Vibe Content Service có seed riêng (`seed:bots`, `seed:tags`) để tạo bot users và tags.
 
 **Chạy seed**:
 ```bash

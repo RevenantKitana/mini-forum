@@ -3,6 +3,7 @@ import config from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 import { startCronScheduler } from './scheduler/cronScheduler.js';
 import { ActionResult } from './types/index.js';
+import logger from './utils/logger.js';
 
 const app = express();
 app.use(express.json());
@@ -23,22 +24,24 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-// Status endpoint
+// Enhanced status endpoint (Phase 4.3)
 app.get('/status', (_req, res) => {
   const uptimeSec = Math.floor(process.uptime());
   const hours = Math.floor(uptimeSec / 3600);
   const minutes = Math.floor((uptimeSec % 3600) / 60);
 
   const rateLimiterStats = generator.getRateLimiterStats();
+  const retryQueueStats = generator.getRetryQueueStats();
 
   res.json({
     status: 'ok',
     uptime: `${hours}h ${minutes}m`,
+    startedAt: stats.startedAt.toISOString(),
     env: config.nodeEnv,
     forumApi: config.forumApiUrl,
     cronSchedule: config.cron.schedule,
     providers: generator.getLLMProviders(),
-    stats: {
+    todayStats: {
       totalActions: stats.totalActions,
       successCount: stats.successCount,
       failedCount: stats.failedCount,
@@ -47,6 +50,7 @@ app.get('/status', (_req, res) => {
         : 'N/A',
     },
     todayActions: rateLimiterStats,
+    queue: retryQueueStats,
     lastAction: stats.lastResult
       ? {
           type: stats.lastResult.actionType,
@@ -54,6 +58,7 @@ app.get('/status', (_req, res) => {
           provider: stats.lastResult.provider,
           success: stats.lastResult.success,
           latencyMs: stats.lastResult.latencyMs,
+          at: new Date().toISOString(),
           error: stats.lastResult.error,
         }
       : null,
@@ -62,7 +67,7 @@ app.get('/status', (_req, res) => {
 
 // Manual trigger — supports both GET (browser) and POST
 async function handleTrigger(_req: express.Request, res: express.Response) {
-  console.log('\n🔫 Manual trigger received');
+  logger.info('Manual trigger received');
   try {
     const result = await generator.runOnce();
     stats.totalActions++;
@@ -74,12 +79,13 @@ async function handleTrigger(_req: express.Request, res: express.Response) {
   } catch (error: any) {
     stats.totalActions++;
     stats.failedCount++;
+    logger.error(`Trigger error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 }
 
 async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req: express.Request, res: express.Response) {
-  console.log(`\n🔫 Manual trigger received for specific action: ${actionType}`);
+  logger.info(`Manual trigger received for action: ${actionType}`);
   try {
     const result = await generator.runOnceForAction(actionType);
     stats.totalActions++;
@@ -91,6 +97,7 @@ async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req
   } catch (error: any) {
     stats.totalActions++;
     stats.failedCount++;
+    logger.error(`Trigger error (${actionType}): ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 }
@@ -107,35 +114,54 @@ app.get('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
 app.post('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
 
 // Start server + cron
-app.listen(config.port, () => {
-  console.log(`🚀 Vibe Content Service started on port ${config.port}`);
-  console.log(`   Environment: ${config.nodeEnv}`);
-  console.log(`   Forum API: ${config.forumApiUrl}/v1`);
-  console.log(`\n📡 Endpoints:`);
-  console.log(`   Health: http://localhost:${config.port}/health`);
-  console.log(`   Status: http://localhost:${config.port}/status`);
-  console.log(`   Random trigger: POST http://localhost:${config.port}/trigger`);
-  console.log(`   Post only: POST http://localhost:${config.port}/trigger/post`);
-  console.log(`   Comment only: POST http://localhost:${config.port}/trigger/comment`);
-  console.log(`   Vote only: POST http://localhost:${config.port}/trigger/vote`);
+const server = app.listen(config.port, () => {
+  logger.info(`Vibe Content Service started on port ${config.port}`);
+  logger.info(`Environment: ${config.nodeEnv}`);
+  logger.info(`Forum API: ${config.forumApiUrl}/v1`);
+  logger.info(`Endpoints: /health, /status, /trigger, /trigger/{post,comment,vote}`);
 
   // Start cron scheduler
-  const cronTask = startCronScheduler(generator);
-
-  // Track cron results in stats
-  const originalRunOnce = generator.runOnce.bind(generator);
-  // Stats are already tracked in /trigger and cron logs to console
+  startCronScheduler(generator);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('\n🛑 SIGTERM received, shutting down...');
-  await generator.disconnect();
+// Phase 4.4: Enhanced graceful shutdown
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info(`${signal} received, starting graceful shutdown...`);
+
+  // Stop accepting new connections
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+
+  // Give in-flight actions time to complete
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // Disconnect services
+  try {
+    await generator.disconnect();
+    logger.info('All services disconnected');
+  } catch (err: any) {
+    logger.error(`Error during shutdown: ${err.message}`);
+  }
+
   process.exit(0);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Phase 4.4: Global error handlers
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+  // Give logger time to flush, then exit (PM2 will restart)
+  setTimeout(() => process.exit(1), 1000);
 });
 
-process.on('SIGINT', async () => {
-  console.log('\n🛑 SIGINT received, shutting down...');
-  await generator.disconnect();
-  process.exit(0);
+process.on('unhandledRejection', (reason: any) => {
+  logger.error('Unhandled rejection', { error: reason?.message || String(reason) });
 });

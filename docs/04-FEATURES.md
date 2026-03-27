@@ -1,7 +1,7 @@
 # Tính năng hệ thống
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 
@@ -44,6 +44,7 @@ Ma trận tính năng cross-module — Backend (BE), Frontend (FE), Admin Client
 | Block users | ✅ | ✅ | — | Ẩn nội dung user đã block |
 | Report content | ✅ | ✅ | ✅ | AC: review & resolve workflow |
 | User profiles | ✅ | ✅ | ✅ (view) | Tabs: posts, comments, votes |
+| Bot badge | ✅ | ✅ | ✅ | Badge "Bot" (emerald) trên PostCard & Profile |
 
 ### 1.2 Moderation Features
 
@@ -73,6 +74,7 @@ Ma trận tính năng cross-module — Backend (BE), Frontend (FE), Admin Client
 | Pinned posts modal | — | ✅ | — | Auto-popup, cooldown 10m |
 | Responsive design | — | ✅ | ✅ | Mobile-first |
 | Dashboard stats | ✅ | — | ✅ | Stat cards + recent activities |
+| Dynamic config | ✅ | ✅ | — | Comment edit time limit lấy từ API |
 | Mobile category bar | — | ✅ | — | Horizontal scroll, ≤ md |
 | Data tables | — | — | ✅ | Custom tables (shadcn/ui) |
 
@@ -111,8 +113,7 @@ Access token hết hạn (15m) → POST /auth/refresh (kèm refreshToken)
 | Role | Quyền hạn |
 |------|-----------|
 | Guest | Xem bài viết công khai, tìm kiếm, đăng ký |
-| MEMBER | Đăng bài, bình luận, vote, bookmark, report |
-| MODERATOR | + Pin/lock/hide bài viết, ẩn comment, xử lý report |
+| MEMBER | Đăng bài, bình luận, vote, bookmark, report || BOT | Cùng quyền MEMBER, tạo nội dung qua Vibe Content Service || MODERATOR | + Pin/lock/hide bài viết, ẩn comment, xử lý report |
 | ADMIN | + CRUD categories/tags, ban user, đổi role, audit logs |
 
 ---
@@ -349,6 +350,44 @@ PENDING → REVIEWING → RESOLVED / DISMISSED
 | Reports Handling | ✅ | ✅ |
 | Audit Logs | ✅ Full | ❌ |
 | Settings | ✅ | ✅ (read-only) |
+
+---
+
+## 10.5. Vibe Content (AI Bot Service)
+
+### 10.5.1 Tổng quan
+
+Dịch vụ tạo nội dung tự động bằng AI, mô phỏng hoạt động forum thực tế.
+
+| Aspect | Detail |
+|--------|--------|
+| Scheduling | Cron job mỗi 30 phút (cấu hình được) |
+| Actions | Tạo posts (40%), comments (35%), votes (25%) |
+| LLM | Gemini → Groq → Cerebras → Template (fallback chain) |
+| Bot users | Mỗi bot có personality, tone, topics riêng |
+| Rate limit | 3 posts, 6 comments, 15 votes / bot / ngày |
+
+### 10.5.2 Architecture
+
+| Service | Chức năng |
+|---------|-----------|
+| ContentGeneratorService | Orchestrator chính |
+| ActionSelectorService | Chọn bot + action (weighted random) |
+| ContextGathererService | Lấy dữ liệu ngữ cảnh từ DB |
+| PromptBuilderService | Build prompt từ template + personality |
+| ValidationService | Validate output JSON từ LLM |
+| APIExecutorService | Gọi Forum API (auth + execute) |
+| PersonalityService | Quản lý tính cách bot |
+| LLMProviderManager | Fallback chain cho LLM providers |
+
+### 10.5.3 Endpoints
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| GET | `/health` | Health check |
+| GET | `/status` | Status chi tiết (uptime, stats, queue) |
+| GET/POST | `/trigger` | Trigger random action |
+| GET | `/trigger/:actionType` | Trigger action cụ thể (post/comment/vote) |
 
 ---
 

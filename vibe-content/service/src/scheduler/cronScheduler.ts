@@ -1,32 +1,33 @@
 import cron from 'node-cron';
 import config from '../config/index.js';
 import { ContentGeneratorService } from '../services/ContentGeneratorService.js';
+import logger from '../utils/logger.js';
 
 let isRunning = false;
 
 export function startCronScheduler(generator: ContentGeneratorService): cron.ScheduledTask {
-  console.log(`⏰ Cron scheduler started: "${config.cron.schedule}"`);
+  logger.info(`Cron scheduler started: "${config.cron.schedule}"`);
 
   const task = cron.schedule(config.cron.schedule, async () => {
     if (isRunning) {
-      console.log('⏳ Previous cron job still running, skipping...');
+      logger.warn('Previous cron job still running, skipping...');
       return;
     }
 
     isRunning = true;
-    console.log(`\n🔄 Cron triggered at ${new Date().toISOString()}`);
+    logger.info(`Cron triggered at ${new Date().toISOString()}`);
 
     try {
       for (let i = 0; i < config.cron.batchSize; i++) {
         const result = await generator.runOnce();
-        console.log(
-          `   Result: ${result.success ? '✅' : '❌'} ${result.actionType} ` +
+        logger.info(
+          `Cron result: ${result.success ? 'success' : 'failed'} ${result.actionType} ` +
           `by user ${result.userId} via ${result.provider} (${result.latencyMs}ms)` +
           (result.error ? ` — ${result.error}` : ''),
         );
       }
     } catch (error: any) {
-      console.error(`❌ Cron error: ${error.message}`);
+      logger.error(`Cron error: ${error.message}`);
     } finally {
       isRunning = false;
     }

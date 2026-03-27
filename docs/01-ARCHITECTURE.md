@@ -1,7 +1,7 @@
 # System Architecture — Mini Forum
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ## Mục đích
 
@@ -59,7 +59,7 @@ Mini Forum là nền tảng thảo luận trực tuyến Full Stack, hoàn thàn
 │  Node.js 20.x + Express.js 4.x + TypeScript 5.x (strict)      │
 │  ├── Routes          → Định tuyến API                           │
 │  ├── Middlewares      → Auth, Validation, Security, Error       │
-│  ├── Controllers      → Xử lý request (12 controllers)         │
+│  ├── Controllers      → Xử lý request (13 controllers)         │
 │  ├── Services         → Business logic (15 services)            │
 │  ├── Validations      → Zod schemas (10 files)                  │
 │  └── Utils            → JWT, Error classes, Response, Slug      │
@@ -71,10 +71,24 @@ Mini Forum là nền tảng thảo luận trực tuyến Full Stack, hoàn thàn
 │                       DATABASE LAYER                             │
 │                       PostgreSQL                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│   14 Models: User, Post, Comment, Category, Tag, PostTag,       │
+│   15 Models: User, Post, Comment, Category, Tag, PostTag,       │
 │   Vote, Bookmark, Notification, UserBlock, Report,              │
-│   RefreshToken, AuditLog, OtpToken                               │
+│   RefreshToken, AuditLog, OtpToken, UserContentContext           │
 │   12 Enums: Role, PostStatus, CommentStatus, OtpPurpose, ...    │
+└─────────────────────────────────────────────────────────────────┘
+                            ▲
+                            │ Prisma ORM (read-only context)
+                            │
+┌─────────────────────────────────────────────────────────────────┐
+│                   VIBE CONTENT SERVICE                           │
+│                   Port: 3100                                     │
+├─────────────────────────────────────────────────────────────────┤
+│  Node.js + Express + TypeScript                                  │
+│  ├── Scheduler       → Cron job (mỗi 30 phút)                  │
+│  ├── LLM Providers   → Gemini / Groq / Cerebras / Template     │
+│  ├── Content Gen     → Tạo posts, comments, votes tự động      │
+│  ├── Personality     → Quản lý tính cách bot                    │
+│  └── Rate Limiter    → Giới hạn hành động/bot/ngày             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -130,7 +144,7 @@ Request
 | Validation | Zod | 3.24.1 |
 | Security | Helmet + express-rate-limit | 8.0.0 / 7.4.1 |
 | Logging | Morgan | 1.10.0 |
-| Email | Nodemailer | 8.0.1 |
+| Email | @sendgrid/mail (SendGrid) | 8.1.3 |
 
 ### 3.2 Frontend (User Client)
 
@@ -144,7 +158,7 @@ Request
 | Forms | React Hook Form + Zod | 7.55.0 / 4.3.6 |
 | Router | React Router DOM | 7.13.0 |
 | HTTP | Axios | 1.13.4 |
-| Animation | motion (Framer Motion) | 12.23.24 |
+| Animation | motion | 12.23.24 |
 | Icons | Lucide React + MUI Icons | 0.487.0 / 7.3.5 |
 | Toast | Sonner | 2.0.3 |
 | Theme | next-themes | 0.4.6 |
@@ -163,6 +177,20 @@ Request
 | Icons | Lucide React | 0.312.0 | |
 
 > **Lưu ý**: Admin Client data fetching sử dụng `useState` + `useEffect` + Axios service calls. `QueryClientProvider` được cấu hình trong `main.tsx` nhưng các pages hiện tại chưa migrate sang `useQuery` hooks.
+
+### 3.4 Vibe Content Service
+
+| Component | Technology | Version |
+|-----------|-----------|---------|
+| Runtime | Node.js | 20.x LTS |
+| Framework | Express.js | 4.21.1 |
+| Language | TypeScript | 5.6.3 |
+| ORM | Prisma | 5.22.0 |
+| LLM (Primary) | @google/generative-ai (Gemini) | 0.24.1 |
+| HTTP Client | Axios | 1.7.0 |
+| Scheduler | node-cron | 3.0.3 |
+| Logging | Winston | 3.19.0 |
+| Process Manager | PM2 (ecosystem.config.cjs) | — |
 
 ---
 
@@ -280,6 +308,17 @@ User → Click VoteButton → useVotes.mutate()
 | Migrations | `prisma migrate dev` / `prisma migrate deploy` |
 | Connection | Connection pool tự quản lý bởi Prisma |
 
+### 5.4 Vibe Content Service ↔ Backend
+
+| Aspect | Detail |
+|--------|--------|
+| Protocol | REST API (same as Frontend/Admin) |
+| Auth | Bot users đăng nhập qua `/auth/login`, dùng JWT |
+| Actions | Tạo posts, comments, votes qua public API |
+| Database | Đọc context trực tiếp từ PostgreSQL qua Prisma (shared schema, read-only) |
+| Scheduling | Cron job mỗi 30 phút (cấu hình được) |
+| LLM | Google Gemini (primary) → Groq → Cerebras → Template (fallback chain) |
+
 ---
 
 ## 6. Cấu Trúc Dự Án
@@ -299,6 +338,19 @@ DA-mini-forum/
 │   ├── src/              #   Source code (pages, components, ...)
 │   └── README.md         #   Admin development guide
 │
+├── vibe-content/         # AI Bot Content Generation Service
+│   └── service/          #   Node.js + Express + Gemini LLM
+│       ├── prisma/       #     Shared schema (read-only)
+│       ├── prompts/      #     LLM prompt templates
+│       ├── seed/         #     Bot user & tag seed scripts
+│       └── src/          #     Source code (services, scheduler, ...)
+│
+├── e2e/                  # End-to-End Tests (Playwright)
+│   ├── auth.spec.ts
+│   ├── posts.spec.ts
+│   ├── interactions.spec.ts
+│   └── admin.spec.ts
+│
 ├── docs/                 # Documentation
 │   ├── 01-ARCHITECTURE.md    # ← Bạn đang đây
 │   ├── 02-DATABASE.md        # Database schema
@@ -308,7 +360,8 @@ DA-mini-forum/
 │   ├── 06-ROADMAP.md         # Status & roadmap
 │   ├── 07-DEPLOYMENT.md      # Production deployment
 │   ├── 08-TESTING.md         # Testing strategy
-│   └── 09-SECURITY.md        # Security checklist
+│   ├── 09-SECURITY.md        # Security checklist
+│   └── 10-API-FLOW.md        # API flow visualization
 │
 ├── docker-compose.yml    # PostgreSQL container
 └── README.md             # Project landing page
@@ -322,12 +375,13 @@ DA-mini-forum/
 |-------|-------|-----------|
 | **Guest** | Khách vãng lai chưa đăng ký | Xem bài viết công khai, tìm kiếm, đăng ký tài khoản |
 | **Member** | Thành viên đã đăng ký | Đăng bài, bình luận, vote, bookmark, quản lý profile |
+| **Bot** | Tài khoản bot tự động | Cùng quyền Member, tạo nội dung qua Vibe Content Service |
 | **Moderator** | Người kiểm duyệt | Quản lý nội dung, ẩn/xóa bài viết vi phạm, ghim bài |
 | **Admin** | Quản trị viên | Toàn quyền hệ thống, quản lý user, category, tag, settings |
 
 ### Permission Matrix
 
-| Action | Guest | Member | Moderator | Admin |
+| Action | Guest | Member / Bot | Moderator | Admin |
 |--------|-------|--------|-----------|-------|
 | View public posts | ✅ | ✅ | ✅ | ✅ |
 | Search | ✅ | ✅ | ✅ | ✅ |

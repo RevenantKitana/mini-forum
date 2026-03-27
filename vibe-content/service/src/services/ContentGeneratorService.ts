@@ -6,6 +6,9 @@ import { APIExecutorService } from './APIExecutorService.js';
 import { LLMProviderManager } from './llm/LLMProviderManager.js';
 import { ActionSelectorService } from './ActionSelectorService.js';
 import { RateLimiter } from '../tracking/RateLimiter.js';
+import { PersonalityService } from './PersonalityService.js';
+import { RetryQueue, FailedAction } from '../scheduler/retryQueue.js';
+import logger, { logAction } from '../utils/logger.js';
 
 export class ContentGeneratorService {
   private contextGatherer: ContextGathererService;
@@ -15,6 +18,8 @@ export class ContentGeneratorService {
   private llmManager: LLMProviderManager;
   private actionSelector: ActionSelectorService;
   private rateLimiter: RateLimiter;
+  private personalityService: PersonalityService;
+  private retryQueue: RetryQueue;
 
   constructor() {
     this.contextGatherer = new ContextGathererService();
@@ -24,15 +29,30 @@ export class ContentGeneratorService {
     this.llmManager = new LLMProviderManager();
     this.rateLimiter = new RateLimiter();
     this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter);
+    this.personalityService = new PersonalityService(this.llmManager);
+    this.retryQueue = new RetryQueue(3);
+
+    // Start retry queue processing
+    this.retryQueue.startProcessing(async (action: FailedAction) => {
+      logger.info(`[retry_queue] Retrying ${action.actionType} for user #${action.userId}`);
+      try {
+        const result = await this.runOnceForAction(action.actionType);
+        return result.success;
+      } catch {
+        return false;
+      }
+    });
   }
 
   async runOnce(): Promise<ActionResult> {
     const startTime = Date.now();
+    const actionId = `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
     try {
       // 1. Select action (user + action type) respecting rate limits
       const selected = await this.actionSelector.selectNextAction();
       if (!selected) {
+        logAction({ actionId, stage: 'action_select', status: 'skipped', error: 'All users rate-limited' });
         return {
           success: false,
           actionType: 'post',
@@ -43,19 +63,25 @@ export class ContentGeneratorService {
         };
       }
 
-      console.log(`\n🎯 Selected action: ${selected.actionType} for user #${selected.userId}`);
+      logAction({
+        actionId,
+        userId: selected.userId,
+        actionType: selected.actionType,
+        stage: 'action_select',
+        status: 'success',
+      });
 
       // 2. Dispatch to action handler
       let result: ActionResult;
       switch (selected.actionType) {
         case 'post':
-          result = await this.executePost(selected.userId, startTime);
+          result = await this.executePost(selected.userId, startTime, actionId);
           break;
         case 'comment':
-          result = await this.executeComment(selected.userId, startTime);
+          result = await this.executeComment(selected.userId, startTime, actionId);
           break;
         case 'vote':
-          result = await this.executeVote(selected.userId, startTime);
+          result = await this.executeVote(selected.userId, startTime, actionId);
           break;
         default:
           throw new Error(`Unknown action type: ${selected.actionType}`);
@@ -64,11 +90,27 @@ export class ContentGeneratorService {
       // 3. Record in rate limiter on success
       if (result.success) {
         this.rateLimiter.record(selected.userId, selected.actionType);
+        // Phase 3.1: Track personality updates
+        await this.personalityService.trackAndUpdate(selected.userId);
+      } else if (result.error && !result.error.includes('Validation failed')) {
+        // Enqueue for retry (don't retry validation failures)
+        this.retryQueue.add(selected.userId, selected.actionType, result.error);
       }
+
+      logAction({
+        actionId,
+        userId: result.userId,
+        actionType: result.actionType,
+        stage: 'complete',
+        status: result.success ? 'success' : 'failed',
+        provider: result.provider,
+        latencyMs: result.latencyMs,
+        error: result.error,
+      });
 
       return result;
     } catch (error: any) {
-      console.error(`   ❌ Error: ${error.message}`);
+      logAction({ actionId, stage: 'complete', status: 'failed', error: error.message });
       return {
         success: false,
         actionType: 'post',
@@ -82,22 +124,18 @@ export class ContentGeneratorService {
 
   async runOnceForAction(actionType: ActionType): Promise<ActionResult> {
     const startTime = Date.now();
+    const actionId = `action-${actionType}-${Date.now()}`;
 
     try {
-      // Get list of active bot users
       const botUsers = await this.contextGatherer.getAllBotUsers();
       if (botUsers.length === 0) {
+        logAction({ actionId, actionType, stage: 'action_select', status: 'failed', error: 'No bot users' });
         return {
-          success: false,
-          actionType,
-          userId: 0,
-          provider: 'none',
-          latencyMs: Date.now() - startTime,
-          error: 'No active bot users found',
+          success: false, actionType, userId: 0, provider: 'none',
+          latencyMs: Date.now() - startTime, error: 'No active bot users found',
         };
       }
 
-      // Check rate limits and find first available user
       let selectedUserId: number | null = null;
       for (const user of botUsers) {
         if (this.rateLimiter.canPerform(user.id, actionType)) {
@@ -107,71 +145,62 @@ export class ContentGeneratorService {
       }
 
       if (!selectedUserId) {
+        logAction({ actionId, actionType, stage: 'action_select', status: 'skipped', error: 'All rate-limited' });
         return {
-          success: false,
-          actionType,
-          userId: 0,
-          provider: 'none',
-          latencyMs: Date.now() - startTime,
-          error: `All bot users are rate-limited for ${actionType} action`,
+          success: false, actionType, userId: 0, provider: 'none',
+          latencyMs: Date.now() - startTime, error: `All bot users are rate-limited for ${actionType} action`,
         };
       }
 
-      console.log(`\n🎯 Selected action: ${actionType} for user #${selectedUserId}`);
+      logAction({ actionId, userId: selectedUserId, actionType, stage: 'action_select', status: 'success' });
 
-      // Execute the specific action
       let result: ActionResult;
       switch (actionType) {
         case 'post':
-          result = await this.executePost(selectedUserId, startTime);
+          result = await this.executePost(selectedUserId, startTime, actionId);
           break;
         case 'comment':
-          result = await this.executeComment(selectedUserId, startTime);
+          result = await this.executeComment(selectedUserId, startTime, actionId);
           break;
         case 'vote':
-          result = await this.executeVote(selectedUserId, startTime);
+          result = await this.executeVote(selectedUserId, startTime, actionId);
           break;
         default:
           throw new Error(`Unknown action type: ${actionType}`);
       }
 
-      // Record in rate limiter on success
       if (result.success) {
         this.rateLimiter.record(selectedUserId, actionType);
+        await this.personalityService.trackAndUpdate(selectedUserId);
       }
 
       return result;
     } catch (error: any) {
-      console.error(`   ❌ Error: ${error.message}`);
+      logAction({ actionId, actionType, stage: 'complete', status: 'failed', error: error.message });
       return {
-        success: false,
-        actionType,
-        userId: 0,
-        provider: 'unknown',
-        latencyMs: Date.now() - startTime,
-        error: error.message,
+        success: false, actionType, userId: 0, provider: 'unknown',
+        latencyMs: Date.now() - startTime, error: error.message,
       };
     }
   }
 
-  private async executePost(userId: number, startTime: number): Promise<ActionResult> {
+  private async executePost(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
     // 1. Gather context
-    console.log('   📦 Gathering post context...');
+    logAction({ actionId, userId, actionType: 'post', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherPostContext(userId);
-    console.log(`   📂 Category: ${context.category.name}`);
-    console.log(`   🏷️  Tags pool: ${context.availableTags.length} available`);
+    logger.info(`[context_gather] Category: ${context.category.name}, Tags: ${context.availableTags.length}`);
 
     // 2. Build prompt
-    console.log('   🔨 Building prompt...');
+    logAction({ actionId, userId, actionType: 'post', stage: 'prompt_build', status: 'info' });
     const prompt = await this.promptBuilder.buildPostPrompt(context);
 
     // 3. Call LLM (with fallback stack)
-    console.log('   🤖 Calling LLM stack...');
+    logAction({ actionId, userId, actionType: 'post', stage: 'llm_call', status: 'info' });
     const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
-    console.log(`   ✅ LLM response — title: "${llmOutput.title}" (via ${provider})`);
+    logger.info(`[llm_call] Response via ${provider} — title: "${llmOutput.title}"`);
 
     // 4. Validate
-    console.log('   🔍 Validating output...');
+    logAction({ actionId, userId, actionType: 'post', stage: 'validation', status: 'info', provider });
     const validation = await this.validator.validatePostOutput({
       title: llmOutput.title || '',
       content: llmOutput.content || '',
@@ -181,7 +210,23 @@ export class ContentGeneratorService {
 
     if (!validation.valid) {
       const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
-      console.log(`   ❌ ${errMsg}`);
+      logAction({ actionId, userId, actionType: 'post', stage: 'validation', status: 'failed', provider, error: errMsg });
+      return {
+        success: false, actionType: 'post', userId, provider,
+        latencyMs: Date.now() - startTime, error: errMsg,
+      };
+    }
+
+    // 4b. Phase 3.3: Quality scoring
+    const quality = await this.validator.scorePostQuality(
+      validation.data!.title,
+      validation.data!.content,
+      validation.data!.tags,
+      userId,
+    );
+    if (!quality.overallPass) {
+      const errMsg = `Quality check failed: ${quality.details.join('; ')}`;
+      logAction({ actionId, userId, actionType: 'post', stage: 'quality_check', status: 'failed', provider, error: errMsg });
       return {
         success: false, actionType: 'post', userId, provider,
         latencyMs: Date.now() - startTime, error: errMsg,
@@ -189,7 +234,7 @@ export class ContentGeneratorService {
     }
 
     // 5. Call Forum API
-    console.log('   📤 Creating post via API...');
+    logAction({ actionId, userId, actionType: 'post', stage: 'api_call', status: 'info', provider });
     const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
     if (!user) throw new Error(`Bot user #${userId} not found`);
 
@@ -201,7 +246,7 @@ export class ContentGeneratorService {
     });
 
     if (!apiResult.success) {
-      console.log(`   ❌ API error: ${apiResult.error}`);
+      logAction({ actionId, userId, actionType: 'post', stage: 'api_call', status: 'failed', provider, error: apiResult.error });
       return {
         success: false, actionType: 'post', userId, provider,
         latencyMs: Date.now() - startTime, error: apiResult.error,
@@ -209,31 +254,33 @@ export class ContentGeneratorService {
     }
 
     const latencyMs = Date.now() - startTime;
-    console.log(`   🎉 Post created! ID: ${apiResult.postId} (${latencyMs}ms)`);
-    console.log(`   📌 Title: "${validation.data!.title}"`);
-    console.log(`   🏷️  Tags: [${validation.data!.tags.join(', ')}]`);
+    logAction({
+      actionId, userId, actionType: 'post', stage: 'api_call', status: 'success',
+      provider, latencyMs,
+      details: { postId: apiResult.postId, title: validation.data!.title, tags: validation.data!.tags },
+    });
 
     return { success: true, actionType: 'post', userId, provider, latencyMs };
   }
 
-  private async executeComment(userId: number, startTime: number): Promise<ActionResult> {
+  private async executeComment(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
     // 1. Gather context
-    console.log('   📦 Gathering comment context...');
+    logAction({ actionId, userId, actionType: 'comment', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherCommentContext(userId);
     const isReply = !!context.parentComment;
-    console.log(`   📝 Target post: "${context.targetPost.title}" (${isReply ? 'reply' : 'top-level'})`);
+    logger.info(`[context_gather] Target post: "${context.targetPost.title}" (${isReply ? 'reply' : 'top-level'})`);
 
     // 2. Build prompt
-    console.log('   🔨 Building comment prompt...');
+    logAction({ actionId, userId, actionType: 'comment', stage: 'prompt_build', status: 'info' });
     const prompt = await this.promptBuilder.buildCommentPrompt(context);
 
     // 3. Call LLM
-    console.log('   🤖 Calling LLM stack...');
+    logAction({ actionId, userId, actionType: 'comment', stage: 'llm_call', status: 'info' });
     const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
-    console.log(`   ✅ LLM response (via ${provider})`);
+    logger.info(`[llm_call] Comment response via ${provider}`);
 
     // 4. Validate
-    console.log('   🔍 Validating comment...');
+    logAction({ actionId, userId, actionType: 'comment', stage: 'validation', status: 'info', provider });
     const validation = this.validator.validateCommentOutput({
       content: llmOutput.content || '',
       explain: llmOutput.explain,
@@ -241,7 +288,18 @@ export class ContentGeneratorService {
 
     if (!validation.valid) {
       const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
-      console.log(`   ❌ ${errMsg}`);
+      logAction({ actionId, userId, actionType: 'comment', stage: 'validation', status: 'failed', provider, error: errMsg });
+      return {
+        success: false, actionType: 'comment', userId, provider,
+        latencyMs: Date.now() - startTime, error: errMsg,
+      };
+    }
+
+    // 4b. Phase 3.3: Quality scoring for comment
+    const quality = this.validator.scoreCommentQuality(validation.data!.content);
+    if (!quality.overallPass) {
+      const errMsg = `Quality check failed: ${quality.details.join('; ')}`;
+      logAction({ actionId, userId, actionType: 'comment', stage: 'quality_check', status: 'failed', provider, error: errMsg });
       return {
         success: false, actionType: 'comment', userId, provider,
         latencyMs: Date.now() - startTime, error: errMsg,
@@ -249,7 +307,7 @@ export class ContentGeneratorService {
     }
 
     // 5. Call Forum API
-    console.log('   📤 Creating comment via API...');
+    logAction({ actionId, userId, actionType: 'comment', stage: 'api_call', status: 'info', provider });
     const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
     if (!user) throw new Error(`Bot user #${userId} not found`);
 
@@ -260,7 +318,7 @@ export class ContentGeneratorService {
     });
 
     if (!apiResult.success) {
-      console.log(`   ❌ API error: ${apiResult.error}`);
+      logAction({ actionId, userId, actionType: 'comment', stage: 'api_call', status: 'failed', provider, error: apiResult.error });
       return {
         success: false, actionType: 'comment', userId, provider,
         latencyMs: Date.now() - startTime, error: apiResult.error,
@@ -268,24 +326,27 @@ export class ContentGeneratorService {
     }
 
     const latencyMs = Date.now() - startTime;
-    console.log(`   🎉 Comment created! ID: ${apiResult.commentId} (${latencyMs}ms)`);
-    console.log(`   💬 "${validation.data!.content.substring(0, 80)}..."`);
+    logAction({
+      actionId, userId, actionType: 'comment', stage: 'api_call', status: 'success',
+      provider, latencyMs,
+      details: { commentId: apiResult.commentId, isReply, contentPreview: validation.data!.content.substring(0, 80) },
+    });
 
     return { success: true, actionType: 'comment', userId, provider, latencyMs };
   }
 
-  private async executeVote(userId: number, startTime: number): Promise<ActionResult> {
+  private async executeVote(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
     // 1. Gather context
-    console.log('   📦 Gathering vote context...');
+    logAction({ actionId, userId, actionType: 'vote', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherVoteContext(userId);
     if (!context) {
-      console.log('   ⏭️  No unvoted content found, skipping');
+      logAction({ actionId, userId, actionType: 'vote', stage: 'context_gather', status: 'skipped', error: 'No unvoted content' });
       return {
         success: false, actionType: 'vote', userId, provider: 'none',
         latencyMs: Date.now() - startTime, error: 'No unvoted content available',
       };
     }
-    console.log(`   🗳️  Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
+    logger.info(`[context_gather] Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
 
     // 2. Decide strategy: random voting rate vs. LLM-based (personality-driven)
     const isRandomVoter = Math.random() < 0.3;
@@ -294,27 +355,19 @@ export class ContentGeneratorService {
     let provider: string;
 
     if (isRandomVoter) {
-      // --- Random Voting ("like dạo") --- 77% upvote, 23% downvote
-      console.log('   🎲 Strategy: random voter (like dạo)');
+      logger.info('[vote_strategy] Random voter (like dạo)');
       voteType = Math.random() < 0.77 ? 'up' : 'down';
       reason = 'random_voter';
       provider = 'none';
     } else {
-      // --- LLM-Based Voting (personality-based) ---
-      console.log('   🧠 Strategy: LLM-based (personality)');
+      logger.info('[vote_strategy] LLM-based (personality)');
 
-      // Build prompt
-      console.log('   🔨 Building vote prompt...');
+      logAction({ actionId, userId, actionType: 'vote', stage: 'llm_call', status: 'info' });
       const prompt = this.promptBuilder.buildVotePrompt(context);
-
-      // Call LLM
-      console.log('   🤖 Calling LLM stack...');
       const llmResult = await this.llmManager.generate(prompt);
       provider = llmResult.provider;
-      console.log(`   ✅ LLM response (via ${provider})`);
 
-      // Validate
-      console.log('   🔍 Validating vote decision...');
+      logAction({ actionId, userId, actionType: 'vote', stage: 'validation', status: 'info', provider });
       const validation = this.validator.validateVoteOutput({
         shouldVote: llmResult.output.shouldVote ?? false,
         voteType: llmResult.output.voteType,
@@ -323,7 +376,7 @@ export class ContentGeneratorService {
 
       if (!validation.valid) {
         const errMsg = `Validation failed: ${validation.errors.join('; ')}`;
-        console.log(`   ❌ ${errMsg}`);
+        logAction({ actionId, userId, actionType: 'vote', stage: 'validation', status: 'failed', provider, error: errMsg });
         return {
           success: false, actionType: 'vote', userId, provider,
           latencyMs: Date.now() - startTime, error: errMsg,
@@ -332,7 +385,10 @@ export class ContentGeneratorService {
 
       if (!validation.data!.shouldVote) {
         const latencyMs = Date.now() - startTime;
-        console.log(`   ⏭️  LLM decided not to vote. Reason: ${validation.data!.reason}`);
+        logAction({
+          actionId, userId, actionType: 'vote', stage: 'llm_call', status: 'skipped',
+          provider, latencyMs, details: { reason: validation.data!.reason },
+        });
         return { success: true, actionType: 'vote', userId, provider, latencyMs };
       }
 
@@ -341,7 +397,7 @@ export class ContentGeneratorService {
     }
 
     // 3. Cast vote via API
-    console.log('   📤 Casting vote via API...');
+    logAction({ actionId, userId, actionType: 'vote', stage: 'api_call', status: 'info', provider });
     const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
     if (!user) throw new Error(`Bot user #${userId} not found`);
 
@@ -352,7 +408,7 @@ export class ContentGeneratorService {
     });
 
     if (!apiResult.success) {
-      console.log(`   ❌ API error: ${apiResult.error}`);
+      logAction({ actionId, userId, actionType: 'vote', stage: 'api_call', status: 'failed', provider, error: apiResult.error });
       return {
         success: false, actionType: 'vote', userId, provider,
         latencyMs: Date.now() - startTime, error: apiResult.error,
@@ -361,8 +417,11 @@ export class ContentGeneratorService {
 
     const latencyMs = Date.now() - startTime;
     const strategyLabel = isRandomVoter ? 'random' : 'personality_based';
-    console.log(`   🎉 Vote cast! ${voteType} on ${context.targetType} #${context.targetId} (${latencyMs}ms)`);
-    console.log(`   💡 Strategy: ${strategyLabel} | Reason: ${reason}`);
+    logAction({
+      actionId, userId, actionType: 'vote', stage: 'api_call', status: 'success',
+      provider, latencyMs,
+      details: { voteType, strategy: strategyLabel, reason, targetType: context.targetType, targetId: context.targetId },
+    });
 
     return { success: true, actionType: 'vote', userId, provider, latencyMs };
   }
@@ -375,8 +434,15 @@ export class ContentGeneratorService {
     return this.llmManager.getProviderIds();
   }
 
+  getRetryQueueStats() {
+    return this.retryQueue.getStats();
+  }
+
   async disconnect(): Promise<void> {
+    this.retryQueue.stop();
     await this.contextGatherer.disconnect();
     await this.validator.disconnect();
+    await this.personalityService.disconnect();
+    logger.info('ContentGeneratorService disconnected');
   }
 }

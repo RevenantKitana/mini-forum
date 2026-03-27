@@ -1,7 +1,7 @@
 # Testing
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 
@@ -301,9 +301,9 @@ e2e/
 
 | Role | Email | Password | Tạo bởi |
 |------|-------|----------|--------|
-| Admin | `admin@forum.com` | `Admin@123` | Seed (tự động) |
-| Moderator | `mod@forum.com` | `Moderator@123` | Tạo thủ công |
-| Member | `john@example.com` | `Member@123` | Tạo thủ công |
+| Admin | `sfw.forum@atomicmail.io` | `Admin@123` | Seed (tự động) |
+| Moderator | — | — | Tạo thủ công (admin đổi role) |
+| Member | — | — | Đăng ký qua giao diện |
 
 > **URLs:** Frontend `http://localhost:5173` — Admin `http://localhost:5174`
 
@@ -658,9 +658,9 @@ npx playwright install
 
 | Role | Email | Password | Tạo bởi |
 |------|-------|----------|--------|
-| Admin | `admin@forum.com` | `Admin@123` | Seed (tự động) |
-| Moderator | `mod@forum.com` | `Moderator@123` | Tạo thủ công |
-| Member | `john@example.com` | `Member@123` | Tạo thủ công |
+| Admin | `sfw.forum@atomicmail.io` | `Admin@123` | Seed (tự động) |
+| Moderator | — | — | Tạo thủ công (admin đổi role) |
+| Member | — | — | Đăng ký qua giao diện |
 
 ### Checklist thủ công
 

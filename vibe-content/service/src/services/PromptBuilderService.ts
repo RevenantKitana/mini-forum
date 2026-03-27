@@ -1,4 +1,4 @@
-import { GenerationContext, CommentContext, VoteContext } from '../types/index.js';
+import { GenerationContext, CommentContext, VoteContext, PersonalityInfo } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import fs from 'fs';
 import path from 'path';
@@ -18,6 +18,35 @@ export class PromptBuilderService {
     this.postTemplate = fs.readFileSync(path.join(promptsDir, 'post.template.txt'), 'utf-8');
     this.commentTemplate = fs.readFileSync(path.join(promptsDir, 'comment.template.txt'), 'utf-8');
     this.voteTemplate = fs.readFileSync(path.join(promptsDir, 'vote.template.txt'), 'utf-8');
+  }
+
+  /**
+   * Build a consistency preamble from personality data.
+   * Phase 3.2: Stronger consistency instructions when we have rich personality data.
+   */
+  private buildConsistencyPreamble(personality: PersonalityInfo | null, recentSnippets?: string): string {
+    if (!personality) return '';
+
+    const parts: string[] = [];
+
+    if (personality.writingStyle) {
+      parts.push(`Phong cách viết đặc trưng: ${personality.writingStyle}`);
+    }
+
+    if (personality.votePatterns) {
+      const vp = personality.votePatterns;
+      if (vp.likeTopics?.length > 0) {
+        parts.push(`Chủ đề hay upvote: ${vp.likeTopics.join(', ')}`);
+      }
+      if (vp.dislikeTopics?.length > 0) {
+        parts.push(`Chủ đề hay downvote: ${vp.dislikeTopics.join(', ')}`);
+      }
+    }
+
+    if (parts.length === 0) return '';
+
+    return '\n🔑 NHẤT QUÁN TÍNH CÁCH:\n' + parts.join('\n') +
+      '\nHãy viết sao cho nhất quán với tính cách, phong cách, và các bài trước của bạn.\n';
   }
 
   async buildPostPrompt(context: GenerationContext): Promise<string> {
@@ -51,6 +80,12 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{RECENT_POSTS_SNIPPETS}/g, recentSnippets);
     prompt = prompt.replace(/{TAG_POOL}/g, tagPool);
 
+    // Phase 3.2: Inject consistency preamble
+    const preamble = this.buildConsistencyPreamble(personality, recentSnippets);
+    if (preamble) {
+      prompt += '\n' + preamble;
+    }
+
     return prompt;
   }
 
@@ -76,6 +111,12 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{POST_AUTHOR}/g, targetPost.authorName);
     prompt = prompt.replace(/{PARENT_COMMENT_SECTION}/g, parentSection);
 
+    // Phase 3.2: Inject consistency preamble
+    const preamble = this.buildConsistencyPreamble(personality);
+    if (preamble) {
+      prompt += '\n' + preamble;
+    }
+
     return prompt;
   }
 
@@ -97,6 +138,12 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{TARGET_CONTENT}/g, targetContent);
     prompt = prompt.replace(/{TARGET_AUTHOR}/g, targetAuthor);
     prompt = prompt.replace(/{TARGET_CATEGORY}/g, targetCategory);
+
+    // Phase 3.2: Inject consistency preamble (vote patterns)
+    const preamble = this.buildConsistencyPreamble(personality);
+    if (preamble) {
+      prompt += '\n' + preamble;
+    }
 
     return prompt;
   }

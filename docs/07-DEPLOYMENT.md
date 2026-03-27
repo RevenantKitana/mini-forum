@@ -1,7 +1,7 @@
 # Deployment & Setup
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 
@@ -48,6 +48,7 @@
 | Backend API | 5000 | http://localhost:5000 |
 | Frontend | 5173 | http://localhost:5173 |
 | Admin Client | 5174 | http://localhost:5174 |
+| Vibe Content | 3100 | http://localhost:3100 |
 | PostgreSQL | 5432 | localhost:5432 |
 | Prisma Studio | 5555 | http://localhost:5555 |
 
@@ -77,6 +78,7 @@ cd backend
 npm install
 cp .env.example .env
 # → Sửa .env: điền JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (min 32 chars)
+#            + SENDGRID_API_KEY (cho OTP email)
 npm run db:generate
 npm run db:migrate
 npm run db:seed
@@ -96,8 +98,8 @@ cp .env.example .env
 npm run dev
 
 # 6. Truy cập
-# Frontend:  http://localhost:5173  (admin@forum.com / Admin@123)
-# Admin:     http://localhost:5174  (admin@forum.com / Admin@123)
+# Frontend:  http://localhost:5173  (sfw.forum@atomicmail.io / Admin@123)
+# Admin:     http://localhost:5174  (sfw.forum@atomicmail.io / Admin@123)
 # API:       http://localhost:5000/api/v1/health
 ```
 
@@ -159,14 +161,10 @@ JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
 
-# SMTP (OTP email)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM_EMAIL=noreply@forum.com
-SMTP_FROM_NAME=Mini Forum
+# SendGrid (OTP email)
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM_EMAIL=noreply@example.com
+SENDGRID_FROM_NAME=Mini Forum
 ```
 
 Tạo JWT secret ngẫu nhiên:
@@ -253,16 +251,57 @@ npm run dev
 
 ---
 
+## 6.5. Setup Vibe Content Service (tùy chọn)
+
+> Dịch vụ tạo nội dung tự động bằng AI. Yêu cầu backend đang chạy.
+
+```bash
+cd vibe-content/service
+npm install
+cp .env.example .env
+```
+
+Cấu hình `vibe-content/service/.env`:
+
+```dotenv
+PORT=3100
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mini_forum?schema=public"
+API_BASE_URL=http://localhost:5000/api/v1
+
+# LLM Providers (ít nhất 1 key)
+GEMINI_API_KEY=your-gemini-api-key
+GROQ_API_KEY=your-groq-api-key        # fallback
+CEREBRAS_API_KEY=your-cerebras-api-key # fallback
+
+# Scheduling
+CRON_SCHEDULE=*/30 * * * *            # Mỗi 30 phút
+```
+
+Seed bot users và tags:
+
+```bash
+npm run seed:all
+```
+
+Khởi động:
+
+```bash
+npm run dev
+# → http://localhost:3100/health
+```
+
+---
+
 ## 7. Seed Data & Test Accounts
 
 ### Test Accounts
 
 | Role | Email | Password | Access |
 |------|-------|----------|--------|
-| Admin | `admin@forum.com` | `Admin@123` | Frontend + Admin Client |
+| Admin | `sfw.forum@atomicmail.io` | `Admin@123` | Frontend + Admin Client |
 
 > Admin Client yêu cầu role MODERATOR hoặc ADMIN.
-> Seed hiện tại chỉ tạo tài khoản Admin. Các tài khoản khác cần đăng ký qua giao diện (yêu cầu SMTP đã cấu hình để nhận OTP).
+> Seed hiện tại tạo tài khoản Admin, categories, và dữ liệu mẫu. Các tài khoản khác cần đăng ký qua giao diện (yêu cầu SendGrid API key đã cấu hình để gửi OTP).
 
 ### Dữ liệu mẫu (seed)
 
@@ -303,13 +342,9 @@ npx prisma migrate reset   # → nhập 'yes' → auto seed
 | `JWT_REFRESH_EXPIRES_IN` | — | `7d` | Thời hạn refresh token |
 | `FRONTEND_URL` | — | `http://localhost:5173` | CORS allowed origin |
 | `COMMENT_EDIT_TIME_LIMIT` | — | `30` | Phút giới hạn edit comment |
-| `SMTP_HOST` | — | — | SMTP server hostname |
-| `SMTP_PORT` | — | `587` | SMTP port |
-| `SMTP_SECURE` | — | `false` | TLS connection |
-| `SMTP_USER` | — | — | SMTP username |
-| `SMTP_PASS` | — | — | SMTP password |
-| `SMTP_FROM_EMAIL` | — | — | Sender email address |
-| `SMTP_FROM_NAME` | — | `Mini Forum` | Sender display name |
+| `SENDGRID_API_KEY` | — | — | SendGrid API key |
+| `SENDGRID_FROM_EMAIL` | — | `noreply@example.com` | Sender email address |
+| `SENDGRID_FROM_NAME` | — | `Mini Forum` | Sender display name |
 
 ### frontend/.env
 
@@ -399,10 +434,10 @@ docker logs mini_forum_db  # Xem logs
 □ Backend health:  http://localhost:5000/api/v1/health → {"success": true}
 □ Frontend:        http://localhost:5173 → Trang chủ hiển thị
 □ Admin Client:    http://localhost:5174 → Trang đăng nhập hiển thị
-□ Login user:      john@example.com / Member@123
-□ Login admin:     admin@forum.com / Admin@123
+□ Login admin:     sfw.forum@atomicmail.io / Admin@123
 □ Tạo bài viết:   Tạo thử một bài viết
 □ Notifications:   Bell icon hiển thị đúng
+□ Vibe Content:    http://localhost:3100/health (nếu chạy)
 ```
 
 ### Quick test API
@@ -417,7 +452,7 @@ curl http://localhost:5000/api/v1/posts
 # Login
 curl -X POST http://localhost:5000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@forum.com","password":"Admin@123"}'
+  -d '{"email":"sfw.forum@atomicmail.io","password":"Admin@123"}'
 ```
 
 ---
@@ -467,7 +502,7 @@ Hoặc đổi port trong `.env`.
 ### Admin Client 403 Forbidden
 
 - Admin panel yêu cầu role **MODERATOR** hoặc **ADMIN**
-- Dùng: `admin@forum.com / Admin@123` (seed tạo sẵn)
+- Dùng: `sfw.forum@atomicmail.io / Admin@123` (seed tạo sẵn)
 - Moderator: cần tạo thủ công qua admin panel hoặc database
 
 ### JWT Token invalid / expired

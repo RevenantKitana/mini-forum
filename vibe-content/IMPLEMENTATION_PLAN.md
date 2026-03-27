@@ -848,7 +848,7 @@ PHASE 3 (Quality)           PHASE 4 (Robustness)
 □ Consistency Prompts       □ Retry Queue
 □ Quality Scorer            □ Admin /status endpoint
 □ Few-shot Examples         □ Graceful Shutdown
-□ Cost Tracker              □ PM2 deployment config
+                             □ PM2 deployment config
 ```
 
 ---

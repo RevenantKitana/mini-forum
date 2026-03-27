@@ -14,6 +14,7 @@ const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   logLevel: process.env.LOG_LEVEL || 'info',
+  logDir: process.env.LOG_DIR || '',
   forumApiUrl: process.env.FORUM_API_URL || 'http://localhost:5000/api',
   databaseUrl: process.env.DATABASE_URL || '',
   cron: {

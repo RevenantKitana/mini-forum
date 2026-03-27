@@ -4,6 +4,7 @@ import { LLMOutput } from '../../types/index.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
 import { CerebrasProvider } from './CerebrasProvider.js';
+import logger from '../../utils/logger.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -38,15 +39,15 @@ export class LLMProviderManager {
       try {
         const available = await provider.isAvailable();
         if (!available) {
-          console.log(`   ⏭️  ${provider.id} — skipped (unavailable)`);
+          logger.debug(`${provider.id} — skipped (unavailable)`);
           continue;
         }
 
         const output = await this.callWithRetry(provider, prompt, 3);
-        console.log(`   ✅ ${provider.id} — success`);
+        logger.info(`${provider.id} — success`);
         return { output, provider: provider.id };
       } catch (err: any) {
-        console.log(`   ⚠️  ${provider.id} — failed: ${err.message}`);
+        logger.warn(`${provider.id} — failed: ${err.message}`);
         // continue to next provider
       }
     }
@@ -67,7 +68,7 @@ export class LLMProviderManager {
         lastError = err;
         if (attempt < maxRetries - 1 && this.isRetryable(err)) {
           const backoff = Math.pow(2, attempt) * 1000;
-          console.log(`   🔄 ${provider.id} retry ${attempt + 1}/${maxRetries} in ${backoff}ms`);
+          logger.info(`${provider.id} retry ${attempt + 1}/${maxRetries} in ${backoff}ms`);
           await sleep(backoff);
           continue;
         }

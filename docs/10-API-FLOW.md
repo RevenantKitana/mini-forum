@@ -1,8 +1,8 @@
 # API Flow Visualization — Mini Forum
 
 > Hướng dẫn chi tiết luồng API từ Frontend → Backend → Database  
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 

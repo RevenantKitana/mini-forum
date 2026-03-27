@@ -1,7 +1,7 @@
 # Security
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 
@@ -25,7 +25,7 @@
 | Layer | Công cụ | Trạng thái |
 |-------|---------|:----------:|
 | Authentication | JWT (Access + Refresh) | ✅ |
-| Authorization | RBAC (3 roles) | ✅ |
+| Authorization | RBAC (4 roles + category permissions) | ✅ |
 | Rate Limiting | express-rate-limit | ✅ |
 | Input Validation | Zod schemas | ✅ |
 | Security Headers | Helmet | ✅ |
@@ -88,12 +88,12 @@ Logout → DELETE refresh token from DB
 ### 3.1 Role Hierarchy
 
 ```
-ADMIN > MODERATOR > MEMBER > Guest
+ADMIN (3) > MODERATOR (2) > MEMBER (1) = BOT (1) > Guest
 ```
 
 ### 3.2 Permission Matrix
 
-| Resource | Guest | MEMBER | MODERATOR | ADMIN |
+| Resource | Guest | MEMBER / BOT | MODERATOR | ADMIN |
 |----------|:-----:|:------:|:---------:|:-----:|
 | View public posts | ✅ | ✅ | ✅ | ✅ |
 | Create post | ❌ | ✅ | ✅ | ✅ |
@@ -222,7 +222,7 @@ Helmet v8.0.0 cấu hình trong `app.ts`:
 ### 9.1 Đã implement ✅
 
 - [x] JWT authentication với token rotation
-- [x] RBAC (3 roles + category permissions)
+- [x] RBAC (4 roles + category permissions)
 - [x] Rate limiting trên tất cả routes
 - [x] Input validation (Zod) cho tất cả inputs
 - [x] Security headers (Helmet)

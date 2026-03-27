@@ -1,9 +1,9 @@
 # API Reference — Mini Forum
 
-> **Version**: v1.25.1  
+> **Version**: v1.27.0  
 > **Base URL**: `http://localhost:5000/api/v1`  
 > **Format**: JSON (`Content-Type: application/json`)  
-> **Last Updated**: 2026-03-19
+> **Last Updated**: 2026-03-27
 
 ## Mục đích
 
@@ -78,6 +78,7 @@ Authorization: Bearer <access_token>
 | `MEMBER` | User thông thường, đã đăng ký |
 | `MODERATOR` | Quản trị viên cấp vừa |
 | `ADMIN` | Super admin, toàn quyền |
+| `BOT` | Tài khoản bot tự động (cùng quyền MEMBER) |
 
 ---
 
@@ -225,13 +226,13 @@ Authorization: Bearer <access_token>
 | `ReportStatus` | `PENDING`, `REVIEWING`, `RESOLVED`, `DISMISSED` |
 | `VoteTarget` | `POST`, `COMMENT` |
 | `PermissionLevel` | `ALL`, `MEMBER`, `MODERATOR`, `ADMIN` |
-| `Role` | `MEMBER`, `MODERATOR`, `ADMIN` |
+| `Role` | `MEMBER`, `MODERATOR`, `ADMIN`, `BOT` |
 
 ---
 
 ## 6. Endpoint Index
 
-### Tổng số: **121 endpoints**
+### Tổng số: **123 endpoints**
 
 | # | Group | Count | Auth | File |
 |---|-------|-------|------|------|
@@ -247,7 +248,30 @@ Authorization: Bearer <access_token>
 | 10 | Search | 3 | Public | [10-search.md](./10-search.md) |
 | 11 | Notifications | 7 | MEMBER+ | [11-notifications.md](./11-notifications.md) |
 | 12 | Admin | 31 | MOD/ADMIN | [12-admin.md](./12-admin.md) |
-| 13 | Misc | 1 | Public | _(xem bên dưới)_ |
+| 13 | Config | 2 | Public | _(xem bên dưới)_ |
+| 14 | Misc | 1 | Public | _(xem bên dưới)_ |
+
+### Config Endpoints
+
+#### `GET /config/comment`
+
+Lấy cấu hình comment (thời gian giới hạn edit).
+
+**Access**: Public
+
+```json
+{ "success": true, "data": { "editTimeLimit": 30 } }
+```
+
+#### `GET /config/db-ping`
+
+Ping database (giữ kết nối free-tier).
+
+**Access**: Public
+
+```json
+{ "success": true, "message": "Database is connected" }
+```
 
 ### Misc Endpoint
 

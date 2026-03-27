@@ -3,6 +3,8 @@
 > **Base path**: `/auth`  
 > **Endpoints**: 13  
 > [← Quay lại API Reference](./README.md)
+>
+> **Last Updated**: 2026-03-27
 
 ---
 

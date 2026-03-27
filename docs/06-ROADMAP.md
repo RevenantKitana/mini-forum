@@ -1,7 +1,7 @@
 # Roadmap & Trạng thái dự án
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
+> **Version**: v1.27.0  
+> **Last Updated**: 2026-03-27
 
 ---
 
@@ -183,7 +183,7 @@
 
 | Item | Mô tả | Effort |
 |------|-------|:------:|
-| Automated Testing | Không có unit / e2e tests | High |
+| Automated Testing | Có 40 automated tests (unit + integration + E2E scaffolded), cần mở rộng | High |
 | API Documentation | Swagger / OpenAPI chưa có | Medium |
 | Type Consolidation | Post types defined ở 2 nơi, incompatible | Medium |
 | Error Messages i18n | Một số messages chưa i18n-ready | Medium |

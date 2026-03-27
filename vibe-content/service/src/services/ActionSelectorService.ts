@@ -1,6 +1,7 @@
 import { ActionType, BotUser, SelectedAction } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import { RateLimiter } from '../tracking/RateLimiter.js';
+import logger from '../utils/logger.js';
 
 // Weighted probabilities for action selection
 const ACTION_WEIGHTS: { action: ActionType; weight: number }[] = [
@@ -30,7 +31,7 @@ export class ActionSelectorService {
       if (action) return action;
     }
 
-    console.log('   ⚠️  All bot users are rate-limited for all actions');
+    logger.warn('All bot users are rate-limited for all actions');
     return null;
   }
 

@@ -12,6 +12,57 @@ Tất cả các thay đổi lớn của dự án này sẽ được ghi lại tr
 
 ## [1.27.0] - 2026-03-26
 
+### Feature — Vibe Content Service (AI-Powered Bot Content Generator)
+
+Tích hợp dịch vụ tạo nội dung tự động sử dụng Gemini LLM để sinh bài viết, bình luận, và vote từ các bot do admin quản lý. Hệ thống có fallback sang Groq và Cerebras nếu Gemini không khả dụng.
+
+**Đặc điểm chính**:
+- Tự động tạo 40% bài viết, 35% bình luận, 25% vote mỗi 30 phút
+- Hỗ trợ multiple LLM providers (Gemini → Groq → Cerebras → Template fallback)
+- Rate limiting: 3 posts, 6 comments, 15 votes/bot/ngày
+- Personality tracking cho mỗi bot user
+- Cron job scheduler tích hợp PM2
+- Đầy đủ logging qua Winston
+
+**Services**:
+- `ContentGeneratorService`: Orchestrator chính
+- `ActionSelectorService`: Chọn loại tác động (post/comment/vote)
+- `ContextGathererService`: Thu thập context từ database
+- `PromptBuilderService`: Xây dựng prompt động
+- `ValidationService`: Kiểm tra output từ LLM
+- `APIExecutorService`: Gọi API backend
+- `PersonalityService`: Quản lý nhân cách bot
+- `LLMProviderManager`: Quản lý multiple LLM providers
+
+**Database Changes**:
+- `vibe_content/prisma/schema.prisma`: Thêm model `user_content_context` để tracking personality
+- Seed scripts: `seed:bots`, `seed:tags`
+
+**Files changed**:
+- **vibe-content service**: `src/services/` (ContentGeneratorService, ActionSelectorService, v.v.), `src/prompts/`, `seed/`
+- **Backend**: `backend/prisma/migrations/` - thêm user_content_context model
+- **Deployment**: PM2 config tại `vibe-content/service/ecosystem.config.cjs`
+
+---
+
+### Feature — Email Service Migration (Nodemailer → SendGrid)
+
+Thay thế SMTP-based Nodemailer bằng SendGrid API để cải thiện reliability, tracking, deliverability.
+
+**Changes**:
+- Thay thế `nodemailer` package → `@sendgrid/mail` v8.1.3
+- Environment variables: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` (thay cho SMTP_*)
+- Email templates tối ưu hóa cho SendGrid
+- Seed account updated: `sfw.forum@atomicmail.io`
+
+**Files changed**:
+- `backend/src/services/emailService.ts`: Rewrite sử dụng SendGrid SDK
+- `.env.example`: Cập nhật email config variables
+- `backend/prisma/seed.ts`: Thay đổi seed email
+- Deployment docs
+
+---
+
 ### Feature — Thêm vai trò người dùng BOT
 
 Thêm vai trò thứ 4 `BOT` vào hệ thống, bên cạnh ADMIN / MODERATOR / MEMBER. BOT kế thừa toàn bộ tính chất và quyền hạn của MEMBER (hierarchy level 1).
