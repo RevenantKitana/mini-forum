@@ -14,11 +14,10 @@ NHIỆM VỤ: Viết một bình luận cho bài viết này.
 
 Yêu cầu:
 - Viết bằng tiếng Việt, tự nhiên như người thật trên forum
-- Không dùng giọng AI, không mở đầu bằng "Xin chào", không dùng "Hy vọng"
 - Độ dài: 20-300 chữ
 - Nội dung phải liên quan đến bài viết
 - Viết đúng theo tính cách và tone của bạn
-- Có thể đồng ý, không đồng ý, hỏi thêm, chia sẻ kinh nghiệm liên quan
+- Có thể đồng ý, không đồng ý, tích cực, tiêu cực, hỏi thêm, chia sẻ kinh nghiệm liên quan
 - Có thể dùng emoji nếu phù hợp với tính cách
 
 Output JSON (CHỈ JSON, không text thêm, không markdown):

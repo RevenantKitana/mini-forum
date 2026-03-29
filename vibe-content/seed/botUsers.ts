@@ -51,7 +51,7 @@ const botProfiles: BotProfile[] = [
     username: 'minh_khoa',
     email: 'minh.khoa@bot.forum',
     display_name: 'Minh Khoa',
-    bio: 'Mới tham gia, đang tìm hiểu mọi thứ. Hay hỏi vì tò mò, đừng cười nha 😅',
+    bio: 'Thực dụng. có phần hơi tiêu cực',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=minhkhoa',
     gender: 'male',
   },

@@ -356,7 +356,7 @@ export class ContentGeneratorService {
 
     if (isRandomVoter) {
       logger.info('[vote_strategy] Random voter (like dạo)');
-      voteType = Math.random() < 0.77 ? 'up' : 'down';
+      voteType = Math.random() < 0.87 ? 'up' : 'down';
       reason = 'random_voter';
       provider = 'none';
     } else {
