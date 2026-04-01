@@ -1,245 +1,288 @@
-# Mini Forum — Backend
+# Backend — Mini Forum API
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
-
-REST API Server — Node.js + Express + TypeScript + Prisma ORM.
-
----
+REST API server cho hệ thống Mini Forum, xây dựng trên Node.js + Express + TypeScript với PostgreSQL qua Prisma ORM.
 
 ## Tech Stack
 
-| Package | Version | Mục đích |
-|---------|:-------:|----------|
-| express | 4.21.1 | Web framework |
-| @prisma/client | 5.22.0 | Database ORM |
-| jsonwebtoken | 9.0.2 | JWT authentication |
+| Công nghệ | Phiên bản | Mục đích |
+|---|---|---|
+| Node.js | >= 18 | Runtime |
+| Express.js | 4.21.1 | Web framework |
+| TypeScript | 5.6.3 | Type safety |
+| Prisma | 5.22.0 | ORM + migrations |
+| PostgreSQL | >= 14 | Database |
+| Zod | 3.24.1 | Input validation |
+| JWT | 9.0.2 | Authentication |
 | bcrypt | 5.1.1 | Password hashing |
-| zod | 3.24.1 | Request validation |
-| helmet | 8.0.0 | Security headers |
-| express-rate-limit | 7.4.1 | Rate limiting |
-| cors | 2.8.5 | Cross-origin support |
-| morgan | 1.10.0 | HTTP logging |
-| nodemailer | 8.0.1 | OTP email sending |
+| SendGrid | 8.1.3 | Email (OTP) |
+| Jest | - | Testing |
+| Helmet | - | Security headers |
 
----
+## Cài đặt
+
+```bash
+cd backend
+npm install
+cp .env.example .env  # Tạo và cấu hình file .env
+```
+
+## Biến môi trường
+
+```env
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mini_forum?schema=public
+
+# JWT (tối thiểu 32 ký tự)
+JWT_ACCESS_SECRET=your-access-secret-minimum-32-characters
+JWT_REFRESH_SECRET=your-refresh-secret-minimum-32-characters
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+
+# CORS
+FRONTEND_URL=http://localhost:5173,http://localhost:5174
+
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM_NAME=Mini Forum
+
+# OTP
+OTP_LENGTH=6
+OTP_EXPIRATION_MINUTES=10
+OTP_MAX_ATTEMPTS=5
+OTP_RESEND_DELAY_SECONDS=60
+
+# Comments
+COMMENT_EDIT_TIME_LIMIT=30
+```
+
+## Scripts
+
+| Lệnh | Mô tả |
+|---|---|
+| `npm run dev` | Chạy dev server với nodemon (auto-reload) |
+| `npm run build` | Compile TypeScript → `dist/` |
+| `npm start` | Chạy production server (`dist/index.js`) |
+| `npm test` | Chạy tất cả tests |
+| `npm run test:watch` | Chạy tests ở chế độ watch |
+| `npm run test:coverage` | Chạy tests với coverage report |
+| `npm run test:unit` | Chạy unit tests |
+| `npm run test:integration` | Chạy integration tests |
+| `npm run db:generate` | Generate Prisma Client |
+| `npm run db:migrate` | Chạy migrations (dev) |
+| `npm run db:push` | Push schema trực tiếp (không tạo migration) |
+| `npm run db:studio` | Mở Prisma Studio GUI |
+| `npm run db:seed` | Seed dữ liệu ban đầu |
+| `npm run db:clear` | Xóa toàn bộ dữ liệu |
+| `npm run db:reset` | Clear + seed lại dữ liệu |
 
 ## Cấu trúc thư mục
 
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma          # Database schema (14 models, 12 enums)
-│   ├── seed.ts                # Seed data
-│   └── migrations/            # Migration files
-├── src/
-│   ├── index.ts               # Entry point — server startup
-│   ├── app.ts                 # Express app configuration
-│   ├── config/
-│   │   ├── index.ts           # Centralized config (env validation)
-│   │   ├── database.ts        # Prisma client singleton
-│   │   └── email.ts           # Nodemailer transporter
-│   ├── constants/
-│   │   └── roles.ts           # Role definitions & hierarchy
-│   ├── controllers/           # 12 request handlers
-│   ├── services/              # 15 business logic files
-│   ├── middlewares/            # 5 middleware files
-│   ├── routes/                # 13 route definitions
-│   ├── validations/           # 10 Zod schemas
-│   └── utils/                 # 6 helper files
+│   ├── schema.prisma         # Database schema definition
+│   ├── seed.ts               # Seed data script
+│   └── migrations/           # Migration history
 ├── scripts/
-│   └── clearData.ts           # Clear database script
-├── package.json
-├── tsconfig.json              # TypeScript strict mode
-└── nodemon.json               # Dev server config
+│   └── clearData.ts          # Script xóa dữ liệu
+├── src/
+│   ├── app.ts                # Express app setup (middleware, routes, error handling)
+│   ├── index.ts              # Server entry point
+│   ├── config/
+│   │   ├── index.ts          # Tập trung env config
+│   │   ├── database.ts       # Prisma client singleton
+│   │   └── email.ts          # SMTP/Nodemailer config
+│   ├── constants/
+│   │   └── roles.ts          # Role hierarchy definitions
+│   ├── controllers/          # Request handlers (13 controllers)
+│   │   ├── authController.ts
+│   │   ├── postController.ts
+│   │   ├── commentController.ts
+│   │   ├── userController.ts
+│   │   ├── categoryController.ts
+│   │   ├── tagController.ts
+│   │   ├── voteController.ts
+│   │   ├── bookmarkController.ts
+│   │   ├── searchController.ts
+│   │   ├── notificationController.ts
+│   │   ├── blockReportController.ts
+│   │   ├── adminController.ts
+│   │   └── configController.ts
+│   ├── middlewares/
+│   │   ├── authMiddleware.ts     # JWT authentication
+│   │   ├── roleMiddleware.ts     # RBAC authorization
+│   │   ├── validateMiddleware.ts # Zod schema validation
+│   │   ├── errorMiddleware.ts    # Global error handler
+│   │   └── securityMiddleware.ts # Helmet, CORS, rate limiting
+│   ├── routes/               # API route definitions (14 files)
+│   ├── services/             # Business logic layer (15 services)
+│   ├── utils/
+│   │   ├── jwt.ts            # Token generation/verification
+│   │   ├── errors.ts         # Custom error classes
+│   │   ├── response.ts       # Standardized API responses
+│   │   ├── slug.ts           # URL slug generation
+│   │   └── snakeToCamel.ts   # Case conversion utility
+│   ├── validations/          # Zod schemas cho tất cả inputs
+│   └── __tests__/            # Unit + integration tests
+├── Dockerfile                # Production Docker image
+├── docker-entrypoint.sh      # Container startup script
+├── jest.config.js            # Jest configuration
+├── nodemon.json              # Dev server config
+├── tsconfig.json             # TypeScript config
+└── package.json
 ```
 
----
+## Kiến trúc
 
-## Architecture
-
-### Layered Architecture (Request Flow)
+### Luồng xử lý Request
 
 ```
-Request
-  → Helmet → CORS → Body Parser → Input Sanitization → Rate Limiting
-  → Route matching
-  → [Auth Middleware — JWT verification]
-  → [Validation Middleware — Zod schema]
-  → Controller (handle request)
-  → Service (business logic)
-  → Prisma ORM (database queries)
-  → Response (JSON)
+Client Request
+    │
+    ▼
+┌─────────────────────┐
+│  Security Middleware │  Helmet, CORS, Rate Limiting
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Route Matching      │  Express Router
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Auth Middleware      │  JWT verify → req.user
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Role Middleware      │  RBAC check (optional)
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Validate Middleware  │  Zod schema validation
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Controller          │  Extract params, call service
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Service             │  Business logic + Prisma queries
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  Response Utility     │  Standardized JSON response
+└─────────────────────┘
 ```
 
-### Controllers (12 files)
+### Hệ thống phân quyền (RBAC)
 
-| File | Module | Endpoints |
-|------|--------|:---------:|
-| authController.ts | Register, Login, Refresh, Logout, OTP | 13 |
-| userController.ts | Profile, Update, Posts, Comments | 10 |
-| postController.ts | CRUD, Pin, Lock, Featured | 13 |
-| commentController.ts | CRUD, Replies, Hide | 5 |
-| voteController.ts | Post/Comment vote | 7 |
-| bookmarkController.ts | Bookmark CRUD | 5 |
-| searchController.ts | Search posts, users | 3 |
-| notificationController.ts | Notifications CRUD | 7 |
-| blockReportController.ts | Block, Report | 11 |
-| categoryController.ts | Categories CRUD | 7 |
-| tagController.ts | Tags CRUD | 8 |
-| adminController.ts | Dashboard, Management | 31 |
+| Role | Cấp độ | Quyền |
+|---|---|---|
+| `MEMBER` | 1 | Tạo/sửa nội dung mình, vote, bookmark, báo cáo |
+| `MODERATOR` | 2 | + Pin/lock bài, ẩn/hiện nội dung, quản lý reports, tags |
+| `ADMIN` | 3 | + Quản lý categories, users, roles, xem audit logs |
+| `BOT` | 1 | Tạo nội dung tự động (tương đương MEMBER) |
 
-### Services (15 files)
+### Xác thực (Authentication)
 
-| File | Business logic |
-|------|---------------|
-| authService.ts | JWT token management, register, login |
-| userService.ts | User CRUD, profile |
-| postService.ts | Post CRUD, permissions, filtering |
-| commentService.ts | Nested comments, quote reply, edit time |
-| voteService.ts | Polymorphic vote (POST/COMMENT) |
-| bookmarkService.ts | Bookmark toggle |
-| searchService.ts | Full-text search + filters |
-| notificationService.ts | Create/read/soft-delete notifications |
-| blockService.ts | User blocking logic |
-| reportService.ts | Report handling |
-| categoryService.ts | Category management |
-| tagService.ts | Tag operations |
-| auditLogService.ts | Admin action logging |
-| otpService.ts | OTP generation, verification, cleanup |
-| emailService.ts | Nodemailer email sending (OTP templates) |
+- **Access Token**: JWT, hết hạn sau 15 phút (mặc định)
+- **Refresh Token**: JWT, hết hạn sau 7 ngày, lưu trong DB
+- **OTP**: 6 chữ số, hết hạn sau 10 phút, giới hạn 5 lần thử
+- **Password**: bcrypt với 12-round salt
 
-### Middlewares (5 files)
+### Rate Limiting
 
-| File | Chức năng |
-|------|----------|
-| authMiddleware.ts | JWT verification, attach user to request |
-| roleMiddleware.ts | RBAC — check role >= required |
-| validateMiddleware.ts | Zod schema validation (body, query, params) |
-| securityMiddleware.ts | Rate limiting, input sanitization |
-| errorMiddleware.ts | Global error handler |
+| Endpoint | Giới hạn | Thời gian |
+|---|---|---|
+| API chung | 300 requests | 15 phút |
+| Auth (login) | 10 requests | 15 phút |
+| Tạo nội dung | 5 requests | 1 phút |
+| Vote | 30 requests | 1 phút |
+| Gửi OTP | 3 requests | 5 phút |
+| Xác thực OTP | 10 requests | 10 phút |
+| Tìm kiếm | 30 requests | 1 phút |
 
----
+## API Endpoints
 
-## Cách chạy
+Xem chi tiết tại [docs/API_REFERENCE.md](../docs/API_REFERENCE.md).
 
-### Yêu cầu
+### Tóm tắt nhóm API
 
-- Node.js >= 20.x
-- PostgreSQL 15+ (hoặc Docker)
+| Nhóm | Base Path | Mô tả |
+|---|---|---|
+| Auth | `/api/v1/auth` | Đăng ký, đăng nhập, OTP, refresh token |
+| Posts | `/api/v1/posts` | CRUD bài viết, pin, lock, status |
+| Comments | `/api/v1/comments` | CRUD bình luận, reply chains |
+| Users | `/api/v1/users` | Profile, settings, avatar |
+| Categories | `/api/v1/categories` | Quản lý danh mục |
+| Tags | `/api/v1/tags` | Quản lý tags |
+| Votes | `/api/v1/posts/:id/vote` | Vote bài viết & bình luận |
+| Bookmarks | `/api/v1/posts/:id/bookmark` | Lưu bài viết |
+| Search | `/api/v1/search` | Tìm kiếm bài viết & users |
+| Notifications | `/api/v1/notifications` | Thông báo người dùng |
+| Reports | `/api/v1/reports` | Báo cáo vi phạm |
+| Admin | `/api/v1/admin` | Quản trị hệ thống |
+| Config | `/api/v1/config` | Cấu hình công khai |
 
-### Cài đặt
+## Database
+
+Xem schema chi tiết tại [docs/DATABASE.md](../docs/DATABASE.md).
+
+### Models chính
+
+- `users` — Tài khoản người dùng với roles & reputation
+- `posts` — Bài viết với categories, tags, voting, pinning
+- `comments` — Bình luận lồng nhau, quote, voting
+- `categories` — Danh mục với permissions
+- `tags` — Tags phân loại nội dung
+- `votes` — Upvote/downvote tracking
+- `bookmarks` — Bài viết đã lưu
+- `notifications` — Thông báo
+- `reports` — Báo cáo vi phạm
+- `user_blocks` — Block người dùng
+- `audit_logs` — Nhật ký hành động admin
+
+## Testing
 
 ```bash
-npm install
-cp .env.example .env           # Cấu hình DATABASE_URL + JWT secrets
-npm run db:generate            # Generate Prisma Client
-npm run db:migrate             # Chạy migrations
-npm run db:seed                # Seed dữ liệu mẫu (tùy chọn)
-npx prisma migrate reset --force  #clear
+# Chạy tất cả tests
+npm test
+
+# Unit tests
+npm run test:unit
+
+# Integration tests (cần database)
+npm run test:integration
+
+# Coverage
+npm run test:coverage
 ```
 
-### Scripts
+### Test files hiện có
 
-| Script | Lệnh | Mô tả |
-|--------|------|-------|
-| `dev` | `nodemon` | Development với hot reload |
-| `build` | `tsc` | Build TypeScript |
-| `start` | `node dist/index.js` | Production |
-| `db:generate` | `prisma generate` | Generate Prisma Client |
-| `db:migrate` | `prisma migrate dev` | Tạo + chạy migration |
-| `db:push` | `prisma db push` | Push schema (no migration) |
-| `db:studio` | `prisma studio` | GUI tại http://localhost:5555 |
-| `db:seed` | `tsx prisma/seed.ts` | Seed dữ liệu mẫu |
+- `auth.integration.test.ts` — Luồng xác thực
+- `utils.errors.test.ts` — Error handling
+- `utils.jwt.test.ts` — JWT token utils
 
-### Development
+## Docker
 
 ```bash
-npm run dev
-# → ✅ Database connected successfully
-# → 🚀 Server is running on http://localhost:5000
-# → Health: GET http://localhost:5000/api/v1/health
+# Build image
+docker build -t mini-forum-backend .
+
+# Run container
+docker run -p 5000:5000 \
+  -e DATABASE_URL=postgresql://... \
+  -e JWT_ACCESS_SECRET=... \
+  -e JWT_REFRESH_SECRET=... \
+  mini-forum-backend
 ```
 
----
-
-## Environment Variables
-
-```dotenv
-PORT=5000                        # HTTP server port
-NODE_ENV=development             # development | production
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mini_forum?schema=public"
-JWT_ACCESS_SECRET=<min 32 chars> # Access token secret
-JWT_REFRESH_SECRET=<min 32 chars># Refresh token secret
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-FRONTEND_URL=http://localhost:5173,http://localhost:5174
-COMMENT_EDIT_TIME_LIMIT=30       # Phút giới hạn edit comment
-
-# SMTP (tùy chọn, cần cho OTP email)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM_EMAIL=noreply@forum.com
-SMTP_FROM_NAME=Mini Forum
-```
-
----
-
-## API Overview
-
-**Base URL**: `http://localhost:5000/api/v1` — **121 endpoints**
-
-| Prefix | Module | Endpoints |
-|--------|--------|:---------:|
-| /auth | Authentication + OTP | 13 |
-| /users | User Management | 10 |
-| /posts | Posts | 13 |
-| /comments | Comments | 5 |
-| /categories | Categories | 7 |
-| /tags | Tags | 8 |
-| /search | Search | 3 |
-| /notifications | Notifications | 7 |
-| /admin | Administration | 31 |
-| (root-mounted) | Vote, Bookmark, Block, Report | 24 |
-
-> Chi tiết: [docs/03-API/](../docs/03-API/README.md)
-
----
-
-## Security
-
-- **JWT**: Access (15m) + Refresh (7d), HS256
-- **RBAC**: MEMBER, MODERATOR, ADMIN
-- **Rate Limiting**: API 300/15m, Auth 10/15m, Content 5/1m, Vote/Search 30/1m
-- **Input Validation**: Zod schemas cho tất cả inputs
-- **Sanitization**: XSS prevention, NoSQL injection protection
-- **Headers**: Helmet (CSP, X-Frame-Options, HSTS, etc.)
-- **Password**: bcrypt (salt rounds: 12)
-- **Audit**: AuditLog model (15 action types)
-
-> Chi tiết: [docs/09-SECURITY.md](../docs/09-SECURITY.md)
-
----
-
-## Ghi chú kỹ thuật
-
-1. **ESM Modules**: `"type": "module"` — imports cần đuôi `.js`
-2. **TypeScript Strict**: `strict: true`, `noImplicitAny: true`
-3. **Polymorphic Vote**: Table `votes` với `targetType` (POST/COMMENT), counters denormalized
-4. **Comment Edit Time**: Configurable qua env (default 30 phút)
-5. **Soft Delete**: Posts/Comments dùng status, Notifications dùng deletedAt
-6. **Graceful Shutdown**: SIGINT/SIGTERM handlers trong index.ts
-7. **OTP Email**: Nodemailer SMTP, OTP 6 số (hashed), max 5 attempts, 60s resend delay
-8. **Response Transform**: Global middleware chuyển snake_case → camelCase cho frontend
-
----
-
-## Liên kết
-
-- [Kiến trúc hệ thống](../docs/01-ARCHITECTURE.md)
-- [Database Schema](../docs/02-DATABASE.md)
-- [API Reference](../docs/03-API/README.md)
-- [Deployment Guide](../docs/07-DEPLOYMENT.md)
+Container tự động chạy `prisma migrate deploy` và `prisma db seed` khi khởi động.

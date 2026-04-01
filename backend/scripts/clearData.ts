@@ -37,6 +37,11 @@ async function clearDatabase() {
     console.log("Delete user content context...")
     await prisma.user_content_context.deleteMany();
 
+    console.log("Delete Others... ")
+    await prisma.post_tags.deleteMany();
+    await prisma.refresh_tokens.deleteMany();
+
+
     console.log('Database cleanup completed successfully!');
     console.log('All data except users has been deleted.');
   } catch (error) {

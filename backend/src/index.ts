@@ -16,8 +16,8 @@ async function main() {
 
     // Start server
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server is running on http://localhost:${PORT}`);
-      console.log(`📚 API Health: http://localhost:${PORT}/api/v1/health`);
+      console.log(`🚀 Server is running`);
+      console.log(`📚 API Health: /api/v1/health`);
       console.log(`🔧 Environment: ${config.nodeEnv}`);
     });
   } catch (error) {

@@ -1,287 +1,195 @@
-# Mini Forum — Frontend
+# Frontend — Mini Forum User Portal
 
-> **Version**: v1.25.1  
-> **Last Updated**: 2026-03-19
-
-User-facing SPA — React 18 + TypeScript + Vite + TailwindCSS v4.
-
----
+Giao diện người dùng (SPA) cho hệ thống Mini Forum, xây dựng trên React 18 + Vite + Tailwind CSS.
 
 ## Tech Stack
 
-| Package | Version | Mục đích |
-|---------|:-------:|----------|
-| react | 18.3.1 | UI framework |
-| react-router-dom | 7.13.0 | Routing (v7) |
-| @tanstack/react-query | 5.90.20 | Server state management |
-| axios | 1.13.4 | HTTP client |
-| react-hook-form | 7.55.0 | Form handling |
-| zod | 4.3.6 | Schema validation |
-| tailwindcss | 4.1.12 | CSS framework (v4 + @tailwindcss/vite) |
-| @radix-ui/* | various | Headless UI (Shadcn base) |
-| @mui/material | 7.3.5 | Material UI components |
-| motion | 12.23.24 | Animations (Framer Motion) |
-| recharts | 2.15.2 | Charts |
-| lucide-react | 0.487.0 | Icons |
-| sonner | 2.0.3 | Toast notifications |
-| next-themes | 0.4.6 | Dark/light theme |
-| date-fns | 3.6.0 | Date utilities |
+| Công nghệ | Phiên bản | Mục đích |
+|---|---|---|
+| React | 18.3.1 | UI framework |
+| Vite | 6.3.5 | Build tool & dev server |
+| TypeScript | - | Type safety |
+| Tailwind CSS | 4.1.12 | Styling |
+| React Router | 7.13.0 | Client-side routing |
+| TanStack React Query | 5.90.20 | Server state management |
+| Axios | 1.13.4 | HTTP client |
+| React Hook Form | 7.55.0 | Form management |
+| Zod | - | Form validation |
+| Radix UI | - | Accessible UI primitives (30+ components) |
+| Motion | 12.23.24 | Animations |
+| Sonner | - | Toast notifications |
+| Lucide React | - | Icons |
+| Recharts | - | Charts |
+| Vitest | - | Testing |
 
----
+## Cài đặt
+
+```bash
+cd frontend
+npm install
+```
+
+## Biến môi trường
+
+Tạo file `.env.local`:
+
+```env
+VITE_API_URL=http://localhost:5000/api/v1
+VITE_USE_MOCK_API=false
+```
+
+## Scripts
+
+| Lệnh | Mô tả |
+|---|---|
+| `npm run dev` | Dev server tại `http://localhost:5173` |
+| `npm run build` | Build production → `dist/` |
+| `npm run preview` | Preview bản build production |
+| `npm test` | Chạy tests (Vitest) |
+| `npm run test:watch` | Tests ở chế độ watch |
+| `npm run test:ui` | UI test runner |
+| `npm run test:coverage` | Coverage report |
 
 ## Cấu trúc thư mục
 
 ```
 frontend/src/
-├── main.tsx                    # Entry point
-├── api/
-│   ├── axios.ts               # Axios instance, token interceptor
-│   ├── endpoints.ts           # API endpoint constants
-│   └── services/              # 11 API service files
+├── main.tsx                  # Entry point
 ├── app/
-│   ├── App.tsx                # Root component, route config
-│   └── components/            # Shared UI components
-├── components/
-│   ├── layout/                # 7 layout components
-│   ├── common/                # 21+ reusable components
-│   ├── ui/                    # Base UI (shadcn-generated)
-│   └── PostCard.tsx           # Post card component
-├── contexts/                  # 4 React contexts
-├── hooks/                     # 40+ custom hooks
-├── lib/                       # Utility functions
-├── pages/                     # 14 page components
-├── routes/                    # Route definitions
-├── styles/                    # Global styles (~34 animation tokens)
-└── types/                     # TypeScript type definitions
+│   └── App.tsx               # Router setup, providers
+├── pages/                    # Route page components
+│   ├── HomePage.tsx          # Trang chủ — feed bài viết
+│   ├── PostDetailPage.tsx    # Chi tiết bài viết + bình luận
+│   ├── EditPostPage.tsx      # Chỉnh sửa bài viết (protected)
+│   ├── ProfilePage.tsx       # Hồ sơ người dùng
+│   ├── SearchPage.tsx        # Tìm kiếm bài viết & users
+│   ├── CategoriesPage.tsx    # Duyệt danh mục
+│   ├── TagsPage.tsx          # Duyệt tags
+│   ├── BookmarksPage.tsx     # Bài viết đã lưu (protected)
+│   ├── EditProfilePage.tsx   # Cài đặt hồ sơ (protected)
+│   ├── BlockedUsersPage.tsx  # Quản lý chặn (protected)
+│   ├── NotificationsPage.tsx # Thông báo (protected)
+│   └── NotFoundPage.tsx      # Trang 404
+├── routes/
+│   └── PrivateRoute.tsx      # Route guard — redirect nếu chưa đăng nhập
+├── components/               # UI components
+│   ├── ui/                   # Radix UI primitives tùy chỉnh
+│   ├── layout/               # Header, Sidebar, Footer, MainLayout
+│   └── ...                   # Feature components
+├── api/
+│   ├── axios.ts              # Axios instance + interceptors
+│   ├── endpoints.ts          # API endpoint constants
+│   └── services/             # API service functions
+├── contexts/
+│   ├── AuthContext.tsx        # Authentication state
+│   ├── SidebarContext.tsx     # Sidebar collapse/expand
+│   ├── FontSizeContext.tsx    # Accessibility — font scale
+│   └── GlobalLoadingContext.tsx # Loading overlay
+├── hooks/                    # Custom React hooks
+├── types/                    # TypeScript interfaces
+├── lib/                      # Utility functions
+├── styles/                   # Global CSS + Tailwind
+└── test/                     # Test setup
 ```
 
----
+## Routing
 
-## Pages (14)
+### Trang công khai
 
-### Public (9)
-
-| Path | Component | Mô tả |
-|------|-----------|-------|
-| `/` | HomePage | Trang chủ, feed bài viết, filter, sort |
-| `/posts/:id` | PostDetailPage | Chi tiết bài viết + comments |
-| `/users/:username` | ProfilePage | Trang profile user |
-| `/search` | SearchPage | Tìm kiếm bài viết, users |
-| `/categories` | CategoriesPage | Danh sách categories |
-| `/tags` | TagsPage | Danh sách tags |
+| Route | Component | Mô tả |
+|---|---|---|
+| `/` | HomePage | Feed bài viết chính, bộ lọc |
+| `/posts/:id` | PostDetailPage | Xem bài viết + bình luận |
+| `/users/:username` | ProfilePage | Hồ sơ & hoạt động người dùng |
+| `/search` | SearchPage | Tìm kiếm bài viết & users |
+| `/categories` | CategoriesPage | Duyệt danh mục |
+| `/tags` | TagsPage | Duyệt tags |
 | `/login` | LoginPage | Đăng nhập |
-| `/register` | RegisterPage | Đăng ký (multi-step OTP) |
-| `/forgot-password` | ForgotPasswordPage | Đặt lại mật khẩu (OTP) |
+| `/register` | RegisterPage | Đăng ký (OTP) |
+| `/forgot-password` | ForgotPasswordPage | Quên mật khẩu (OTP) |
 
-### Protected — Yêu cầu đăng nhập (5)
+### Trang yêu cầu đăng nhập
 
-| Path | Component | Mô tả |
-|------|-----------|-------|
+| Route | Component | Mô tả |
+|---|---|---|
 | `/posts/:id/edit` | EditPostPage | Chỉnh sửa bài viết |
-| `/bookmarks` | BookmarksPage | Bài viết đã bookmark |
-| `/settings/profile` | EditProfilePage | Chỉnh sửa profile |
-| `/settings/blocked` | BlockedUsersPage | Quản lý users đã block |
-| `/notifications` | NotificationsPage | Danh sách thông báo |
+| `/bookmarks` | BookmarksPage | Bài viết đã lưu |
+| `/settings/profile` | EditProfilePage | Hồ sơ & đổi mật khẩu |
+| `/settings/blocked` | BlockedUsersPage | Quản lý chặn người dùng |
+| `/notifications` | NotificationsPage | Thông báo |
 
----
+## Contexts
 
-## Components
+### AuthContext
+Quản lý trạng thái đăng nhập toàn cục.
 
-### Layout (6)
+| Method | Mô tả |
+|---|---|
+| `login(credentials)` | Đăng nhập, lưu token |
+| `register(data)` | Đăng ký tài khoản |
+| `logout()` | Đăng xuất, xóa token |
+| `updateProfile(data)` | Cập nhật hồ sơ |
+| `refreshUser()` | Refresh thông tin user |
 
-| Component | Mô tả |
-|-----------|-------|
-| MainLayout | Layout chính (Header + Sidebar + Content + RightSidebar) |
-| Header | Navigation header (logo, search, user menu, theme, font size) |
-| Sidebar | Left sidebar (categories, tags, navigation) |
-| RightSidebar | Right sidebar (featured/pinned posts) |
-| MobileNav | Mobile hamburger drawer |
-| MobileCategoryBar | Horizontal scrollable category pills (mobile) |
+### SidebarContext
+Điều khiển hiển thị sidebar trái/phải.
 
-### Common (20+)
+### FontSizeContext
+Hỗ trợ accessibility — 5 mức scale font: `xs` (0.7x), `sm` (0.85x), `md` (1x), `lg` (1.15x), `xl` (1.3x).
 
-| Component | Mô tả |
-|-----------|-------|
-| PostCard | Card hiển thị bài viết (author badge, vote score, tags) |
-| VoteButtons | Nút vote up/down với animation |
-| BookmarkButton | Toggle bookmark |
-| PostFormDialog | Dialog tạo/sửa bài viết (Markdown, draft auto-save) |
-| ReportModal | Modal report nội dung |
-| MarkdownRenderer | Render Markdown content (hỗ trợ avatar detection) |
-| MarkdownGuide | Hướng dẫn cú pháp Markdown với copy-to-clipboard |
-| LoginRequiredDialog | Dialog yêu cầu đăng nhập |
-| NotificationBell | Icon thông báo + badge (dropdown) |
-| PinnedPostsModal | Modal bài viết đã ghim (auto-popup, 10m cooldown) |
-| ThemeToggle | Toggle dark/light theme |
-| FontSizeSelector | Chọn cỡ chữ (5 mức: xs/sm/md/lg/xl) |
-| TagFilterBar | Multi-tag filter với Popover + Apply |
-| TagSearchInput | Debounced tag search input |
-| EmojiPicker | Chọn emoji cho posts/comments |
-| OtpVerification | OTP input 6 số với auto-focus |
-| ErrorBoundary | Error boundary component |
-| RestrictedContent | Permission-based content hiding |
-| PermissionBadge | Role/permission badges |
-| AnimatedIcon | Icon với animation wrapper |
+### GlobalLoadingContext
+Loading overlay toàn trang.
 
-### Skeleton (8)
+## Custom Hooks
 
-PostCardSkeleton, CommentSkeleton, ProfileSkeleton, SearchSkeleton, NotificationSkeleton, CategorySkeleton, TagSkeleton, DashboardSkeleton.
+### Data Fetching
 
----
+| Hook | Mô tả |
+|---|---|
+| `usePosts(params)` | Lấy danh sách bài viết (phân trang, lọc) |
+| `useComments(postId, params)` | Lấy bình luận của bài viết |
+| `useCategories()` | Lấy danh mục |
+| `useCategoriesWithTags()` | Danh mục kèm tags phổ biến |
+| `useTags(limit)` | Lấy danh sách tags |
+| `useBookmarks(userId)` | Bài viết đã lưu |
+| `useNotifications(page, limit)` | Thông báo (auto-refresh 60s) |
+| `useSearch(params)` | Tìm kiếm bài viết |
+| `useSearchUsers(q)` | Tìm kiếm người dùng |
+| `useUsers(userId)` | Lấy thông tin user |
+| `useUserByUsername(username)` | User theo username |
+| `useConfig()` | Cấu hình hệ thống |
 
-## Custom Hooks (40+)
+### Mutations
 
-Các custom hooks được tổ chức theo domain:
+| Hook | Mô tả |
+|---|---|
+| `useCreateComment()` | Tạo bình luận |
+| `useUpdateComment()` | Sửa bình luận |
+| `useDeleteComment()` | Xóa bình luận |
+| `useVotePost()` | Vote bài viết |
+| `useVoteComment()` | Vote bình luận |
+| `useCreateBookmark()` | Lưu bài viết |
+| `useRemoveBookmark()` | Bỏ lưu bài viết |
+| `useUpdateProfile()` | Cập nhật hồ sơ |
+| `useChangePassword()` | Đổi mật khẩu |
+| `useUpdateAvatar()` | Đổi avatar |
 
-| Hook group | Mục đích |
-|------------|----------|
-| usePosts, usePost, usePostBySlug, usePostsByAuthor, useFeaturedPosts, useLatestPosts, useInfinitePosts | Fetch, create, update, delete posts |
-| useComments, useCreateComment, useUpdateComment, useDeleteComment | Fetch và quản lý comments |
-| useCategories, useCategoriesWithTags, useCategory, useCategoryBySlug | Categories data |
-| useTags, usePopularTags, usePopularTagsForCategory, useSearchTags | Tags data |
-| useVotePost, useVoteComment, useRemovePostVote, useRemoveCommentVote, useMyVoteHistory | Voting |
-| useBookmarks, useBookmarkStatus, useAddBookmark, useRemoveBookmark, useToggleBookmark | Bookmarks |
-| useSearch, useSearchUsers, useSearchSuggestions | Search |
-| useNotifications, useUnreadNotificationCount, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification | Notifications |
-| useUsers, useUserByUsername, useUserPosts, useUserComments | User profiles |
-| useUpdateProfile, useChangeUsername, useChangePassword, useUpdateAvatar | Profile mutations |
-| useResponsive | Media query breakpoint detection |
-| useScrollLock | Lock body scroll (modals) |
+### UI Utilities
 
----
+| Hook | Mô tả |
+|---|---|
+| `useBreakpoint()` | Detect Tailwind breakpoint hiện tại |
+| `useScrollLock(isLocked)` | Lock scroll cho modal/dialog |
+| `useDebounce(value, delay)` | Debounce giá trị |
+| `useResponsive()` | Responsive utilities |
 
-## Contexts (4)
+## Cấu hình React Query
 
-| Context | State | Methods |
-|---------|-------|--------|
-| AuthContext | user, isAuthenticated, isLoading | login(), logout(), register(), refreshUser() |
-| SidebarContext | isLeftSidebarCollapsed, isRightSidebarCollapsed | toggle, collapse/expand (localStorage) |
-| FontSizeContext | scale (xs/sm/md/lg/xl) | setScale() (localStorage) |
-| GlobalLoadingContext | isLoading, loadingMessage | showLoading(), hideLoading() |
+- **Stale time**: 5 phút
+- **Retry**: 1 lần
+- **Refetch on window focus**: Tắt
+- **Notifications**: Stale time 30s, refetch interval 60s
 
----
+## Deploy
 
-## API Services (10)
-
-| File | Endpoints |
-|------|----------|
-| authService.ts | Login, register, refresh, logout, OTP, reset password |
-| userService.ts | Profile CRUD, user posts/comments |
-| postService.ts | Posts CRUD, featured, latest |
-| commentService.ts | Comments CRUD, replies |
-| categoryService.ts | Categories, popular tags per category |
-| tagService.ts | Tags, popular, search |
-| voteService.ts | Vote/unvote posts & comments, vote history |
-| bookmarkService.ts | Bookmark toggle, list, status |
-| searchService.ts | Search posts, users, suggestions |
-| notificationService.ts | Notifications CRUD, mark read |
-
----
-
-## State Management
-
-### Server State — TanStack Query
-
-- Cache: staleTime 5 phút
-- Retry: 1 lần
-- Optimistic updates cho vote, bookmark
-- Query invalidation khi mutate
-
-### Client State — React Context
-
-- AuthContext: authentication state
-- SidebarContext: sidebar open/close
-- GlobalLoadingContext: global loading overlay
-
-### Token Storage
-
-| Key | Storage | Mô tả |
-|-----|---------|-------|
-| `forum_access_token` | localStorage | JWT access token (15m) |
-| `forum_refresh_token` | localStorage | JWT refresh token (7d) |
-
-Auto-refresh: Axios interceptor tự động refresh khi 401 + request queue cho concurrent requests.
-
----
-
-## Animations & UX
-
-- ~30+ CSS animation keyframes trong global styles
-- Framer Motion (motion) cho page transitions, modal animations
-- Optimistic UI updates cho vote/bookmark
-- Skeleton loading states (8 variants)
-- Toast notifications (Sonner)
-- Infinite scroll
-- Responsive masonry layout
-
----
-
-## Cách chạy
-
-### Yêu cầu
-
-- Node.js >= 20.x
-- Backend đang chạy tại port 5000
-
-### Cài đặt
-
-```bash
-npm install
-cp .env.example .env     # Cấu hình VITE_API_URL
-```
-
-### Environment Variables
-
-```dotenv
-VITE_API_URL=http://localhost:5000/api/v1
-VITE_USE_MOCK_API=false
-```
-
-### Scripts
-
-| Script | Lệnh | Mô tả |
-|--------|------|-------|
-| `dev` | `vite` | Development server (port 5173) |
-| `build` | `vite build` | Build production |
-| `preview` | `vite preview` | Preview production build |
-
-### Development
-
-```bash
-npm run dev
-# → http://localhost:5173
-# → Yêu cầu backend đang chạy tại :5000
-```
-
----
-
-## Responsive Design
-
-| Breakpoint | Layout |
-|:----------:|--------|
-| < 640px | Mobile — single column, bottom nav |
-| 640–1024px | Tablet — collapsed sidebar |
-| > 1024px | Desktop — full 3-column layout |
-
-Hook `useResponsive` cung cấp breakpoint detection cho components.
-
----
-
-## Ghi chú kỹ thuật
-
-1. **TailwindCSS v4**: Plugin mới `@tailwindcss/vite` (không dùng PostCSS plugin)
-2. **Shadcn/UI**: Components trong `src/app/components/ui` và `src/components/ui`
-3. **Path Alias**: `@` → `./src` (Vite + TSConfig)
-4. **React Router v7**: Future flags enabled cho migration path
-5. **Markdown**: Posts + comments hỗ trợ Markdown qua `MarkdownRenderer`
-6. **Dark Mode**: Theme toggle + CSS variables
-7. **Vite Config**: historyApiFallback enabled cho SPA routing
-
----
-
-## Liên kết
-
-- [Kiến trúc hệ thống](../docs/01-ARCHITECTURE.md)
-- [API Reference](../docs/03-API/README.md)
-- [Features Matrix](../docs/04-FEATURES.md)
-- [Deployment Guide](../docs/07-DEPLOYMENT.md)
+Đã cấu hình `vercel.json` cho Vercel deployment — SPA rewrites tất cả routes về `index.html`.

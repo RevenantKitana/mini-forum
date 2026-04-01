@@ -1,97 +1,189 @@
-# Mini Forum Web
+# Mini Forum
 
-> **Version**: v1.27.0 — MVP hoàn thành (55/55 tasks)
+Nền tảng diễn đàn cộng đồng tiếng Việt, được xây dựng theo kiến trúc monorepo với hệ thống bot AI tự động tạo nội dung.
 
-Website Forum Full Stack — đăng bài, bình luận, vote, bookmark, thông báo, quản trị.
+## Tổng quan hệ thống
 
----
+| Sub-project | Mô tả | Tech Stack | Port |
+|---|---|---|---|
+| **backend** | REST API server | Node.js, Express, TypeScript, Prisma, PostgreSQL | 5000 |
+| **frontend** | Giao diện người dùng | React 18, Vite, Tailwind CSS, Radix UI | 5173 |
+| **admin-client** | Bảng điều khiển quản trị | React 18, Vite, Tailwind CSS, Radix UI | 5174 |
+| **vibe-content** | Dịch vụ sinh nội dung AI | Node.js, TypeScript, Google Gemini, node-cron | 4000 |
 
-## Quick Start
+## Kiến trúc tổng quan
 
-```bash
-docker-compose up -d                           # PostgreSQL
-cd backend  && npm i && cp .env.example .env   # Sửa JWT secrets + SENDGRID_API_KEY
-npm run db:generate && npm run db:migrate && npm run db:seed && npm run dev
-cd ../frontend     && npm i && cp .env.example .env && npm run dev   # VITE_USE_MOCK_API=false
-cd ../admin-client && npm i && cp .env.example .env && npm run dev
+```
+┌─────────────┐     ┌──────────────┐     ┌────────────────┐
+│  Frontend   │────▶│              │◀────│  Admin Client  │
+│  (React)    │     │   Backend    │     │    (React)     │
+│  :5173      │     │  (Express)   │     │    :5174       │
+└─────────────┘     │    :5000     │     └────────────────┘
+                    │              │
+                    │  PostgreSQL  │◀────┐
+                    │   (Prisma)   │     │
+                    └──────────────┘     │
+                           ▲            │
+                           │     ┌──────┴─────────┐
+                           │     │ Vibe Content   │
+                           └─────│ (Bot Service)  │
+                                 │   :4000        │
+                                 │  Gemini API    │
+                                 └────────────────┘
 ```
 
-| Service | URL | Test Account |
-|---------|-----|-------------|
-| Frontend | http://localhost:5173 | `sfw.forum@atomicmail.io` / `Admin@123` |
-| Admin Client | http://localhost:5174 | `sfw.forum@atomicmail.io` / `Admin@123` |
-| Backend API | http://localhost:5000/api/v1/health | — |
-| Vibe Content | http://localhost:3100/health | — (tùy chọn) |
+## Yêu cầu hệ thống
 
-> Chi tiết đầy đủ: [docs/07-DEPLOYMENT.md](docs/07-DEPLOYMENT.md)
+- **Node.js** >= 18.x
+- **PostgreSQL** >= 14
+- **npm** >= 9.x (hoặc yarn/pnpm)
 
----
+## Cài đặt nhanh
 
-## Tech Stack
+### 1. Clone và cài đặt dependencies
 
-| Layer | Công nghệ |
-|-------|-----------|
-| Backend | Node.js 20+, Express 4.21, TypeScript (strict), Prisma 5.22, Zod 3.24, SendGrid |
-| Frontend | React 18.3, Vite 6.3, TailwindCSS 4.1, TanStack Query 5.90, React Router 7.13 |
-| Admin Client | React 18.2, Vite 6.3, TailwindCSS 4.1, React Router 6.21, shadcn/ui |
-| Vibe Content | Node.js, Express, TypeScript, Gemini AI, node-cron, Winston |
-| Database | PostgreSQL 15+ (15 models, 12 enums) |
-| Auth | JWT (Access 15m + Refresh 7d), RBAC (Admin / Moderator / Member / Bot), OTP email |
+```bash
+git clone <repo-url> mini-forum
+cd mini-forum
 
----
+# Cài đặt tất cả sub-projects
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+cd admin-client && npm install && cd ..
+cd vibe-content && npm install && cd ..
+
+# Cài Playwright (E2E tests - root)
+npm install
+```
+
+### 2. Thiết lập cơ sở dữ liệu
+
+```bash
+# Tạo database PostgreSQL
+createdb mini_forum
+
+# Chạy migration và seed data
+cd backend
+cp .env.example .env  # Cấu hình DATABASE_URL
+npx prisma migrate dev
+npm run db:seed
+```
+
+### 3. Cấu hình biến môi trường
+
+Tạo file `.env` cho mỗi sub-project. Xem chi tiết tại [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+
+### 4. Khởi chạy hệ thống
+
+```bash
+# Terminal 1 - Backend API
+cd backend && npm run dev
+
+# Terminal 2 - Frontend
+cd frontend && npm run dev
+
+# Terminal 3 - Admin Client
+cd admin-client && npm run dev
+
+# Terminal 4 - Vibe Content (tùy chọn)
+cd vibe-content && npm run dev
+```
+
+## Scripts chính
+
+| Lệnh | Mô tả |
+|---|---|
+| `backend/npm run dev` | Chạy backend dev server (nodemon) |
+| `backend/npm run build` | Build TypeScript → `dist/` |
+| `backend/npm run db:migrate` | Chạy Prisma migration |
+| `backend/npm run db:seed` | Seed dữ liệu ban đầu |
+| `backend/npm run db:studio` | Mở Prisma Studio |
+| `frontend/npm run dev` | Chạy frontend dev server |
+| `frontend/npm run build` | Build production |
+| `admin-client/npm run dev` | Chạy admin panel dev server |
+| `vibe-content/npm run dev` | Chạy bot content service |
+| `vibe-content/npm run seed:all` | Seed bot users và tags |
+
+## Testing
+
+```bash
+# Backend - Jest
+cd backend && npm test
+cd backend && npm run test:coverage
+
+# Frontend - Vitest
+cd frontend && npm test
+
+# Admin Client - Vitest
+cd admin-client && npm test
+
+# E2E - Playwright (root)
+npx playwright test
+```
+
+## Tài liệu chi tiết
+
+| Tài liệu | Mô tả |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Kiến trúc hệ thống chi tiết |
+| [docs/API_REFERENCE.md](docs/API_REFERENCE.md) | Tham chiếu API endpoints đầy đủ |
+| [docs/DATABASE.md](docs/DATABASE.md) | Schema cơ sở dữ liệu |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Hướng dẫn triển khai |
+| [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Biến môi trường |
+| [backend/README.md](backend/README.md) | Tài liệu Backend |
+| [frontend/README.md](frontend/README.md) | Tài liệu Frontend |
+| [admin-client/README.md](admin-client/README.md) | Tài liệu Admin Client |
+| [vibe-content/README.md](vibe-content/README.md) | Tài liệu Vibe Content Service |
 
 ## Cấu trúc dự án
 
 ```
-DA-mini-forum/
-├── backend/            ← API Server (Express + Prisma)
-├── frontend/           ← User Client (React + Vite)
-├── admin-client/       ← Admin Dashboard (React + Vite)
-├── vibe-content/       ← AI Bot Content Generation Service
-├── e2e/                ← End-to-End Tests (Playwright)
-├── docs/               ← Tài liệu dự án
-└── docker-compose.yml  ← PostgreSQL container
+mini-forum/
+├── package.json              # Root (Playwright E2E)
+├── playwright.config.ts      # Cấu hình E2E testing
+├── docs/                     # Tài liệu hệ thống
+├── backend/                  # REST API server
+│   ├── prisma/               # Database schema & migrations
+│   └── src/
+│       ├── controllers/      # Request handlers
+│       ├── services/         # Business logic
+│       ├── routes/           # API route definitions
+│       ├── middlewares/      # Auth, validation, error handling
+│       ├── validations/      # Zod schemas
+│       └── utils/            # Helpers
+├── frontend/                 # User-facing SPA
+│   └── src/
+│       ├── pages/            # Route pages
+│       ├── components/       # UI components
+│       ├── api/              # API client & services
+│       ├── contexts/         # React contexts
+│       └── hooks/            # Custom hooks
+├── admin-client/             # Admin dashboard SPA
+│   └── src/
+│       ├── pages/            # Admin pages
+│       ├── components/       # Admin UI components
+│       └── api/              # Admin API services
+└── vibe-content/             # AI content generation
+    ├── prompts/              # LLM prompt templates
+    ├── seed/                 # Bot user data
+    └── src/
+        ├── services/         # Content generation logic
+        ├── scheduler/        # Cron & retry queue
+        └── config/           # LLM & scheduler config
 ```
-
----
-
-## Tài liệu
-
-| Tài liệu | Mô tả |
-|-----------|-------|
-| [docs/README.md](docs/README.md) | Mục lục tài liệu |
-| [docs/01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md) | Kiến trúc hệ thống |
-| [docs/02-DATABASE.md](docs/02-DATABASE.md) | Database schema (15 models) |
-| [docs/03-API/](docs/03-API/README.md) | API Reference (123 endpoints) |
-| [docs/04-FEATURES.md](docs/04-FEATURES.md) | Tính năng cross-module |
-| [docs/05-CHANGELOG.md](docs/05-CHANGELOG.md) | Lịch sử phiên bản |
-| [docs/06-ROADMAP.md](docs/06-ROADMAP.md) | Roadmap & trạng thái |
-| [docs/07-DEPLOYMENT.md](docs/07-DEPLOYMENT.md) | Setup & deployment |
-| [docs/08-TESTING.md](docs/08-TESTING.md) | Testing strategy |
-| [docs/09-SECURITY.md](docs/09-SECURITY.md) | Security features |
-| [docs/10-API-FLOW.md](docs/10-API-FLOW.md) | API flow visualization |
-
-### Module READMEs
-
-| Module | Mô tả |
-|--------|-------|
-| [backend/README.md](backend/README.md) | Backend development guide |
-| [frontend/README.md](frontend/README.md) | Frontend development guide |
-| [admin-client/README.md](admin-client/README.md) | Admin Client development guide |
-
----
 
 ## Tính năng chính
 
-- **Posts**: CRUD, Markdown, draft auto-save, filter/sort, pinning (Global/Category)
-- **Comments**: 2-level threading, quote reply, edit time limit (dynamic config)
-- **Voting**: Upvote/downvote cho posts & comments, optimistic updates
-- **Bookmarks**: Toggle, danh sách riêng
-- **Notifications**: 5 loại (comment, reply, mention, upvote, system), soft delete
-- **Search**: Full-text posts + users, suggestions
-- **OTP Authentication**: Đăng ký + reset password qua email OTP (SendGrid)
-- **Moderation**: Pin/lock/hide posts, hide comments, ban users, audit logs
-- **Admin Dashboard**: Statistics, management tables, CRUD categories/tags
-- **Vibe Content**: AI bot tự động tạo posts, comments, votes (Gemini LLM)
-- **UX**: Dark/light mode, font size scale, ~30+ CSS animations, skeleton loading, responsive design
+- **Diễn đàn thảo luận** — Bài viết, bình luận lồng nhau, phân loại theo danh mục & tags
+- **Hệ thống vote** — Upvote/downvote cho bài viết và bình luận, điểm reputation
+- **Xác thực OTP** — Đăng ký và reset mật khẩu qua email
+- **Phân quyền RBAC** — 4 role: Member, Moderator, Admin, Bot
+- **Quản trị nội dung** — Pin/lock bài viết, ẩn bình luận, báo cáo vi phạm
+- **Tìm kiếm** — Full-text search bài viết và người dùng
+- **Bookmark & Thông báo** — Lưu bài viết, thông báo realtime
+- **Bot AI** — Tự động tạo nội dung bằng Google Gemini với 12 personality khác nhau
+- **Audit logging** — Ghi lại mọi hành động quản trị
 
+## License
+
+Private project.
