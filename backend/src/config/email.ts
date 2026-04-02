@@ -1,33 +1,36 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import config from './index.js';
 
 /**
- * Initialize SendGrid Mail Client
- * Supports sending emails via SendGrid Web API
+ * Initialize Brevo SMTP transporter via nodemailer
  */
-
-// Initialize SendGrid with API key
-if (config.sendGrid.apiKey) {
-  sgMail.setApiKey(config.sendGrid.apiKey);
-}
+const transporter = nodemailer.createTransport({
+  host: config.brevo.smtpHost,
+  port: config.brevo.smtpPort,
+  secure: false,
+  auth: {
+    user: config.brevo.smtpUser,
+    pass: config.brevo.smtpKey,
+  },
+});
 
 /**
- * Verify SendGrid configuration on startup (non-blocking)
+ * Verify Brevo SMTP configuration on startup (non-blocking)
  */
 export async function verifyEmailConnection(): Promise<boolean> {
   try {
-    if (!config.sendGrid.apiKey) {
-      console.warn('⚠️  SendGrid API key not configured. OTP emails will fail.');
-      console.warn('   Please set SENDGRID_API_KEY in backend/.env');
-      console.warn('   Get your API key from: https://app.sendgrid.com/settings/api_keys');
+    if (!config.brevo.smtpUser || !config.brevo.smtpKey) {
+      console.warn('⚠️  Brevo SMTP credentials not configured. OTP emails will fail.');
+      console.warn('   Please set BREVO_SMTP_USER and BREVO_SMTP_KEY in backend/.env');
       return false;
     }
-    console.log('✅ SendGrid configuration loaded successfully');
+    await transporter.verify();
+    console.log('✅ Brevo SMTP connection verified successfully');
     return true;
   } catch (error) {
-    console.error('❌ SendGrid initialization failed:', error);
+    console.error('❌ Brevo SMTP verification failed:', error);
     return false;
   }
 }
 
-export default sgMail;
+export default transporter;

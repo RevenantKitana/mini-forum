@@ -1,8 +1,8 @@
-import sgMail from '@sendgrid/mail';
+import transporter from '../config/email.js';
 import config from '../config/index.js';
 
 /**
- * Email Service - Handles sending OTP emails
+ * Email Service - Handles sending OTP emails via Brevo SMTP
  */
 
 interface SendOtpEmailOptions {
@@ -18,35 +18,33 @@ interface SendOtpEmailOptions {
 export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> {
   const { to, otp, purpose, expiresInMinutes } = options;
 
-  // Validate SendGrid API key before attempting to send
-  if (!config.sendGrid.apiKey) {
+  if (!config.brevo.smtpUser || !config.brevo.smtpKey) {
     throw new Error(
-      'SendGrid API key not configured. Please set SENDGRID_API_KEY environment variable. ' +
-      'Get your API key from: https://app.sendgrid.com/settings/api_keys'
+      'Brevo SMTP credentials not configured. Please set BREVO_SMTP_USER and BREVO_SMTP_KEY environment variables.'
     );
   }
 
   const subject = purpose === 'register'
-    ? `${config.sendGrid.fromName} - Mã xác thực đăng ký`
-    : `${config.sendGrid.fromName} - Mã xác thực đặt lại mật khẩu`;
+    ? `${config.brevo.fromName} - Mã xác thực đăng ký`
+    : `${config.brevo.fromName} - Mã xác thực đặt lại mật khẩu`;
 
   const html = purpose === 'register'
     ? createRegisterOtpTemplate(otp, expiresInMinutes)
     : createResetOtpTemplate(otp, expiresInMinutes);
 
   try {
-    await sgMail.send({
+    await transporter.sendMail({
       to,
       from: {
-        email: config.sendGrid.fromEmail,
-        name: config.sendGrid.fromName,
+        address: config.brevo.fromEmail,
+        name: config.brevo.fromName,
       },
       subject,
       html,
     });
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Failed to send email via SendGrid: ${error.message}`);
+      throw new Error(`Failed to send email via Brevo SMTP: ${error.message}`);
     }
     throw error;
   }

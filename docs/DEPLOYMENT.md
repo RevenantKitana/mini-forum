@@ -174,7 +174,7 @@ docker run -d \
   -e DATABASE_URL="postgresql://user:pass@host:5432/mini_forum" \
   -e JWT_ACCESS_SECRET="your-32-char-secret" \
   -e JWT_REFRESH_SECRET="your-32-char-secret" \
-  -e FRONTEND_URL="https://your-frontend.vercel.app" \
+  -e FRONTEND_URL="https://your-frontend.vercel.app,https://your-admin.vercel.app" \
   -e NODE_ENV=production \
   mini-forum-backend
 ```

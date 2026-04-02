@@ -38,16 +38,16 @@ Format: `postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public`
 
 Ví dụ: `http://localhost:5173,http://localhost:5174`
 
-### Email (SMTP)
+### Email (Brevo SMTP)
 
 | Biến | Bắt buộc | Mặc định | Mô tả |
 |---|---|---|---|
-| `SMTP_HOST` | ✅ | - | SMTP server host |
-| `SMTP_PORT` | ❌ | `587` | SMTP port |
-| `SMTP_SECURE` | ❌ | `false` | Sử dụng TLS |
-| `SMTP_USER` | ✅ | - | SMTP username/email |
-| `SMTP_PASS` | ✅ | - | SMTP password/app password |
-| `SMTP_FROM_NAME` | ❌ | `Mini Forum` | Tên người gửi |
+| `BREVO_SMTP_HOST` | ❌ | `smtp-relay.brevo.com` | Brevo SMTP host |
+| `BREVO_SMTP_PORT` | ❌ | `587` | Brevo SMTP port |
+| `BREVO_SMTP_USER` | ✅ | - | Brevo SMTP login (cho gửi OTP email) |
+| `BREVO_SMTP_KEY` | ✅ | - | Brevo SMTP key |
+| `BREVO_FROM_EMAIL` | ❌ | `noreply@example.com` | Email người gửi |
+| `BREVO_FROM_NAME` | ❌ | `Mini Forum` | Tên người gửi |
 
 ### OTP
 
@@ -79,12 +79,10 @@ JWT_REFRESH_EXPIRES_IN=7d
 
 FRONTEND_URL=http://localhost:5173,http://localhost:5174
 
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM_NAME=Mini Forum
+BREVO_SMTP_USER=your-brevo-smtp-login
+BREVO_SMTP_KEY=your-brevo-smtp-key
+BREVO_FROM_EMAIL=noreply@example.com
+BREVO_FROM_NAME=Mini Forum
 
 OTP_LENGTH=6
 OTP_EXPIRATION_MINUTES=10

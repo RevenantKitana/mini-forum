@@ -19,8 +19,11 @@ interface Config {
   comment: {
     editTimeLimit: number; // Time limit in minutes for editing comments
   };
-  sendGrid: {
-    apiKey: string;
+  brevo: {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpKey: string;
     fromEmail: string;
     fromName: string;
   };
@@ -33,7 +36,25 @@ interface Config {
 }
 
 // Validate required environment variables at startup
-const requiredEnvVars = ['DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'JWT_ACCESS_SECRET',
+  'JWT_REFRESH_SECRET',
+  'JWT_ACCESS_EXPIRES_IN',
+  'JWT_REFRESH_EXPIRES_IN',
+  'FRONTEND_URL',
+  'COMMENT_EDIT_TIME_LIMIT',
+  'BREVO_SMTP_HOST',
+  'BREVO_SMTP_PORT',
+  'BREVO_SMTP_USER',
+  'BREVO_SMTP_KEY',
+  'BREVO_FROM_EMAIL',
+  'BREVO_FROM_NAME',
+  'OTP_LENGTH',
+  'OTP_EXPIRATION_MINUTES',
+  'OTP_MAX_ATTEMPTS',
+  'OTP_RESEND_DELAY_SECONDS',
+];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 if (missingEnvVars.length > 0) {
   console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
@@ -48,25 +69,28 @@ const config: Config = {
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET!,
     refreshSecret: process.env.JWT_REFRESH_SECRET!,
-    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN!,
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN!,
   },
   cors: {
-    origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173', 'http://localhost:5174'],
+    origin: process.env.FRONTEND_URL!.split(','),
   },
   comment: {
-    editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT || '30', 10), // Default 30 minutes
+    editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT!, 10),
   },
-  sendGrid: {
-    apiKey: process.env.SENDGRID_API_KEY || '',
-    fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@example.com',
-    fromName: process.env.SENDGRID_FROM_NAME || 'Mini Forum',
+  brevo: {
+    smtpHost: process.env.BREVO_SMTP_HOST!,
+    smtpPort: parseInt(process.env.BREVO_SMTP_PORT!, 10),
+    smtpUser: process.env.BREVO_SMTP_USER!,
+    smtpKey: process.env.BREVO_SMTP_KEY!,
+    fromEmail: process.env.BREVO_FROM_EMAIL!,
+    fromName: process.env.BREVO_FROM_NAME!,
   },
   otp: {
-    length: parseInt(process.env.OTP_LENGTH || '6', 10),
-    expirationMinutes: parseInt(process.env.OTP_EXPIRATION_MINUTES || '10', 10),
-    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS || '5', 10),
-    resendDelaySeconds: parseInt(process.env.OTP_RESEND_DELAY_SECONDS || '60', 10),
+    length: parseInt(process.env.OTP_LENGTH!, 10),
+    expirationMinutes: parseInt(process.env.OTP_EXPIRATION_MINUTES!, 10),
+    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS!, 10),
+    resendDelaySeconds: parseInt(process.env.OTP_RESEND_DELAY_SECONDS!, 10),
   },
 };
 

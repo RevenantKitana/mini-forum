@@ -4,11 +4,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
 // Request interceptor to add auth token
@@ -23,11 +22,18 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors and token refresh
+// Response interceptor to handle errors, rate limiting and token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle 429 (Too Many Requests) - retry after delay
+    if (error.response?.status === 429 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return apiClient(originalRequest);
+    }
 
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {

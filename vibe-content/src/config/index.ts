@@ -33,7 +33,7 @@ const config = {
     nvidiaApiKey: process.env.NVIDIA_API_KEY || '',
     providerTimeoutMs: parseInt(process.env.PROVIDER_TIMEOUT_MS || '30000', 10),
   },
-  botPassword: process.env.BOT_PASSWORD || 'BotUser@123',
+  botPassword: process.env.BOT_PASSWORD || '',
 };
 
 export default config;

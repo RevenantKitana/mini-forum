@@ -16,7 +16,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://mini-forum-backend-kkxu.onrender.com/',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
