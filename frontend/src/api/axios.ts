@@ -1,7 +1,17 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
-// API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+// Validate API URL - required for production, optional for dev
+const getApiUrl = (): string => {
+  const url = import.meta.env.VITE_API_URL;
+  
+  if (!url && import.meta.env.MODE === 'production') {
+    throw new Error('❌ VITE_API_URL environment variable must be set for production builds. Check .env.example for setup.');
+  }
+  
+  return url || 'http://localhost:5000/api/v1';
+};
+
+const API_BASE_URL = getApiUrl();
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'forum_access_token';
