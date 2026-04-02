@@ -59,6 +59,8 @@ export function ReportsPage() {
     switch (status) {
       case 'PENDING':
         return <Badge variant="warning">Chờ xử lý</Badge>;
+      case 'REVIEWING':
+        return <Badge variant="secondary">Đang xem xét</Badge>;
       case 'RESOLVED':
         return <Badge variant="success">Đã xử lý</Badge>;
       case 'DISMISSED':

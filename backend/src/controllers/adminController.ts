@@ -177,6 +177,14 @@ async function getRecentActivities() {
         id: true,
         title: true,
         created_at: true,
+        users: {
+          select: {
+            id: true,
+            username: true,
+            display_name: true,
+            avatar_url: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
       take: 5,
@@ -215,7 +223,11 @@ async function getRecentActivities() {
     })),
     ...recentPosts.map((post) => ({
       type: 'POST_CREATED' as const,
-      data: post,
+      data: {
+        ...post,
+        author: (post as any).users,
+        users: undefined,
+      },
       created_at: post.created_at,
     })),
     ...recentComments.map((comment) => ({
@@ -790,7 +802,7 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
     const { status, action, review_note } = req.body;
 
     // Validate status
-    if (!['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'].includes(status)) {
+    if (!['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'].includes(status)) {
       throw new BadRequestError('Invalid status');
     }
 

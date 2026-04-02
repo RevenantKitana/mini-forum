@@ -9,7 +9,7 @@ export type ReportTargetType = z.infer<typeof ReportTargetEnum>;
 /**
  * Report status enum
  */
-export const ReportStatusEnum = z.enum(['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED']);
+export const ReportStatusEnum = z.enum(['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED']);
 export type ReportStatusType = z.infer<typeof ReportStatusEnum>;
 
 /**

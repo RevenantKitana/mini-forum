@@ -3,7 +3,7 @@ import { NotFoundError, BadRequestError } from '../utils/errors.js';
 import { CreateReportInput, ReportQuery, UpdateReportStatusInput } from '../validations/reportValidation.js';
 
 type ReportTarget = 'USER' | 'POST' | 'COMMENT';
-type ReportStatus = 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
+type ReportStatus = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
 
 /**
  * Transform raw Prisma report to clean API response shape.

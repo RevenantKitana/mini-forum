@@ -241,16 +241,8 @@ export async function getUsers(params: {
   };
 }
 
-export async function updateUser(
-  id: number,
-  data: Partial<{ role: string; isActive: boolean; isVerified: boolean }>
-): Promise<User> {
-  const response = await apiClient.patch<ApiResponse<User>>(
-    `${API_ENDPOINTS.ADMIN.USERS}/${id}`,
-    data
-  );
-  return response.data.data;
-}
+// Note: Generic user update removed - use changeUserRole() or changeUserStatus() instead
+// Backend only supports PATCH /admin/users/:id/role and /admin/users/:id/status
 
 export async function changeUserRole(id: number, role: string): Promise<any> {
   const response = await apiClient.patch<ApiResponse<any>>(
@@ -283,9 +275,15 @@ export async function getPosts(params: {
   status?: string;
   categoryId?: string;
 }): Promise<{ data: Post[]; pagination: any }> {
+  // Convert camelCase query params to snake_case for backend
+  const queryParams: Record<string, any> = { ...params };
+  if (params.categoryId !== undefined) {
+    queryParams.category_id = params.categoryId;
+    delete queryParams.categoryId;
+  }
   const response = await apiClient.get<PaginatedResponse<Post>>(
     API_ENDPOINTS.ADMIN.POSTS,
-    { params }
+    { params: queryParams }
   );
   return {
     data: response.data.data,
@@ -615,7 +613,6 @@ export const adminService = {
   
   // Users
   getUsers,
-  updateUser,
   changeUserRole: (id: string, role: string) => changeUserRole(Number(id), role),
   changeUserStatus: (id: string, isActive: boolean) => changeUserStatus(Number(id), isActive),
   banUser: (id: string) => changeUserStatus(Number(id), false),
