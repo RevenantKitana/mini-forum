@@ -137,18 +137,6 @@ export async function getAuditLogs(params: {
 }
 
 /**
- * Get recent activity for dashboard
- */
-export async function getRecentActivity(limit = 20) {
-  const logs = await prisma.audit_logs.findMany({
-    select: auditLogSelect,
-    orderBy: { created_at: 'desc' },
-    take: limit,
-  });
-  return logs.map(transformAuditLog);
-}
-
-/**
  * Helper to get IP address from request
  */
 export function getClientIp(req: any): string | undefined {

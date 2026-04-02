@@ -222,23 +222,7 @@ export async function toggleBookmark(userId: number, postId: number) {
   }
 }
 
-/**
- * Get bookmark status for multiple posts
- */
-export async function getBookmarkStatusForPosts(userId: number, postIds: number[]) {
-  const bookmarks = await prisma.bookmarks.findMany({
-    where: {
-      userId,
-      postId: { in: postIds },
-    },
-    select: { postId: true },
-  });
 
-  return bookmarks.reduce((acc, bookmark) => {
-    acc[bookmark.postId] = true;
-    return acc;
-  }, {} as Record<number, boolean>);
-}
 
 
 

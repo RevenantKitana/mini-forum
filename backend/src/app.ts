@@ -56,9 +56,6 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Note: sanitizeInput removed (P0-3) — XSS prevention belongs at render layer (frontend MarkdownRenderer)
-// Note: preventNoSQLInjection removed (P1-5) — Prisma ORM parameterizes all queries, NoSQL operators irrelevant
-
 // Rate limiting
 app.use('/api/v1', apiLimiter);
 

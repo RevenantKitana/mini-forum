@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { FontSizeProvider } from '@/contexts/FontSizeContext';
@@ -23,7 +22,6 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { Toaster } from '@/app/components/ui/sonner';
 import { TooltipProvider } from '@/app/components/ui/tooltip';
 import { Button } from '@/app/components/ui/button';
-import { Skeleton } from '@/app/components/ui/skeleton';
 import { Home, AlertTriangle } from 'lucide-react';
 
 // Create a client
