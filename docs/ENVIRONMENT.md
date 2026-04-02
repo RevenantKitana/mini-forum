@@ -99,13 +99,11 @@ COMMENT_EDIT_TIME_LIMIT=30
 | Biến | Bắt buộc | Mặc định | Mô tả |
 |---|---|---|---|
 | `VITE_API_URL` | ✅ | - | URL backend API |
-| `VITE_USE_MOCK_API` | ❌ | `false` | Sử dụng mock API (cho testing) |
 
 ### File .env.local mẫu
 
 ```env
 VITE_API_URL=http://localhost:5000/api/v1
-VITE_USE_MOCK_API=false
 ```
 
 ---

@@ -2,8 +2,7 @@
  * AuthContext Tests
  *
  * Tests the AuthContext state management by mocking the API service layer.
- * vi.mock() intercepts API calls so tests are fast, deterministic, and
- * independent of VITE_USE_MOCK_API or a running backend.
+ * vi.mock() intercepts API calls so tests are fast and deterministic.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
