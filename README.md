@@ -33,7 +33,7 @@ Nền tảng diễn đàn cộng đồng tiếng Việt, được xây dựng th
 - **Quản trị nội dung** — Pin/lock bài viết, ẩn bình luận, báo cáo vi phạm
 - **Tìm kiếm** — Full-text search bài viết và người dùng
 - **Bookmark & Thông báo** — Lưu bài viết, thông báo realtime
-- **Bot AI** — Tự động tạo nội dung bằng Google Gemini với 12 personality khác nhau
+- **Bot AI** — Tự động tạo nội dung bằng Google Gemini với personality khác nhau
 - **Audit logging** — Ghi lại mọi hành động quản trị
 
 ## License

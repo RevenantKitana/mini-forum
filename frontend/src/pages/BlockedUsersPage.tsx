@@ -86,7 +86,7 @@ export function BlockedUsersPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Link to="/settings/profile">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -94,8 +94,8 @@ export function BlockedUsersPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Người dùng đã chặn</h1>
-          <p className="text-muted-foreground">Quản lý danh sách người dùng bạn đã chặn</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Người dùng đã chặn</h1>
+          <p className="text-sm text-muted-foreground">Quản lý danh sách người dùng bạn đã chặn</p>
         </div>
       </div>
 
@@ -135,10 +135,10 @@ export function BlockedUsersPage() {
               {blockedUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage
                         src={user.avatarUrl || undefined}
                         alt={user.displayName || user.username}
@@ -147,14 +147,14 @@ export function BlockedUsersPage() {
                         {(user.displayName || user.username)[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="min-w-0">
                       <Link
                         to={`/users/${user.username}`}
-                        className="font-medium hover:underline"
+                        className="font-medium hover:underline truncate block"
                       >
                         {user.displayName || user.username}
                       </Link>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         @{user.username} • Đã chặn{' '}
                         {formatDistanceToNow(new Date(user.blockedAt), {
                           addSuffix: true,
@@ -166,6 +166,7 @@ export function BlockedUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full sm:w-auto flex-shrink-0"
                     onClick={() => {
                       if (confirm(`Bạn có chắc muốn bỏ chặn @${user.username}?`)) {
                         unblockMutation.mutate(user.id);

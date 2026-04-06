@@ -203,8 +203,8 @@ export function ProfilePage() {
 
             {/* Info */}
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold">{profile.displayName || profile.username}</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold">{profile.displayName || profile.username}</h1>
                 {getRoleBadge(profile.role)}
               </div>
               
@@ -242,7 +242,7 @@ export function ProfilePage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
               {isOwnProfile ? (
                 <Link to="/settings/profile">
                   <Button variant="outline" size="sm">
@@ -308,13 +308,14 @@ export function ProfilePage() {
       {/* Content Tabs */}
       {isAuthenticated ? (
         <Tabs defaultValue="posts">
-          <TabsList>
-            <TabsTrigger value="posts">Bài viết</TabsTrigger>
-            <TabsTrigger value="comments">Bình luận</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="posts" className="flex-1 sm:flex-none">Bài viết</TabsTrigger>
+            <TabsTrigger value="comments" className="flex-1 sm:flex-none">Bình luận</TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="votes">
+              <TabsTrigger value="votes" className="flex-1 sm:flex-none">
                 <ThumbsUp className="h-4 w-4 mr-1" />
-                Lịch sử vote
+                <span className="hidden sm:inline">Lịch sử vote</span>
+                <span className="sm:hidden">Vote</span>
               </TabsTrigger>
             )}
           </TabsList>

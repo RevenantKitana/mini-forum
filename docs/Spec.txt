@@ -1,0 +1,297 @@
+Du an lam doi tuong nghien cuu: Mini Forum (monorepo: frontend, admin-client, backend, vibe-content)  
+
+Pham vi: Phan tich du an va de xuat ke hoach trien khai bao cao cho 3 mon:
+- Thuc tap he thong thong tin quan li
+- Thuc tap he thong thong tin tich hop
+- Thuc tap quan tri du an phan mem
+
+A. Phan tich du an
+
+1. Tom tat du an va pham vi nghien cuu
+
+Mini Forum la nen tang dien dan cong dong tieng Viet, co he thong quan tri noi dung va bot AI tu dong tao noi dung. Kien truc monorepo gom cac thanh phan chinh sau:
+- `frontend` (React + Vite): cong thong tin nguoi dung.
+- `admin-client` (React): cong quan tri he thong.
+- `backend` (Node.js + Express + Prisma): API trung tam, quan li nghiep vu, xac thuc, phan quyen, thong bao.
+- `vibe-content` (Node.js/TS): dich vu tao noi dung tu dong, ket noi LLM provider (Gemini, Groq, Cerebras).
+- Database: PostgreSQL (Prisma ORM).
+
+Doi tuong nghien cuu: he thong thong tin quan li dien dan, mo hinh tich hop cac thanh phan (web app, admin, bot AI, email OTP), va quy trinh quan tri du an phan mem khi trien khai he thong.
+
+ 2. Phan tich du an (tong quan nghiep vu, kien truc, du lieu)
+
+ 2.1 Muc tieu nghiep vu
+- Tao moi truong thao luan cong dong, quan li bai viet va binh luan theo danh muc va tags.
+- Tang cuong chat luong noi dung va tinh tuong tac (vote, bookmark, thong bao).
+- Quan tri van hanh (phan quyen RBAC, xu ly bao cao vi pham, audit log).
+- Tu dong hoa tao noi dung qua bot AI nham duy tri luong bai viet.
+
+ 2.2 Doi tuong su dung
+- Member: dang bai, binh luan, vote, bookmark.
+- Moderator: xu ly report, pin/lock bai, an/hien noi dung.
+- Admin: quan ly users, categories, roles, audit logs.
+- Bot: tao noi dung tu dong.
+
+ 2.3 Chuc nang chinh
+- Forum: posts, comments (reply), categories, tags.
+- Vote va reputation.
+- Auth: OTP, JWT access/refresh.
+- Search full-text.
+- Notifications va bookmarks.
+- Quan tri: ban/unban, pin/lock, xu ly report, audit log.
+- Bot AI: tao bai viet/binh luan, quan ly personality.
+
+ 2.4 Kien truc va luong tich hop
+- Frontend va Admin-Client goi API thong qua `backend` (REST /api/v1).
+- `backend` truy xuat PostgreSQL thong qua Prisma.
+- `vibe-content` ket noi LLM providers, sau do goi API backend de tao noi dung.
+- He thong email OTP (nodemailer) cho dang ky va reset mat khau.
+
+ 2.5 Du lieu va bao mat
+- Role-based access control (RBAC) 4 cap: MEMBER, MODERATOR, ADMIN, BOT.
+- JWT access (15 phut) va refresh (7 ngay).
+- Rate limiting theo nhom endpoint.
+- Audit log cho hanh dong quan tri.
+
+B. Ke hoach trien khai
+
+1. Thuc tap quan tri du an phan mem
+
+ 1.1 Bo cuc bao cao du kien
+
+ Chuong 1. Gioi thieu de tai
+- Ly do chon de tai va y nghia thuc tien.
+- Muc tieu quan tri du an.
+- Doi tuong va pham vi nghien cuu.
+- Phuong phap nghien cuu.
+- Ket cau bao cao.
+
+ Chuong 2. Co so ly thuyet ve quan tri du an phan mem
+- Khai niem du an phan mem va vong doi (SDLC).
+- Cac pha quan tri: khoi dong, lap ke hoach, thuc thi, giam sat, ket thuc.
+- Cong cu quan tri: WBS, Gantt, RACI, risk register.
+- Chi so quan ly du an: tien do, chi phi, chat luong, pham vi.
+
+ Chuong 3. Xac dinh pham vi va ke hoach du an
+- Pham vi chuc nang: forum, admin, bot AI, auth, search, thong bao.
+- Pham vi phi chuc nang: bao mat, hieu nang, kha nang mo rong.
+- WBS theo module: backend, frontend, admin-client, vibe-content, database, testing.
+- Ke hoach tien do (6-8 tuan) va cot moc nghiem thu.
+- Ke hoach nguon luc va nhan su.
+
+ Chuong 4. Ke hoach thuc thi va giam sat
+- Ke hoach trien khai theo giai doan.
+- Quan ly thay doi (change control).
+- Quan ly cau hinh, versioning, va tai lieu.
+- Truyen thong du an va bao cao dinh ky.
+
+ Chuong 5. Quan ly rui ro va dam bao chat luong
+- Danh muc rui ro (bao mat, spam, LLM fail, qua tai).
+- Danh gia muc do tac dong va ke hoach giam thieu.
+- Ke hoach QA: unit test, integration test, UAT.
+- Tieu chi nghiem thu va ban giao.
+
+ Chuong 6. Ket luan va bai hoc kinh nghiem
+- Tong ket ket qua quan tri du an.
+- Bai hoc rut ra.
+- De xuat huong phat trien.
+
+ 1.2 Noi dung chi tiet theo du an
+
+ 1.2.1. Pham vi du an
+- Chuc nang chinh: posts, comments, vote, bookmarks, notifications, search.
+- Quan tri: reports workflow, pin/lock, ban/unban, audit logs.
+- Bot AI: tao noi dung tu dong, validation, fallback provider.
+
+ 1.2.2 Cong cu quan tri tham khao
+
+
+ 1.2.3 Ke hoach tien do (goi y 8 tuan)
+- Khoi dong, pham vi, requirement.
+- Thiet ke, ERD, API contract.
+- Backend + DB.
+- Frontend + Admin.
+- Bot AI + tich hop.
+- Testing tong the.
+- Nghiem thu + bao cao.
+
+ 1.2.4. Quan ly rui ro
+- LLM provider down -> fallback + retry queue.
+- Spam/noi dung xau -> rate limit + report workflow.
+- Qua tai he thong -> cache + gioi han.
+- Loi auth -> OTP rate limit + refresh token.
+
+ 1.2.5. Ke hoach chat luong
+- Unit test backend (Jest), frontend (Vitest).
+- Integration test API.
+- UAT cho admin-client.
+
+ 1.2.6. Danh muc hinh ve va bang bieu can co
+
+- Mo hinh vong doi du an phan mem.
+- Gantt chart tien do 8 tuan.
+- Pham vi chuc nang va phi chuc nang.
+- Risk register.
+- Tieu chi nghiem thu.
+- ...
+
+2. Thuc tap he thong thong tin quan li
+ 2.1 Bo cuc bao cao du kien
+
+Chuong 1. Gioi thieu de tai
+- Ly do chon de tai va y nghia thuc tien.
+- Muc tieu nghien cuu.
+- Doi tuong va pham vi nghien cuu.
+- Phuong phap nghien cuu.
+- Ket cau bao cao.
+
+ Chuong 2. Co so ly thuyet va tong quan he thong quan li
+- Khai niem he thong thong tin quan li.
+- Cac thanh phan cua HTTTQL (du lieu, quy trinh, nhan su, cong nghe).
+- Mo hinh hoat dong quan li trong he thong dien dan.
+- Cac chi so quan tri (KPI): bai viet, binh luan, ty le vi pham, thoi gian xu ly report.
+
+ Chuong 3. Phan tich nghiep vu va yeu cau he thong
+- Mo ta nghiep vu tong quan cua Mini Forum.
+- Tac nhan: Member, Moderator, Admin, Bot.
+- Yeu cau chuc nang: quan tri users, posts, comments, reports, categories, tags, audit logs.
+- Yeu cau phi chuc nang: bao mat, hieu nang, kha nang mo rong, kha dung.
+- Mo hinh Use Case (tach use case quan tri va nguoi dung).
+- Mo hinh quy trinh quan li (BPMN/DFD) cho:
+  - Xu ly bao cao vi pham.
+  - Kiem duyet va an/hien noi dung.
+  - Ban/unban nguoi dung.
+
+ Chuong 4. Mo hinh hoa he thong quan li
+- Mo hinh du lieu (ERD) cho: users, posts, comments, reports, audit_logs, categories, tags.
+- Ma tran phan quyen RBAC (4 role) va pham vi quyen quan tri.
+- Mo hinh luong du lieu quan tri (DFD muc khung va muc chi tiet).
+- Mo hinh giao dien quan tri (Admin-Client):
+  - Dashboard thong ke.
+  - Users/Posts/Comments/Reports/Tags/Categories.
+  - Audit Logs.
+- Dac ta bao cao quan tri (thong ke va audit).
+
+ Chuong 5. Danh gia he thong thong tin quan li
+- Muc do dap ung nghiep vu quan tri.
+- Danh gia tinh day du va nhat quan cua du lieu (audit log, rate limit).
+- Danh gia kha nang giam rui ro: spam, vi pham, qua tai.
+- Chi so hieu qua quan tri (KPI) va cach do luong.
+- Nhan xet uu diem, han che, huong cai tien.
+
+ Chuong 6. Ket luan va huong phat trien
+- Tom tat ket qua.
+- Gia tri ung dung thuc tien.
+- Dinh huong mo rong (analytics, quy trinh kiem duyet nang cao, tu dong hoa).
+
+ 2.2. Noi dung chi tiet theo du an Mini Forum
+
+ 2.2.1 Tong quan du an
+- Kien truc: frontend + admin-client + backend + vibe-content + PostgreSQL.
+- Trung tam quan li: admin-client (dashboard, moderation, audit).
+- Cac chuc nang quan li co san: pin/lock bai, an/hien binh luan, xu ly reports, ban/unban, audit logs.
+
+ 2.2.2 Nghiep vu quan li tieu bieu
+- Xu ly report: Pending -> Reviewing -> Resolved/Dismissed.
+- Quan li bai viet: pin, lock, doi trang thai (Published/Hidden/Deleted).
+- Quan li nguoi dung: thay doi role, ban/unban.
+- Quan tri danh muc/tags: CRUD va phan quyen theo role.
+- Audit logs: ghi lai hanh dong admin (old/new values, IP, user agent).
+
+ 2.2.3 Yeu cau va tieu chi danh gia
+- Bao mat: JWT, RBAC, rate limiting.
+- Truy vet: audit log day du.
+- Hieu nang: thong ke co the tong hop theo thoi gian.
+- Kha dung: dashboard tong quan, thao tac quan tri don gian.
+
+ 2.2.4. Danh muc hinh ve va bang bieu can co
+
+-  So do tong quan he thong thong tin quan li.
+-  Use Case tong quan quan tri.
+-  BPMN xu ly report vi pham.
+-  ERD du lieu quan li.
+-  DFD muc khung (quan tri).
+-  Ma tran phan quyen RBAC.
+-  KPI quan tri va mo ta cach do.
+- ...
+
+3. Thuc tap he thong thong tin tich hơp
+ 3.1. Bo cuc bao cao
+
+ Chuong 1. Gioi thieu de tai
+- Ly do chon de tai va y nghia thuc tien.
+- Muc tieu nghien cuu.
+- Doi tuong va pham vi nghien cuu.
+- Phuong phap nghien cuu.
+- Ket cau bao cao.
+
+ Chuong 2. Co so ly thuyet ve he thong thong tin tich hop
+- Khai niem he thong thong tin tich hop.
+- Mo hinh tich hop: point-to-point, hub-and-spoke, API-first.
+- Cac thanh phan tich hop: cong thong tin, dich vu nghiep vu, co so du lieu.
+- Cac yeu to dam bao tich hop: bao mat, do tin cay, kha nang mo rong.
+
+ Chuong 3. Phan tich kien truc tich hop cua du an
+- Kien truc tong quan: frontend + admin-client + backend + vibe-content + PostgreSQL.
+- Vai tro va trach nhiem tung thanh phan.
+- Cac diem tich hop chinh:
+  - Frontend/Admin-Client -> Backend (REST API).
+  - Backend -> Database (Prisma ORM).
+  - Vibe-content -> LLM Providers (Gemini, Groq, Cerebras).
+  - Vibe-content -> Backend (API tao noi dung).
+  - Backend -> Email OTP.
+- Dac ta luong du lieu va dong bo thong tin.
+
+ Chuong 4. Hop dong tich hop va mo hinh giao tiep
+- Dac ta API theo nhom:
+  - Auth, Posts, Comments, Users, Categories, Tags, Reports, Admin.
+- Payload mau va quy uoc response.
+- Co che xac thuc va phan quyen (JWT, RBAC).
+- Chien luoc xu ly loi: retry, fallback provider, rate limit.
+- Logging, audit log va theo doi.
+
+ Chuong 5. Kiem thu tich hop va danh gia
+- Kiem thu tich hop API (integration test).
+- Kiem thu luong OTP va auth.
+- Kiem thu luong bot AI tao noi dung.
+- Danh gia hieu nang: do tre, throughput, ty le loi.
+- Danh gia rui ro tich hop va giam thieu.
+
+ Chuong 6. Ket luan va huong phat trien
+- Tom tat ket qua tich hop.
+- Gia tri ung dung thuc tien.
+- Dinh huong mo rong: cache, message queue, observability.
+
+ 3.2. Noi dung chi tiet theo du an
+
+ 3.2.1. Cac luong tich hop tieu bieu
+- Luong dang ky/OTP: Frontend -> Backend -> Email.
+- Luong tao bai viet: Frontend -> Backend -> Database.
+- Luong xu ly report: Admin-Client -> Backend -> Database.
+- Luong bot AI: Vibe-content -> LLM Provider -> Backend -> Database.
+
+ 3.2.2. Cac diem tich hop ngoai
+- LLM Providers: Gemini, Groq, Cerebras (fallback).
+- Email OTP: nodemailer SMTP.
+
+ 3.2.3. Co che tin cay va dong bo
+- JWT access/refresh, RBAC.
+- Rate limiting theo nhom endpoint.
+- Audit log cho hanh dong admin.
+- Retry queue trong vibe-content khi LLM fail.
+
+ 3.3. Danh muc hinh ve va bang bieu can co
+
+-  So do tong quan he thong tich hop.
+-  Component diagram cac he thong con.
+-  Sequence diagram luong bot tao noi dung.
+-  Sequence diagram luong OTP.
+-  Danh sach nhom API va muc dich.
+-  Chi so danh gia tich hop (latency, error rate).
+
+ 3.4. Phu luc tham khao (neu can)
+
+
+
+
+

@@ -145,7 +145,7 @@ export function NotificationBell() {
             <p>Thông báo{unreadCount > 0 ? ` (${unreadCount} chưa đọc)` : ''}</p>
           </TooltipContent>
         </Tooltip>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-[min(320px,calc(100vw-2rem))]">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Thông báo</span>
           {unreadCount > 0 && (

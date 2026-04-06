@@ -86,7 +86,7 @@ export function SearchPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-3xl font-bold mb-4">Tìm kiếm</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4">Tìm kiếm</h1>
         
         <form onSubmit={handleSearch}>
           <div className="relative">
@@ -104,13 +104,13 @@ export function SearchPage() {
 
       {queryParam ? (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Kết quả tìm kiếm cho "{queryParam}"
             </p>
             
             <Select value={sortParam} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SortAsc className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
@@ -125,11 +125,11 @@ export function SearchPage() {
           </div>
 
           <Tabs value={tabParam} onValueChange={handleTabChange}>
-            <TabsList>
-              <TabsTrigger value="posts">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="posts" className="flex-1 sm:flex-none">
                 Bài viết ({postsPagination?.total || 0})
               </TabsTrigger>
-              <TabsTrigger value="users">
+              <TabsTrigger value="users" className="flex-1 sm:flex-none">
                 Người dùng ({usersData?.pagination?.total || 0})
               </TabsTrigger>
             </TabsList>

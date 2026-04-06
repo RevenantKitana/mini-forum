@@ -128,11 +128,11 @@ export function NotificationsPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:justify-between">
         <div className="flex items-center gap-3">
-          <Bell className="h-8 w-8 text-primary animate-float" />
+          <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
           <div>
-            <h1 className="text-2xl font-bold">Thông báo</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Thông báo</h1>
             {unreadCount > 0 && (
               <p className="text-sm text-muted-foreground">
                 {unreadCount} thông báo chưa đọc
@@ -140,8 +140,8 @@ export function NotificationsPage() {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="btn-press" onClick={() => refetch()}>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="btn-press flex-1 sm:flex-none" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Làm mới
           </Button>
@@ -149,12 +149,13 @@ export function NotificationsPage() {
             <Button
               variant="outline"
               size="sm"
-              className="btn-press"
+              className="btn-press flex-1 sm:flex-none"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsReadMutation.isPending}
             >
               <CheckCheck className="h-4 w-4 mr-2" />
-              Đánh dấu tất cả đã đọc
+              <span className="hidden sm:inline">Đánh dấu tất cả đã đọc</span>
+              <span className="sm:hidden">Đã đọc hết</span>
             </Button>
           )}
         </div>

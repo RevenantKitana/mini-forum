@@ -244,7 +244,7 @@ export function PostDetailPage() {
       {/* Post Card */}
       <Card className="animate-fade-in-scale">
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 {post.isPinned && (
@@ -279,12 +279,12 @@ export function PostDetailPage() {
                     title={post.category.name}
                   />
                 )}
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
                   {decodeHtmlEntities(post.title)}
                 </h1>
               </div>
               {post.author && (
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
                   <Link
                     to={`/users/${post.author.username}`}
                     className="flex items-center gap-2 hover:text-foreground transition-colors"
@@ -308,7 +308,7 @@ export function PostDetailPage() {
             </div>
 
             {canEdit && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)} className="btn-press hover:animate-wiggle">
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -388,7 +388,7 @@ export function PostDetailPage() {
       {/* Comments Section */}
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-2xl font-bold">Comments ({post.commentCount})</h2>
+          <h2 className="text-lg sm:text-2xl font-bold">Comments ({post.commentCount})</h2>
           
           {/* Comment Sort Dropdown */}
           {post.commentCount > 0 && (
@@ -595,7 +595,7 @@ export function PostDetailPage() {
         ) : (
           <Card>
             <CardContent className="pt-5 text-center text-muted-foreground">
-              No comments yet. Be the first to comment!
+              Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
             </CardContent>
           </Card>
         )}
@@ -689,7 +689,7 @@ function CommentItem({
 
   const handleSaveEdit = () => {
     if (!editContent.trim()) {
-      toast.error('Comment cannot be empty');
+      toast.error('Bình luận không thể trống');
       return;
     }
     
@@ -712,7 +712,7 @@ function CommentItem({
   };
 
   const handleDelete = () => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
     
     deleteCommentMutation.mutate(
       { id: comment.id, postId },
@@ -743,7 +743,7 @@ function CommentItem({
   };
 
   return (
-    <div id={`comment-${comment.id}`} className={isReply ? 'ml-5 mt-1' : ''}>
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-5 mt-1' : ''}>
       <Card className={isReply ? 'border-l-2 border-l-primary/30' : ''}>
         <CardContent className="pt-4 !pb-1">
           {/* Quoted Comment - Clickable to scroll */}
@@ -763,7 +763,7 @@ function CommentItem({
             </div>
           )}
           
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             <VoteButtons
               targetId={comment.id}
               targetType="comment"
@@ -774,7 +774,7 @@ function CommentItem({
               orientation="vertical"
             />
 
-            <div className="flex-1 mb-0">
+            <div className="flex-1 min-w-0 mb-0">
               {comment.author && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
                   <Avatar className="h-6 w-6 flex-shrink-0">
@@ -799,9 +799,9 @@ function CommentItem({
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={4}
                     className="w-full input-focus-animate"
-                    placeholder="Edit your comment..."
+                    placeholder="Chỉnh sửa bình luận..."
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Button 
                       size="sm" 
                       className="btn-interactive"
@@ -809,7 +809,7 @@ function CommentItem({
                       disabled={updateCommentMutation.isPending}
                     >
                       <Check className="h-4 w-4 mr-1" />
-                      {updateCommentMutation.isPending ? 'Saving...' : 'Save'}
+                      {updateCommentMutation.isPending ? 'Đang lưu...' : 'Lưu'}
                     </Button>
                     <Button 
                       size="sm" 
@@ -819,7 +819,7 @@ function CommentItem({
                       disabled={updateCommentMutation.isPending}
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Cancel
+                      Hủy
                     </Button>
                   </div>
                 </div>
@@ -828,7 +828,7 @@ function CommentItem({
               )}
 
               {!isEditing && (
-                <div className="flex justify-end gap-2 mt-3 mb-0">
+                <div className="flex justify-end flex-wrap gap-1 mt-3 mb-0">
                   {isAuthenticated && canComment && !isPostLocked && comment.status !== 'DELETED' && (
                     <>
                       <Button variant="ghost" size="sm" className="btn-press" onClick={() => onReply(comment)}>

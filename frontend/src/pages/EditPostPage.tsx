@@ -97,7 +97,7 @@ export function EditPostPage() {
 
   if (postLoading || categoriesLoading) {
     return (
-      <div className="container max-w-4xl py-6">
+      <div className="w-full max-w-4xl mx-auto py-4 sm:py-6 px-0 sm:px-0">
         <Card>
           <CardHeader>
             <Skeleton className="h-8 w-48" />
@@ -115,7 +115,7 @@ export function EditPostPage() {
 
   if (postError || !post) {
     return (
-      <div className="container max-w-4xl py-6">
+      <div className="w-full max-w-4xl mx-auto py-4 sm:py-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">Không tìm thấy bài viết</p>
@@ -130,9 +130,9 @@ export function EditPostPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6">
-      <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+    <div className="w-full max-w-4xl mx-auto py-4 sm:py-6 animate-fade-in-up">
+      <div className="mb-4 sm:mb-6">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-3 sm:mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
@@ -216,7 +216,7 @@ export function EditPostPage() {
                     <FormControl>
                       <Textarea
                         placeholder="Nội dung bài viết... (hỗ trợ Markdown)"
-                        className="min-h-[300px] font-mono"
+                        className="min-h-[200px] sm:min-h-[300px] font-mono"
                         {...field}
                       />
                     </FormControl>
@@ -229,12 +229,12 @@ export function EditPostPage() {
               />
 
               {/* Submit */}
-              <div className="flex gap-4">
-                <Button type="submit" disabled={updatePost.isPending}>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Button type="submit" disabled={updatePost.isPending} className="w-full sm:w-auto">
                   {updatePost.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Lưu thay đổi
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
                   Hủy
                 </Button>
               </div>

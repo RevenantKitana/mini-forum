@@ -219,7 +219,7 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-10 bg-background pb-3 -mx-3 px-3 py-2 -mt-3 mb-0" style={{ top: '-12px' }}>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-2 sm:pb-3 -mx-4 sm:-mx-5 px-4 sm:px-5 pt-2 sm:pt-3 border-b border-border/50">
         {/* Header - Dynamic based on selected category */}
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="min-w-0 flex-1">
@@ -260,15 +260,14 @@ export function HomePage() {
                   size="sm"
                   onClick={() => handleSortClick(baseSort)}
                   className={cn(
-                    "gap-1.5 btn-press transition-all duration-200",
+                    "gap-1 sm:gap-1.5 btn-press transition-all duration-200 px-2 sm:px-3 sm:min-w-[100px]",
                     isActive && "animate-tab-slide"
                   )}
-                  style={{ minWidth: TAB_MIN_WIDTH }}
                 >
                   {SORT_CONFIG[baseSort].icon}
-                  <span className="hidden sm:inline">{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  <span className="text-xs">{config?.label || SORT_CONFIG[baseSort].label}</span>
                   {isActive && (
-                    <ArrowUpDown className="h-3 w-3 ml-0.5 opacity-70" />
+                    <ArrowUpDown className="h-3 w-3 ml-0.5 opacity-70 flex-shrink-0" />
                   )}
                 </Button>
               );
@@ -345,7 +344,8 @@ export function HomePage() {
           {hasDateFilter && (
             <Badge variant="secondary" className="gap-1 animate-pop-in">
               <CalendarDays className="h-3 w-3" />
-              Đang lọc theo thời gian
+              <span className="hidden sm:inline">Đang lọc theo thời gian</span>
+              <span className="sm:hidden">Thời gian</span>
               <X 
                 className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors duration-200" 
                 onClick={clearDateFilter}
@@ -395,16 +395,17 @@ export function HomePage() {
 
             {/* Pagination */}
             {data.pagination && data.pagination.totalPages > 1 && (
-              <div className="flex justify-center gap-1.5 sm:gap-2 mt-4 sm:mt-6 pb-4 flex-wrap">
+              <div className="flex justify-center gap-1 sm:gap-1.5 mt-4 sm:mt-6 pb-4 flex-wrap items-center">
                 <Button
                   variant="outline"
+                  size="sm"
                   className="btn-press"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1}
                 >
-                  Previous
+                  ← <span className="hidden sm:inline ml-1">Trước</span>
                 </Button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {[...Array(data.pagination.totalPages)].map((_, i) => {
                     const pageNum = i + 1;
                     if (
@@ -416,41 +417,61 @@ export function HomePage() {
                         <Button
                           key={pageNum}
                           variant={page === pageNum ? 'default' : 'outline'}
-                          className="btn-press"
+                          size="sm"
+                          className="btn-press h-8 w-8 p-0"
                           onClick={() => handlePageChange(pageNum)}
                         >
                           {pageNum}
                         </Button>
                       );
                     } else if (pageNum === page - 2 || pageNum === page + 2) {
-                      return <span key={pageNum}>...</span>;
+                      return <span key={pageNum} className="text-muted-foreground text-sm">...</span>;
                     }
                     return null;
                   })}
                 </div>
                 <Button
                   variant="outline"
+                  size="sm"
                   className="btn-press"
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === data.pagination.totalPages}
                 >
-                  Next
+                  <span className="hidden sm:inline mr-1">Tiếp</span> →
                 </Button>
               </div>
             )}
           </>
         ) : (
           <div className="text-center py-12 animate-fade-in-up">
-            <p className="text-muted-foreground">No posts found</p>
+            <p className="text-muted-foreground">Không có bài viết nào</p>
             {isAuthenticated && (
               <PostFormDialog
                 mode="create"
-                trigger={<Button className="mt-4 btn-interactive">Create the first post</Button>}
+                trigger={<Button className="mt-4 btn-interactive">Tạo bài viết đầu tiên</Button>}
               />
             )}
           </div>
         )}
       </div>
+
+      {/* Mobile FAB - create post, only for authenticated users */}
+      {isAuthenticated && (
+        <div className="sm:hidden fixed bottom-5 right-4 z-40">
+          <PostFormDialog
+            mode="create"
+            trigger={
+              <Button
+                size="icon"
+                className="h-14 w-14 rounded-full shadow-lg btn-press"
+                aria-label="Tạo bài viết mới"
+              >
+                <MessageSquare className="h-6 w-6" />
+              </Button>
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

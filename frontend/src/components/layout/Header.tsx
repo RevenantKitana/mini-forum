@@ -144,11 +144,15 @@ export function Header() {
             </div>
           )}
 
-          {/* Theme Toggle */}
-          <ThemeToggle />
+          {/* Theme Toggle - hide on very small screens to save space */}
+          <div className="hidden min-[400px]:block">
+            <ThemeToggle />
+          </div>
 
-          {/* Font Size Selector */}
-          <FontSizeSelector />
+          {/* Font Size Selector - hide on small screens */}
+          <div className="hidden sm:block">
+            <FontSizeSelector />
+          </div>
 
           {isAuthenticated && user ? (
             <>
@@ -167,7 +171,7 @@ export function Header() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 animate-fade-in-scale">
+                <DropdownMenuContent align="end" className="w-56 min-w-[min(224px,calc(100vw-2rem))] animate-fade-in-scale">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user?.displayName || user?.username || 'User'}</p>
@@ -200,11 +204,17 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="btn-press transition-all duration-200" onClick={() => navigate('/login')}>
-                Đăng nhập
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="btn-press transition-all duration-200 hidden min-[400px]:inline-flex"
+                onClick={() => navigate('/login')}
+              >
+                <span className="hidden sm:inline">Đăng nhập</span>
+                <span className="sm:hidden">Vào</span>
               </Button>
-              <Button size="sm" onClick={() => navigate('/register')} className="btn-press">
+              <Button size="sm" onClick={() => navigate('/register')} className="btn-press text-xs sm:text-sm px-2 sm:px-3">
                 Đăng ký
               </Button>
             </div>

@@ -82,8 +82,8 @@ export function TagsPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <TagIcon className="h-8 w-8 text-primary animate-float" />
-          <h1 className="text-3xl font-bold">Tags</h1>
+          <TagIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Tags</h1>
         </div>
         <p className="text-muted-foreground mb-4">
           Khám phá các chủ đề thông qua hệ thống tag

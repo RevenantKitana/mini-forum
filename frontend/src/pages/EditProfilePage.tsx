@@ -171,8 +171,8 @@ export function EditProfilePage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Cài đặt tài khoản</h1>
-          <p className="text-muted-foreground">Quản lý thông tin cá nhân và bảo mật</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Cài đặt tài khoản</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Quản lý thông tin cá nhân và bảo mật</p>
         </div>
       </div>
 
@@ -189,8 +189,8 @@ export function EditProfilePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAvatarSubmit} className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <Avatar className="h-20 w-20 flex-shrink-0">
                 <AvatarImage src={avatarUrl || undefined} alt={displayName} />
                 <AvatarFallback className="text-xl">
                   {displayName?.[0]?.toUpperCase() || user.username[0].toUpperCase()}
@@ -210,7 +210,7 @@ export function EditProfilePage() {
                 </p>
               </div>
             </div>
-            <Button type="submit" disabled={updateAvatarMutation.isPending} variant="outline">
+            <Button type="submit" disabled={updateAvatarMutation.isPending} variant="outline" className="w-full sm:w-auto">
               <Save className="h-4 w-4 mr-2" />
               {updateAvatarMutation.isPending ? 'Đang lưu...' : 'Cập nhật ảnh đại diện'}
             </Button>
@@ -302,7 +302,7 @@ export function EditProfilePage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={updateProfileMutation.isPending}>
+            <Button type="submit" disabled={updateProfileMutation.isPending} className="w-full sm:w-auto">
               <Save className="h-4 w-4 mr-2" />
               {updateProfileMutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>

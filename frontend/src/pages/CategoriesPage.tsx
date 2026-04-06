@@ -33,8 +33,8 @@ export function CategoriesPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <Folder className="h-8 w-8 text-primary animate-float" />
-          <h1 className="text-3xl font-bold">Danh mục</h1>
+          <Folder className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Danh mục</h1>
         </div>
         <p className="text-muted-foreground">
           Khám phá các danh mục thảo luận trong diễn đàn
@@ -157,7 +157,7 @@ export function CategoriesPage() {
       {categories && categories.length > 0 && (
         <div className="rounded-lg border p-4 bg-muted/50">
           <h3 className="font-semibold mb-2">Tổng quan</h3>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="text-sm">
               <span className="text-muted-foreground">Tổng số danh mục: </span>
               <span className="font-medium">{categories.length}</span>
