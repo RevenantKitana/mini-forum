@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { Post } from '@/api/services/postService';
 import { Card, CardContent, CardFooter, CardHeader } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
+import { Badge} from '@/app/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 import { VoteButtons } from '@/components/common/VoteButtons';
 import { BookmarkButton } from '@/components/common/BookmarkButton';
+import { CategoryColorIcon } from '@/components/common/CategoryColorIcon';
 import { MessageSquare, Eye, Pin, Lock, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 
 /**
  * Decode HTML entities recursively to handle double-encoding
@@ -49,16 +51,18 @@ export function PostCard({ post }: PostCardProps) {
   // Determine author badge based on role
   const getAuthorBadge = () => {
     if (!post.author) return null;
-    switch (post.author.role) {
-      case 'ADMIN':
-        return <Badge variant="destructive" className="gap-1 text-responsive-xs"><Shield className="h-3 w-3" /> Admin</Badge>;
-      case 'MODERATOR':
-        return <Badge variant="default" className="gap-1 bg-blue-600 text-responsive-xs"><Shield className="h-3 w-3" /> Mod</Badge>;
-      case 'BOT':
-        return <Badge variant="default" className="gap-1 bg-emerald-600 text-responsive-xs"><Shield className="h-3 w-3" /> Bot</Badge>;
-      default:
-        return null;
-    }
+
+    const role = AUTHOR_ROLE_MAP[post.author.role];
+    if (!role) return null;
+
+    const { icon: Icon, label } = ROLE_CONFIG[role];
+
+    return (
+      <Badge role={role} className="text-responsive-xs ">
+        <Icon className="h-3 w-3" />
+        {label}
+      </Badge>
+    );
   };
 
   // Decode HTML entities in title and excerpt to fix &quot; display issue
@@ -67,6 +71,23 @@ export function PostCard({ post }: PostCardProps) {
     const text = post.excerpt || (post.content ? post.content.substring(0, 200) + '...' : '');
     return decodeHtmlEntities(text);
   }, [post.excerpt, post.content]);
+
+  // Detect if author name is truncated (width > 50% of card)
+  const authorNameRef = useRef<HTMLSpanElement>(null);
+  const [isAuthorNameTruncated, setIsAuthorNameTruncated] = useState(false);
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (authorNameRef.current) {
+        const isOverflow = authorNameRef.current.scrollWidth > authorNameRef.current.clientWidth;
+        setIsAuthorNameTruncated(isOverflow);
+      }
+    };
+
+    checkTruncation();
+    window.addEventListener('resize', checkTruncation);
+    return () => window.removeEventListener('resize', checkTruncation);
+  }, [authorDisplayName]);
 
   return (
     <Card className="relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
@@ -80,7 +101,7 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {'Pinnded category'}
+              {'Pinned category'}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -94,7 +115,7 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              Bị admin khóa mõm!
+              Khóa bình luận!
             </TooltipContent>
           </Tooltip>
         </div>
@@ -102,20 +123,11 @@ export function PostCard({ post }: PostCardProps) {
       <CardHeader className="pb-2 relative">
         {/* Title & Status Row */}
         <div className="space-y-1 mb-0 min-w-0 w-full">
-          
           <Link to={`/posts/${post.id}`} className="block group">
-            <div className="flex items-start gap-2">
-              {/* Category color indicator */}
+            <div className="flex items-center gap-2">
+              {/* Category color indicator: SendHorizontal icon filled with category color */}
               {post.category?.color && (
-                <span
-                  className="flex-shrink-0 mt-1 w-3 h-3 rounded-full border-2 transition-transform group-hover:scale-125"
-                  style={{
-                    backgroundColor: post.category.color,
-                    borderColor: post.category.color,
-                    boxShadow: `0 0 0 1px rgba(0,0,0,0.1)`
-                  }}
-                  title={post.category.name}
-                />
+                <CategoryColorIcon color={post.category.color} name={post.category.name} />
               )}
               <h3 className="text-responsive-lg font-semibold group-hover:text-primary transition-colors truncate min-w-0 flex-1">
                 {decodedTitle}
@@ -124,40 +136,84 @@ export function PostCard({ post }: PostCardProps) {
           </Link>
         </div>
 
-        {/* Category Badge - Mobile & Desktop */}
-        {post.category && (
-          <Link
-            to={`/?category=${post.category.slug}`}
-            className="inline-block hover:opacity-80 transition-opacity"
-          >
-            <Badge variant="outline" className="gap-1 text-responsive-xs font-medium">
-              {post.category.name}
-              {post.category.viewPermission && post.category.viewPermission !== 'ALL' && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    Danh mục có quyền hạn chế
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </Badge>
-          </Link>
+        {/* Category & Tags Row (single row, separated) */}
+        {(post.category || (post.tags && post.tags.length > 0)) && (
+          <div className="flex items-center gap-3 flex-wrap">
+            {post.category && (
+              <Link
+                to={`/?category=${post.category.slug}`}
+                className="inline-block hover:opacity-80 transition-opacity"
+              >
+                <Badge variant="outline" className="gap-1 text-responsive-xs font-medium inline-flex items-center">
+                  {post.category.name}
+                  {post.category.viewPermission && post.category.viewPermission !== 'ALL' }
+                </Badge>
+              </Link>
+            )}
+
+            {post.tags && post.tags.length > 0 && (
+              <>
+                <span className="hidden sm:inline text-muted-foreground">·</span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {post.tags.slice(0, 4).map((tag) => (
+                    <Link key={tag.id} to={`/?tag=${tag.slug}`}>
+                      <Badge variant="secondary" className="hover:bg-primary hover:text-primary-foreground cursor-pointer text-responsive-xs transition-all duration-200 btn-press">
+                        {tag.name}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {post.tags.length > 4 && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge variant="outline" className="text-responsive-xs cursor-help">
+                          +{post.tags.length - 4} {post.tags.length - 4 === 1 ? 'tag' : 'tags'}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        {post.tags.slice(4).map((tag) => tag.name).join(', ')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         )}
 
+
         {/* Author & Meta Row */}
-        <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm">
+        <div className="border-t flex items-center gap-3 pt-2 flex-wrap text-xs sm:text-sm">
           {post.author && (
             <Link
               to={`/users/${post.author.username}`}
-              className="flex items-center gap-1.5 hover:text-foreground transition-colors group/author flex-shrink-0"
+              className="flex items-center gap-1.5 hover:text-foreground transition-colors group/author flex-shrink-0 min-w-0 max-w-[50%]"
             >
               <Avatar className="h-5 w-5 sm:h-5 sm:w-5 flex-shrink-0 transition-transform duration-200 group-hover/author:scale-110">
                 <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
                 <AvatarFallback className="text-[10px]">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span className="truncate font-medium text-foreground">{authorDisplayName}</span>
+              {isAuthorNameTruncated ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span 
+                      ref={authorNameRef}
+                      className="truncate font-medium text-foreground cursor-help"
+                    >
+                      {authorDisplayName}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {authorDisplayName}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <span 
+                  ref={authorNameRef}
+                  className="truncate font-medium text-foreground"
+                >
+                  {authorDisplayName}
+                </span>
+              )}
             </Link>
           )}
           
@@ -173,27 +229,9 @@ export function PostCard({ post }: PostCardProps) {
 
       <CardContent className="pb-2 flex-1 space-y-2">
         {/* Excerpt */}
-        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 whitespace-pre-line leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 whitespace-pre-line leading-relaxed">
           {decodedExcerpt}
         </p>
-        
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {post.tags.slice(0, 3).map((tag) => (
-              <Link key={tag.id} to={`/?tag=${tag.slug}`}>
-                <Badge variant="secondary" className="hover:bg-primary hover:text-primary-foreground cursor-pointer text-responsive-xs transition-all duration-200 btn-press inline-block">
-                  {tag.name}
-                </Badge>
-              </Link>
-            ))}
-            {post.tags.length > 3 && (
-              <Badge variant="outline" className="text-responsive-xs">
-                +{post.tags.length - 3} thêm
-              </Badge>
-            )}
-          </div>
-        )}
       </CardContent>
 
       {/* Footer Stats & Actions */}

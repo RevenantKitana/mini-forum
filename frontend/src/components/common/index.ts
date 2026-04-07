@@ -25,3 +25,4 @@ export type { AnimationType } from './AnimatedIcon';
 export { PostFormDialog } from './PostFormDialog';
 export { CreatePostDialog } from './CreatePostDialog';
 export { EditPostDialog } from './EditPostDialog';
+export { CategoryColorIcon } from './CategoryColorIcon';

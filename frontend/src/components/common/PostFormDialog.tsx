@@ -231,8 +231,16 @@ export function PostFormDialog({
     // Set tags
     if (post.tags) {
       const tagNames = post.tags.map((t: any) => t.name || t.tag?.name || t).filter(Boolean);
+      // Deduplicate tags (case-insensitive) - keep first occurrence's casing
+      const seen = new Set<string>();
+      const deduplicatedTagNames = tagNames.filter(tag => {
+        const lower = tag.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
       setSelectedTags([]);
-      setCustomTags(tagNames);
+      setCustomTags(deduplicatedTagNames);
     }
   }, [mode, isOpen, post, reset]);
 
@@ -306,16 +314,26 @@ export function PostFormDialog({
 
   const onSubmit = (data: PostFormData) => {
     if (mode === 'create') {
-      const allTagNames = [...getSelectedTagNames(), ...customTags];
+      const selectedTagNames = getSelectedTagNames();
+      const allTagNames = [...selectedTagNames, ...customTags];
+      
+      // Deduplicate tags (case-insensitive) - keep first occurrence's casing
+      const seen = new Set<string>();
+      const deduplicatedTags = allTagNames.filter(tag => {
+        const lower = tag.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
 
       // Show reminder if no tags selected
-      if (allTagNames.length === 0) {
+      if (deduplicatedTags.length === 0) {
         setPendingSubmitData(data);
         setShowNoTagsDialog(true);
         return;
       }
 
-      submitCreatePost(data, allTagNames);
+      submitCreatePost(data, deduplicatedTags);
     } else {
       submitEditPost(data);
     }
@@ -368,9 +386,19 @@ export function PostFormDialog({
   };
 
   const toggleTag = (tagId: number) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
+    setSelectedTags((prev) => {
+      if (prev.includes(tagId)) {
+        return prev.filter((id) => id !== tagId);
+      } else {
+        // Check tag limit before adding
+        const totalTags = prev.length + customTags.length;
+        if (totalTags >= 10) {
+          toast.error('Tối đa 10 tags cho mỗi bài viết');
+          return prev;
+        }
+        return [...prev, tagId];
+      }
+    });
   };
 
   const handleTagInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -381,19 +409,45 @@ export function PostFormDialog({
   };
 
   const addCustomTag = () => {
-    const tagName = tagInput.trim().toLowerCase();
+    const tagName = tagInput.trim();
     if (!tagName) return;
     
-    // Don't add duplicate custom tags
-    if (customTags.includes(tagName)) {
+    const tagNameLower = tagName.toLowerCase();
+    
+    // Check tag limit (max 10 tags total)
+    const totalTags = selectedTags.length + customTags.length;
+    if (totalTags >= 10) {
+      toast.error('Tối đa 10 tags cho mỗi bài viết');
+      return;
+    }
+    
+    // Check for duplicate custom tags (case-insensitive)
+    if (customTags.some(t => t.toLowerCase() === tagNameLower)) {
+      setTagInput('');
+      return;
+    }
+    
+    // Check if already selected in selectedTags (case-insensitive)
+    const alreadySelectedByName = getSelectedTagNames().some(
+      name => name.toLowerCase() === tagNameLower
+    );
+    if (alreadySelectedByName) {
+      toast.info('Tag này đã được chọn');
       setTagInput('');
       return;
     }
 
     // Check if tag exists in available tags (regardless of permission)
-    const existingTag = availableTags.find((t: Tag) => t.name.toLowerCase() === tagName);
+    const existingTag = availableTags.find((t: Tag) => t.name.toLowerCase() === tagNameLower);
     
     if (existingTag) {
+      // Check if already selected (by ID)
+      if (selectedTags.includes(existingTag.id)) {
+        toast.info(`Tag "${existingTag.name}" đã được chọn`);
+        setTagInput('');
+        return;
+      }
+
       // Tag exists - check permissions
       if (!existingTag.isActive) {
         // Tag is inactive
@@ -417,9 +471,7 @@ export function PostFormDialog({
       }
       
       // User has permission - add to selected tags
-      if (!selectedTags.includes(existingTag.id)) {
-        setSelectedTags(prev => [...prev, existingTag.id]);
-      }
+      setSelectedTags(prev => [...prev, existingTag.id]);
     } else {
       // New tag - allow creation
       setCustomTags(prev => [...prev, tagName]);
@@ -436,6 +488,13 @@ export function PostFormDialog({
   };
 
   const addRecommendedTag = (tagId: number) => {
+    // Check tag limit before adding
+    const totalTags = selectedTags.length + customTags.length;
+    if (totalTags >= 10) {
+      toast.error('Tối đa 10 tags cho mỗi bài viết');
+      return;
+    }
+    
     if (!selectedTags.includes(tagId)) {
       setSelectedTags(prev => [...prev, tagId]);
     }
@@ -576,48 +635,84 @@ export function PostFormDialog({
 
                 {/* Tags - Only for Create Mode */}
                 {mode === 'create' && (
-                  <div className="space-y-3">
-                    <Label>Tags (Tùy chọn)</Label>
+                  <div className="space-y-3 p-3 rounded-lg bg-muted/30 border">
+                    <div className="flex items-center justify-between">
+                      <Label className="mb-0">Tags (Tùy chọn, Tối đa 10)</Label>
+                      <span className={cn(
+                        "text-xs",
+                        selectedTags.length + customTags.length >= 10
+                          ? "text-destructive font-semibold"
+                          : "text-muted-foreground"
+                      )}>
+                        {selectedTags.length + customTags.length}/10
+                      </span>
+                    </div>
+                    
+                    {/* Max Tags Reached Warning */}
+                    {selectedTags.length + customTags.length >= 10 && (
+                      <div className="flex items-center gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
+                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                        <span>Đã đạt giới hạn 10 tags</span>
+                      </div>
+                    )}
+                    
+                    {/* Selected Tags Summary */}
+                    {(selectedTags.length > 0 || customTags.length > 0) && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Tags đã chọn:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {getSelectedTagNames().map((tagName) => (
+                            <Badge
+                              key={tagName}
+                              variant="default"
+                              className="cursor-pointer bg-blue-600 hover:bg-blue-700 gap-1"
+                              onClick={() => {
+                                const tag = availableTags.find(t => t.name === tagName);
+                                if (tag) toggleTag(tag.id);
+                              }}
+                            >
+                              {tagName}
+                              <X className="h-3 w-3" />
+                            </Badge>
+                          ))}
+                          {customTags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="default"
+                              className="cursor-pointer bg-green-600 hover:bg-green-700 gap-1"
+                              onClick={() => removeCustomTag(tag)}
+                            >
+                              {tag}
+                              <X className="h-3 w-3" />
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Custom Tag Input */}
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Nhập tag và nhấn Enter..."
+                        placeholder="Nhập tag mới và nhấn Enter..."
                         value={tagInput}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setTagInput(e.target.value)}
                         onKeyDown={handleTagInputKeyDown}
                         className="flex-1"
+                        disabled={selectedTags.length + customTags.length >= 10}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
                         onClick={addCustomTag}
-                        disabled={!tagInput.trim()}
+                        disabled={
+                          !tagInput.trim() || 
+                          selectedTags.length + customTags.length >= 10
+                        }
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-
-                    {/* Custom Tags (newly created) */}
-                    {customTags.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground">Tags mới sẽ được tạo:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {customTags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="default"
-                              className="cursor-pointer bg-green-600 hover:bg-green-700"
-                              onClick={() => removeCustomTag(tag)}
-                            >
-                              {tag}
-                              <X className="ml-1 h-3 w-3" />
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Tag Permission Warnings */}
                     {restrictedTagWarnings.length > 0 && (
@@ -643,7 +738,7 @@ export function PostFormDialog({
 
                     {/* Recommended Tags */}
                     {categoryId && accessibleRecommendedTags.length > 0 && (
-                      <div className="space-y-1">
+                      <div className="space-y-2 pt-2 border-t">
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <TrendingUp className="h-3 w-3" />
                           Tags gợi ý cho danh mục:
@@ -651,15 +746,30 @@ export function PostFormDialog({
                         <div className="flex flex-wrap gap-2">
                           {accessibleRecommendedTags.map((tag: Tag) => {
                             const isAlreadySelected = selectedTags.includes(tag.id);
+                            const isMaxReached = selectedTags.length + customTags.length >= 10;
                             return (
                               <Badge
                                 key={tag.id}
                                 variant={isAlreadySelected ? 'default' : 'outline'}
-                                className={`cursor-pointer ${isAlreadySelected ? '' : 'border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground'}`}
-                                onClick={() => !isAlreadySelected && addRecommendedTag(tag.id)}
+                                className={`cursor-pointer transition-all ${
+                                  isAlreadySelected
+                                    ? 'bg-blue-600 hover:bg-blue-700'
+                                    : isMaxReached
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground'
+                                }`}
+                                onClick={() => !isMaxReached && (!isAlreadySelected && addRecommendedTag(tag.id))}
                               >
                                 {tag.name}
-                                {isAlreadySelected && <X className="ml-1 h-3 w-3" onClick={(e) => { e.stopPropagation(); toggleTag(tag.id); }} />}
+                                {isAlreadySelected && (
+                                  <X
+                                    className="ml-1 h-3 w-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleTag(tag.id);
+                                    }}
+                                  />
+                                )}
                               </Badge>
                             );
                           })}
@@ -668,22 +778,30 @@ export function PostFormDialog({
                     )}
 
                     {/* Existing Tags */}
-                    <div className="space-y-1">
+                    <div className="space-y-2 pt-2 border-t">
                       <p className="text-xs text-muted-foreground">Hoặc chọn từ tags có sẵn:</p>
-                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-                        {userAccessibleTags.slice(0, 20).map((tag: Tag) => (
-                          <Badge
-                            key={tag.id}
-                            variant={selectedTags.includes(tag.id) ? 'default' : 'outline'}
-                            className="cursor-pointer"
-                            onClick={() => toggleTag(tag.id)}
-                          >
-                            {tag.name}
-                            {selectedTags.includes(tag.id) && (
-                              <X className="ml-1 h-3 w-3" />
-                            )}
-                          </Badge>
-                        ))}
+                      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-background rounded border">
+                        {userAccessibleTags.slice(0, 30).map((tag: Tag) => {
+                          const isSelected = selectedTags.includes(tag.id);
+                          const isMaxReached = selectedTags.length + customTags.length >= 10;
+                          return (
+                            <Badge
+                              key={tag.id}
+                              variant={isSelected ? 'default' : 'outline'}
+                              className={`cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-blue-600 hover:bg-blue-700'
+                                  : isMaxReached
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : 'hover:bg-muted'
+                              }`}
+                              onClick={() => !isMaxReached && toggleTag(tag.id)}
+                            >
+                              {tag.name}
+                              {isSelected && <X className="ml-1 h-3 w-3" />}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
