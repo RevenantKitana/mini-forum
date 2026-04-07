@@ -69,36 +69,39 @@ export function PostCard({ post }: PostCardProps) {
   }, [post.excerpt, post.content]);
 
   return (
-    <Card className="card-hover-lift border-l-4 border-l-transparent hover:border-l-primary transition-all duration-200 flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
+      {/* Corner icons: pinned (left) and locked (right) */}
+      {post.isPinned && post.pinType === 'CATEGORY' && (
+        <div className="absolute top-0 left-0 translate-x-1/2 -translate-y-1/2 -rotate-45">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex-shrink-0">
+                <Pin className={`h-4 w-4 ${post.pinType === 'GLOBAL' ? 'text-primary' : 'text-orange-500'}`} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {'Pinnded category'}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+      {post.isLocked && (
+        <div className="absolute top-2 right-2 z-10 pointer-events-auto">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex-shrink-0">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Bị admin khóa mõm!
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+      <CardHeader className="pb-2 relative">
         {/* Title & Status Row */}
-        <div className="space-y-1.5 mb-0.5">
-          <div className="flex items-start gap-2 flex-wrap">
-            {post.isPinned && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="flex-shrink-0">
-                    <Pin className={`h-4 w-4 ${post.pinType === 'GLOBAL' ? 'text-primary' : 'text-orange-500'}`} />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  {post.pinType === 'GLOBAL' ? 'Ghim toàn cục' : 'Ghim trong danh mục'}
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {post.isLocked && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="flex-shrink-0">
-                    <Lock className="h-4 w-4 text-muted-foreground" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Bài viết đã khóa
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+        <div className="space-y-1 mb-0 min-w-0 w-full">
           
           <Link to={`/posts/${post.id}`} className="block group">
             <div className="flex items-start gap-2">
@@ -114,7 +117,7 @@ export function PostCard({ post }: PostCardProps) {
                   title={post.category.name}
                 />
               )}
-              <h3 className="text-responsive-lg font-semibold group-hover:text-primary transition-colors line-clamp-2 break-words flex-1">
+              <h3 className="text-responsive-lg font-semibold group-hover:text-primary transition-colors truncate min-w-0 flex-1">
                 {decodedTitle}
               </h3>
             </div>

@@ -91,7 +91,7 @@ export function MainLayout() {
           )}
           
           {/* Main content - scrolls independently with smooth transitions */}
-          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-4 md:p-5 scroll-smooth scrollbar-gutter-stable">
+          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-4 md:p-0 scroll-smooth scrollbar-gutter-stable">
             <div className="animate-fade-in-up">
               <Outlet />
             </div>

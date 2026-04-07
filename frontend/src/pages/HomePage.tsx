@@ -145,14 +145,14 @@ export function HomePage() {
     if (categorySlug && selectedCategory) {
       return {
         title: selectedCategory.name,
-        description: selectedCategory.description || `Khám phá các bài viết trong danh mục ${selectedCategory.name}`,
+        description: selectedCategory.description || `Bảo Admin thêm mô tả cho danh mục này đi nào!`,
         icon: selectedCategory.icon,
         color: selectedCategory.color,
       };
     }
     return {
-      title: 'Thảo luận',
-      description: 'Tham gia cuộc trò chuyện và chia sẻ suy nghĩ của bạn',
+      title: "Sảnh chính",
+      description: 'Tất cả bài viết',
       icon: null,
       color: null,
     };
@@ -219,35 +219,33 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-2 sm:pb-3 -mx-4 sm:-mx-5 px-4 sm:px-5 pt-2 sm:pt-3 border-b border-border/50">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur py-10 sm:py-1 -mx-4 sm:-mx-1 px-4 sm:px-4 border-b border-border/50">
         {/* Header - Dynamic based on selected category */}
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-20">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-responsive-sm">
               {headerContent.icon ? (
-                <span className="text-responsive-2xl">{headerContent.icon}</span>
+                <span className="text-responsive-2x1">{headerContent.icon}</span>
               ) : categorySlug ? (
                 <Folder className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
               ) : (
                 <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float flex-shrink-0" />
               )}
-              <h1 className="text-responsive-2xl font-bold truncate">{headerContent.title}</h1>
+              <h1 className="font-bold max-w-[30%] truncate text-responsive-2xl">
+                {headerContent.title}
+                {categorySlug && selectedCategory && (<span className="ml-1">({selectedCategory.postCount})</span>)}
+              </h1>
+              <p className="flex-1 min-w-0 line-clamp-2 text-muted-foreground text-responsive-sm border-l border-border pl-1 sm:pl-2">
+                {headerContent.description}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-1 text-responsive-sm line-clamp-2">
-              {headerContent.description}
-            </p>
-            {categorySlug && selectedCategory && (
-              <div className="mt-2 text-responsive-sm text-muted-foreground">
-                {selectedCategory.postCount} bài viết trong danh mục này
-              </div>
-            )}
           </div>
         </div>
 
         {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex justify-between">
           {/* Sort buttons with toggle functionality - fixed width */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <div className="flex items-center gap-2 bg-muted rounded-lg">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
               const isActive = isSortActive(baseSort);
               const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
@@ -273,7 +271,7 @@ export function HomePage() {
               );
             })}
           </div>
-
+          <div className="ml-auto flex items-center gap-2">
           {/* Date Range Filter */}
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
@@ -339,6 +337,7 @@ export function HomePage() {
               </div>
             </PopoverContent>
           </Popover>
+          </div>
 
           {/* Active date filter badge */}
           {hasDateFilter && (

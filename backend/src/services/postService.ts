@@ -221,26 +221,9 @@ export async function getPosts(query: ListPostsQuery, requestingUserId?: number,
     }
   }
 
-  // Build order by
+  // Build order by - no pin preference in DB sort
+  // Will handle pin prioritization in application code
   let orderBy: any[] = [];
-  
-  // Pin ordering logic:
-  // - When viewing all posts (no category filter): Only GLOBAL pins at top
-  // - When viewing a specific category: Both GLOBAL and CATEGORY pins for that category at top
-  if (category) {
-    // When filtering by category, show all pinned posts (both GLOBAL and CATEGORY type) first
-    orderBy.push({ is_pinned: 'desc' });
-  } else {
-    // When viewing all posts, only show GLOBAL pins first
-    // CATEGORY pins should NOT be prioritized in the "all posts" view
-    // We'll handle this by adding a custom sort that prioritizes GLOBAL pins only
-    orderBy.push({ 
-      pin_type: {
-        sort: 'desc',
-        nulls: 'last'
-      }
-    });
-  }
   
   switch (sort) {
     case 'popular':
@@ -267,7 +250,7 @@ export async function getPosts(query: ListPostsQuery, requestingUserId?: number,
   }
 
   // Get posts with count
-  const [posts, total] = await Promise.all([
+  const [postsList, total] = await Promise.all([
     prisma.posts.findMany({
       where,
       select: postListSelect,
@@ -277,6 +260,27 @@ export async function getPosts(query: ListPostsQuery, requestingUserId?: number,
     }),
     prisma.posts.count({ where }),
   ]);
+
+  // Apply pin-based sorting for category view
+  // When viewing a specific category: prioritize CATEGORY-pinned posts at the top
+  // (sidebar already shows GLOBAL pinned posts, so we don't need them in the main list)
+  if (category) {
+    postsList.sort((a, b) => {
+      const aIsCategoryPin = a.pin_type === 'CATEGORY';
+      const bIsCategoryPin = b.pin_type === 'CATEGORY';
+      
+      // Prioritize CATEGORY pins: they come first
+      if (aIsCategoryPin !== bIsCategoryPin) {
+        return aIsCategoryPin ? -1 : 1;
+      }
+      
+      // For posts with same pin status, maintain the sort order from orderBy
+      // (already sorted by created_at or other sort param)
+      return 0;
+    });
+  }
+
+  const posts = postsList;
 
   return {
     data: posts.map(transformPostTags),
