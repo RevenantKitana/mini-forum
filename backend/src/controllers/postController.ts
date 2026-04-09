@@ -167,6 +167,22 @@ export async function getPostsByAuthor(req: Request, res: Response, next: NextFu
   }
 }
 
+/**
+ * GET /api/v1/posts/:id/related
+ * Get related posts for a given post
+ */
+export async function getRelatedPosts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 8;
+    const authReq = req as AuthRequest;
+    const posts = await postService.getRelatedPosts(id, limit, 3, authReq.user?.role);
+    return sendSuccess(res, posts, 'Related posts retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+
 
 
 

@@ -4,7 +4,7 @@ import { Category, PopularTag } from '@/api/services/categoryService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Folder, FileText, ArrowRight, Hash, TrendingUp, Eye, MessageSquare } from 'lucide-react';
+import { Folder, FileText, ArrowRight, Hash, TrendingUp, Eye, MessageSquare, SendHorizontal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginRequiredDialog } from '@/components/common/LoginRequiredDialog';
 import { useState } from 'react';
@@ -29,10 +29,10 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="ml-2 mt-2 space-y-6 animate-fade-in-up">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-3 mb-2">
+        <div className="ml-2 mt-2 flex items-center gap-3 mb-2">
           <Folder className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
           <h1 className="text-2xl sm:text-3xl font-bold">Danh mục</h1>
         </div>
@@ -66,13 +66,9 @@ export function CategoriesPage() {
                     {/* Color indicator badge */}
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       {category.color ? (
-                        <span
-                          className="w-6 h-6 rounded-full border-2"
-                          style={{
-                            backgroundColor: category.color,
-                            borderColor: category.color,
-                            boxShadow: `0 0 0 2px rgba(0,0,0,0.1)`
-                          }}
+                        <SendHorizontal
+                          className="h-6 w-6"
+                          style={{ color: category.color }}
                         />
                       ) : (
                         <Folder className="h-6 w-6 text-primary" />

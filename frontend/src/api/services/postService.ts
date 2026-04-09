@@ -245,6 +245,16 @@ export const postService = {
   },
 
   /**
+   * Get related posts for a given post
+   */
+  getRelated: async (postId: number, limit = 8): Promise<Post[]> => {
+    const response = await apiClient.get<ApiResponse<Post[]>>(
+      `${API_ENDPOINTS.POSTS.RELATED(postId)}?limit=${limit}`
+    );
+    return response.data.data;
+  },
+
+  /**
    * Get posts by author
    */
   getByAuthor: async (username: string, page = 1, limit = 10): Promise<PaginatedResponse<Post>> => {

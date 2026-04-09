@@ -1,6 +1,7 @@
-import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { useCategories, useCategoryBySlug } from '@/hooks/useCategories';
 import { usePopularTags } from '@/hooks/useTags';
+import { useRelatedPosts } from '@/hooks/usePosts';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
@@ -8,10 +9,11 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
-import { Tag, Folder, X, FileText, TrendingUp, Lock, Globe, Search } from 'lucide-react';
+import { Tag, Folder, X, FileText, TrendingUp, Lock, Globe, Search, Sparkles, Eye, MessageSquare } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { LoginRequiredDialog } from '@/components/common/LoginRequiredDialog';
+import type { Post } from '@/api/services/postService';
 
 // Pages where sidebar filter sections should be hidden
 const HIDE_FILTERS_PATHS: string[] = ['/posts/', '/categories', '/tags'];
@@ -45,7 +47,16 @@ export function Sidebar() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuth();
-  
+  const { id: postId } = useParams<{ id?: string }>();
+
+  const isDetailPage = location.pathname.startsWith('/posts/') && !!postId;
+
+  // Related posts - only fetch on detail pages
+  const { data: relatedPosts, isLoading: relatedLoading } = useRelatedPosts(
+    postId ?? '',
+    8
+  );
+
   // Login required dialog state
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [loginDialogPermission, setLoginDialogPermission] = useState<'MEMBER' | 'MODERATOR' | 'ADMIN'>('MEMBER');
@@ -58,7 +69,7 @@ export function Sidebar() {
   const activeTags = legacyTag ? [legacyTag] : currentTags;
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const { data: popularTags, isLoading: tagsLoading } = usePopularTags(15);
+  const { data: popularTags, isLoading: tagsLoading } = usePopularTags(12, 'postCount', 'desc');
   
   // Tag filter state
   const [tagFilter, setTagFilter] = useState('');
@@ -141,14 +152,78 @@ export function Sidebar() {
   const totalPosts = categories?.reduce((sum, cat) => sum + cat.postCount, 0) || 0;
 
   return (
-    <aside className="h-full overflow-hidden scrollbar-gutter-stable animate-enter-left">
+    <aside className="h-full overflow-hidden scrollbar-gutter-stable animate-enter-left transition-transform duration-300">
       {/* p-3 md:p-4 - Mobile-optimized sidebar padding */}
-      <div className="flex flex-col h-full p-3 md:p-4">
-        {/* Categories - 45% height */}
-        <div style={{ flex: '0 0 45%' }} className="flex flex-col min-h-0">
+      <div className="flex flex-col h-full p-3 md:p-1 gap-3 md:gap-4">
+
+        {/* ── RELATED POSTS ── show only on post detail page */}
+        {isDetailPage && (
+          <div className="flex flex-col flex-1 min-h-0">
+            <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+              <Sparkles className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Bài viết liên quan</span>
+            </h3>
+            <div className="border-t pt-3 flex-1 min-h-0">
+              {relatedLoading ? (
+                <div className="space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : relatedPosts && relatedPosts.length > 0 ? (
+                <ScrollArea className="h-full">
+                  <div className="space-y-2 pr-3">
+                    {relatedPosts.map((post: Post) => (
+                      <Link
+                        key={post.id}
+                        to={`/posts/${post.id}`}
+                        className="block p-2.5 rounded-md border hover:bg-muted transition-colors group animate-fade-in-up"
+                      >
+                        {/* Category color dot */}
+                        {post.category?.color && (
+                          <span
+                            className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-0.5 align-middle flex-shrink-0"
+                            style={{ backgroundColor: post.category.color }}
+                          />
+                        )}
+                        <span className="text-xs font-medium line-clamp-2 group-hover:text-primary leading-snug">
+                          {post.title}
+                        </span>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            <Eye className="h-3 w-3" />
+                            {post.viewCount}
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <MessageSquare className="h-3 w-3" />
+                            {post.commentCount}
+                          </span>
+                          {post.tags && post.tags.length > 0 && (
+                            <span className="flex items-center gap-0.5 truncate">
+                              <Tag className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{post.tags[0].name}</span>
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Không tìm thấy bài viết liên quan.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── CATEGORIES / TAGS / STATS ── hide entirely on detail page */}
+        {!isDetailPage && (<>
+        <div style={{ flex: '0 0 37%' }} className="flex flex-col min-h-0">
           {!shouldHideFilters && (
             <div className="flex flex-col h-full">
-              <h3 className="font-semibold mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+              <h3 className="font-semibold mb-1 flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
                 <Folder className="h-4 w-4 flex-shrink-0" />
                 <span className="truncate">Categories</span>
               </h3>
@@ -161,7 +236,7 @@ export function Sidebar() {
                   </div>
                 ) : (
                   <ScrollArea className="h-full">
-                    <nav className="space-y-1 pr-3">
+                    <nav className="space-y-1 pr-1">
                       <button
                         onClick={() => handleCategoryClick(null)}
                         className={`w-full text-left block px-3 py-2 rounded-md text-sm transition-all duration-200 ${
@@ -195,7 +270,7 @@ export function Sidebar() {
                               {/* Category color indicator */}
                               {category.color && (
                                 <span
-                                  className="w-2.5 h-2.5 rounded-full border flex-shrink-0"
+                                  className="w-4 h-3 rounded-sm border flex-shrink-0"
                                   style={{
                                     backgroundColor: category.color,
                                     borderColor: category.color,
@@ -206,12 +281,17 @@ export function Sidebar() {
                               {/* PUBLIC label for categories visible to ALL */}
                               {!isRestricted && (
                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 flex-shrink-0 text-green-600 border-green-300 dark:text-green-400 dark:border-green-600">
-                                  <Globe className="h-2.5 w-2.5 mr-0.5" />
-                                  PUBLIC
-                                </Badge>
+                                  <Globe className="h-2.5 w-2.5 mr-0.5" /></Badge>
                               )}
                             </span>
-                            <Badge variant="secondary" className="flex-shrink-0">
+                            <Badge
+                              variant="secondary"
+                              className="flex-shrink-0 border-1"
+                              style={{
+                                backgroundColor: undefined,
+                                borderColor: category.color || undefined,
+                              }}
+                            >
                               {category.postCount}
                             </Badge>
                           </div>
@@ -226,7 +306,6 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Tags - 35% height */}
         <div style={{ flex: '0 0 35%' }} className="flex flex-col min-h-0 mt-3">
           {!shouldHideFilters && (
             <div className="flex flex-col h-full">
@@ -352,6 +431,7 @@ export function Sidebar() {
             </div>
           </div>
         </div>
+        </>)}
       </div>
       
       {/* Login Required Dialog */}

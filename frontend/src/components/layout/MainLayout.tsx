@@ -37,7 +37,7 @@ export function MainLayout() {
       <Header />
       <div className="flex-1 overflow-hidden">
         {/* Mobile-optimized spacing: gap-3 → gap-4, py-3 → py-4, px-3 → px-4 */}
-        <div className="w-full h-full flex gap-3 md:gap-4 py-3 md:py-4 px-3 md:px-4">
+        <div className="max-w-full h-full flex gap-3 md:gap-4 py-3 md:py-4 px-3 md:px-4">
           {/* Left Sidebar - responsive width using CSS variables, smart hiding with collapse support */}
           {showLeftSidebar && !isLandscapeMobile && (
             <aside 

@@ -12,6 +12,7 @@ const router = Router();
 router.get('/', optionalAuthMiddleware, postController.getPosts);
 router.get('/featured', optionalAuthMiddleware, postController.getFeaturedPosts);
 router.get('/latest', optionalAuthMiddleware, postController.getLatestPosts);
+router.get('/:id/related', optionalAuthMiddleware, postController.getRelatedPosts as RequestHandler);
 router.get('/:id', optionalAuthMiddleware, postController.getPostById);
 
 // Member routes (requires authentication)

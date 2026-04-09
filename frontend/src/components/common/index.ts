@@ -15,6 +15,7 @@ export {
   ContentLoadingOverlay,
 } from './LoadingStates';
 export { ThemeToggle } from './ThemeToggle';
+export { ThemeSwitcher } from './ThemeSwitcher';
 export { ReportModal } from './ReportModal';
 export { RestrictedContent } from './RestrictedContent';
 export { VoteButtons } from './VoteButtons';
@@ -26,3 +27,4 @@ export { PostFormDialog } from './PostFormDialog';
 export { CreatePostDialog } from './CreatePostDialog';
 export { EditPostDialog } from './EditPostDialog';
 export { CategoryColorIcon } from './CategoryColorIcon';
+export { VoteScore } from './VoteScore';

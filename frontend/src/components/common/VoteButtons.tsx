@@ -135,13 +135,13 @@ export function VoteButtons({
   };
 
   const iconSizeClasses = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-6 w-6',
   };
 
   const score = upvotes - downvotes;
-
+  
   // Generate tooltip text based on current state
   const getUpvoteTooltip = () => {
     if (isAuthor) return 'Bạn không thể vote cho nội dung của chính mình';
@@ -157,84 +157,94 @@ export function VoteButtons({
     return 'Downvote';
   };
 
+  interface ActionButtonProps {
+    voteType: 'up' | 'down';
+    Icon: any;
+    tooltip: string;
+    active: boolean;
+    animating: boolean;
+    onAnimEnd: () => void;
+    onClick: () => void;
+    side?: 'top' | 'bottom';
+  }
+
+  function ActionButton({ voteType, Icon, tooltip, active, animating, onAnimEnd, onClick, side = 'top' }: ActionButtonProps) {
+    const activeClass = voteType === 'up'
+      ? 'text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900'
+      : 'text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900';
+
+    const animClass = voteType === 'up' ? 'animate-vote-up' : 'animate-vote-down';
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              sizeClasses[size],
+              'btn-press transition-all duration-200',
+              active && activeClass,
+              isAuthor && 'opacity-50 cursor-not-allowed'
+            )}
+            onClick={onClick}
+            disabled={isLoading || !isAuthenticated || isAuthor}
+          >
+            <Icon
+              className={cn(
+                iconSizeClasses[size],
+                'transition-transform',
+                animating && animClass,
+                active && 'fill-current'
+              )}
+              onAnimationEnd={onAnimEnd}
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side={side}>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <div
         className={cn(
-          'flex items-center gap-1',
+          'flex items-center gap-4',
           orientation === 'vertical' ? 'flex-col' : 'flex-row',
           className
         )}
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                sizeClasses[size],
-                'btn-press transition-all duration-200',
-                currentVote === 'up' && 'text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900',
-                isAuthor && 'opacity-50 cursor-not-allowed'
-              )}
-              onClick={() => handleVote('up')}
-              disabled={isLoading || !isAuthenticated || isAuthor}
-            >
-              <ThumbsUp 
-                className={cn(
-                  iconSizeClasses[size],
-                  'transition-transform',
-                  upvoteAnimating && 'animate-vote-up',
-                  currentVote === 'up' && 'fill-current'
-                )} 
-                onAnimationEnd={() => setUpvoteAnimating(false)}
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>{getUpvoteTooltip()}</p>
-          </TooltipContent>
-        </Tooltip>
+        <ActionButton
+          voteType="up"
+          Icon={ThumbsUp}
+          tooltip={getUpvoteTooltip()}
+          active={currentVote === 'up'}
+          animating={upvoteAnimating}
+          onAnimEnd={() => setUpvoteAnimating(false)}
+          onClick={() => {
+            setUpvoteAnimating(true);
+            handleVote('up');
+          }}
+          side="top"
+        />
 
-        <span
-          className={cn(
-            'font-medium text-sm min-w-[2ch] text-center transition-all duration-200',
-            score > 0 && 'text-green-600',
-            score < 0 && 'text-red-600'
-          )}
-        >
-          {score}
-        </span>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                sizeClasses[size],
-                'btn-press transition-all duration-200',
-                currentVote === 'down' && 'text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900',
-                isAuthor && 'opacity-50 cursor-not-allowed'
-              )}
-              onClick={() => handleVote('down')}
-              disabled={isLoading || !isAuthenticated || isAuthor}
-            >
-              <ThumbsDown 
-                className={cn(
-                  iconSizeClasses[size],
-                  'transition-transform',
-                  downvoteAnimating && 'animate-vote-down',
-                  currentVote === 'down' && 'fill-current'
-                )} 
-                onAnimationEnd={() => setDownvoteAnimating(false)}
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>{getDownvoteTooltip()}</p>
-          </TooltipContent>
-        </Tooltip>
+        <ActionButton
+          voteType="down"
+          Icon={ThumbsDown}
+          tooltip={getDownvoteTooltip()}
+          active={currentVote === 'down'}
+          animating={downvoteAnimating}
+          onAnimEnd={() => setDownvoteAnimating(false)}
+          onClick={() => {
+            setDownvoteAnimating(true);
+            handleVote('down');
+          }}
+          side="bottom"
+        />
       </div>
     </TooltipProvider>
   );

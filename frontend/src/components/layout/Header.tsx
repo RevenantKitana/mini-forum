@@ -12,7 +12,7 @@ import { Input } from '@/app/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBell } from '@/components/common/NotificationBell';
-import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { ThemeSwitcher } from '@/components/common/ThemeSwitcher';
 import { FontSizeSelector } from '@/components/common/FontSizeSelector';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { MobileNav } from './MobileNav';
@@ -106,7 +106,7 @@ export function Header() {
             )} />
             <Input
               type="search"
-              placeholder="Tìm kiếm bài viết..."
+              placeholder="Tìm kiếm..."
               className={cn(
                 "pl-9 pr-4 h-9 transition-all duration-200",
                 "w-[clamp(180px,20vw,320px)]",
@@ -117,7 +117,7 @@ export function Header() {
                 maxWidth: 'min(400px, 40vw)'
               }}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
             />
@@ -144,9 +144,9 @@ export function Header() {
             </div>
           )}
 
-          {/* Theme Toggle - hide on very small screens to save space */}
+          {/* Theme Switcher - hide on very small screens to save space */}
           <div className="hidden min-[400px]:block">
-            <ThemeToggle />
+            <ThemeSwitcher />
           </div>
 
           {/* Font Size Selector - hide on small screens */}

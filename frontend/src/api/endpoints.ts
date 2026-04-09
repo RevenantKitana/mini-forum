@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     BASE: '/posts',
     BY_ID: (id: string | number) => `/posts/${id}`,
     BY_USER: (userId: string | number) => `/users/${userId}/posts`,
+    RELATED: (id: string | number) => `/posts/${id}/related`,
   },
   
   // Comments

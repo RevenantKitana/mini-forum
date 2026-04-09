@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { FontSizeProvider } from '@/contexts/FontSizeContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { PrivateRoute } from '@/routes';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { HomePage } from '@/pages/HomePage';
@@ -38,11 +39,12 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SidebarProvider>
-          <FontSizeProvider>
-            <TooltipProvider>
-              <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <FontSizeProvider>
+              <TooltipProvider>
+                <BrowserRouter>
                 <Routes>
                   {/* Main Layout Routes */}
                   <Route path="/" element={<MainLayout />}>
@@ -110,6 +112,7 @@ export default function App() {
           </FontSizeProvider>
         </SidebarProvider>
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

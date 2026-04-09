@@ -12,6 +12,7 @@ export const postKeys = {
   detail: (id: number | string) => [...postKeys.details(), id] as const,
   slug: (slug: string) => [...postKeys.all, 'slug', slug] as const,
   byAuthor: (username: string) => [...postKeys.all, 'author', username] as const,
+  related: (id: number) => [...postKeys.all, 'related', id] as const,
 };
 
 /**
@@ -95,6 +96,18 @@ export function usePostsByAuthor(username: string, page = 1, limit = 10) {
     queryKey: [...postKeys.byAuthor(username), page, limit],
     queryFn: () => postService.getByAuthor(username, page, limit),
     enabled: !!username,
+  });
+}
+
+/**
+ * Hook to fetch related posts for a given post
+ */
+export function useRelatedPosts(postId: number | string, limit = 8) {
+  return useQuery({
+    queryKey: postKeys.related(Number(postId)),
+    queryFn: () => postService.getRelated(Number(postId), limit),
+    enabled: !!postId && Number(postId) > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

@@ -8,8 +8,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/too
 import { VoteButtons } from '@/components/common/VoteButtons';
 import { BookmarkButton } from '@/components/common/BookmarkButton';
 import { CategoryColorIcon } from '@/components/common/CategoryColorIcon';
+import { VoteScore } from '@/components/common/VoteScore';
 import { MessageSquare, Eye, Pin, Lock, Shield } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 
@@ -90,7 +91,7 @@ export function PostCard({ post }: PostCardProps) {
   }, [authorDisplayName]);
 
   return (
-    <Card className="relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
+    <Card className="ml-2 relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
       {/* Corner icons: pinned (left) and locked (right) */}
       {post.isPinned && post.pinType === 'CATEGORY' && (
         <div className="absolute top-0 left-0 translate-x-1/2 -translate-y-1/2 -rotate-45">
@@ -221,13 +222,20 @@ export function PostCard({ post }: PostCardProps) {
           {getAuthorBadge()}
           
           <span className="text-muted-foreground flex-shrink-0">•</span>
-          <span className="text-muted-foreground text-responsive-xs flex-shrink-0">
-            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground text-responsive-xs flex-shrink-0">
+                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {format(new Date(post.createdAt), 'dd/MM/yyyy')}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </CardHeader>
 
-      <CardContent className="pb-2 flex-1 space-y-2">
+      <CardContent className="pb-3 flex-1 space-y-2 border-b">
         {/* Excerpt */}
         <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 whitespace-pre-line leading-relaxed">
           {decodedExcerpt}
@@ -235,32 +243,31 @@ export function PostCard({ post }: PostCardProps) {
       </CardContent>
 
       {/* Footer Stats & Actions */}
-      <CardFooter className="border-t pt-2 pb-2 flex items-center justify-between gap-2 flex-wrap">
+      <CardFooter className="pb-2 pt-2 flex items-center justify-between gap-2 flex-wrap">
         {/* Stats Row */}
-        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-          {/* Vote score with visual indicator */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md transition-all ${
-                voteScore > 0 ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400' : 
-                voteScore < 0 ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400' : 
-                'bg-muted'
-              }`}>
-                <span className="font-semibold">{voteScore}</span>
-                <span className="hidden md:inline text-xs">điểm</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
-              {post.upvoteCount} upvote · {post.downvoteCount} downvote
-            </TooltipContent>
-          </Tooltip>
+        <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground">
+
+          <VoteButtons
+            targetId={post.id}
+            targetType="post"
+            upvoteCount={post.upvoteCount}
+            downvoteCount={post.downvoteCount}
+            authorId={post.authorId}
+            size="sm"
+            orientation="horizontal"
+          />
+          <VoteScore
+            score={voteScore}
+            upvoteCount={post.upvoteCount}
+            downvoteCount={post.downvoteCount}
+          />
 
           {/* Comments count */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
                 <MessageSquare className="h-3.5 w-3.5" />
-                <span>{post.commentCount}</span>
+                <span className="ml-1.5">{post.commentCount}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -273,7 +280,7 @@ export function PostCard({ post }: PostCardProps) {
             <TooltipTrigger asChild>
               <div className="hidden md:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
                 <Eye className="h-3.5 w-3.5" />
-                <span>{post.viewCount}</span>
+                <span className="ml-1.5">{post.viewCount}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -282,17 +289,7 @@ export function PostCard({ post }: PostCardProps) {
           </Tooltip>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1">
-          <VoteButtons
-            targetId={post.id}
-            targetType="post"
-            upvoteCount={post.upvoteCount}
-            downvoteCount={post.downvoteCount}
-            authorId={post.authorId}
-            size="sm"
-            orientation="horizontal"
-          />
+        <div className="flex items-center">
           <BookmarkButton postId={post.id} size="sm" />
         </div>
       </CardFooter>

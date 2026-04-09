@@ -745,6 +745,116 @@ export async function getPostsByAuthor(username: string, page = 1, limit = 10, r
   };
 }
 
+/**
+ * Get related posts for a given post
+ * Ranking: tag match count (DESC) → same category → newest
+ * Falls back to random posts if results < minRelatedThreshold ("Bạn có thể thích")
+ */
+export async function getRelatedPosts(
+  postId: number,
+  limit = 8,
+  minRelatedThreshold = 3,
+  userRole?: string
+) {
+  // Step 1: Get source post's category + tag ids
+  const sourcePost = await prisma.posts.findUnique({
+    where: { id: postId },
+    select: {
+      category_id: true,
+      post_tags: { select: { tag_id: true } },
+    },
+  });
+
+  if (!sourcePost) throw new NotFoundError('Post not found');
+
+  const tagIds = sourcePost.post_tags.map(pt => pt.tag_id);
+  const viewPermissionFilter = buildViewPermissionFilter(userRole);
+  const categoryWhere: Record<string, any> = viewPermissionFilter ?? {};
+
+  // Step 2: Build where clause - same category OR shared tags
+  const candidateWhere: Record<string, any> = {
+    id: { not: postId },
+    status: 'PUBLISHED',
+    ...(Object.keys(categoryWhere).length ? { categories: categoryWhere } : {}),
+  };
+
+  if (tagIds.length > 0) {
+    candidateWhere.OR = [
+      { category_id: sourcePost.category_id },
+      { post_tags: { some: { tag_id: { in: tagIds } } } },
+    ];
+  } else {
+    // No tags on source post → match by category only
+    candidateWhere.category_id = sourcePost.category_id;
+  }
+
+  // Internal select that includes tag_id for in-memory scoring
+  const candidateSelect = {
+    ...postListSelect,
+    post_tags: {
+      select: {
+        tag_id: true,
+        tags: { select: { id: true, name: true, slug: true } },
+      },
+    },
+  };
+
+  // Fetch candidates with buffer for sorting
+  const candidates = await prisma.posts.findMany({
+    where: candidateWhere,
+    select: candidateSelect,
+    take: limit * 4,
+  });
+
+  // Step 3: Score each post and sort
+  const scored = candidates
+    .map(p => ({
+      ...p,
+      _tagMatchCount: tagIds.length > 0
+        ? p.post_tags.filter((pt: any) => tagIds.includes(pt.tag_id)).length
+        : 0,
+      _sameCat: p.category_id === sourcePost.category_id,
+    }))
+    .sort((a, b) => {
+      // 1. More tag matches → higher rank
+      if (b._tagMatchCount !== a._tagMatchCount) return b._tagMatchCount - a._tagMatchCount;
+      // 2. Same category → higher rank when tag count is tied
+      if (a._sameCat !== b._sameCat) return a._sameCat ? -1 : 1;
+      // 3. Newest first as tiebreaker
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+  let result = scored.slice(0, limit);
+
+  // Step 4: Fill with random posts if under threshold ("Bạn có thể thích")
+  if (result.length < minRelatedThreshold) {
+    const excludeIds = [postId, ...result.map(p => p.id)];
+    const randomWhere: Record<string, any> = {
+      id: { notIn: excludeIds },
+      status: 'PUBLISHED',
+      ...(Object.keys(categoryWhere).length ? { categories: categoryWhere } : {}),
+    };
+
+    const randomCandidates = await prisma.posts.findMany({
+      where: randomWhere,
+      select: candidateSelect,
+      orderBy: { created_at: 'desc' },
+      take: (limit - result.length) * 3,
+    });
+
+    // Fisher-Yates shuffle for true randomness
+    for (let i = randomCandidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [randomCandidates[i], randomCandidates[j]] = [randomCandidates[j], randomCandidates[i]];
+    }
+
+    result = [...result, ...randomCandidates.slice(0, limit - result.length)];
+  }
+
+  // Strip internal scoring props then transform to public shape
+  return result.map(({ _tagMatchCount, _sameCat, ...p }: any) => transformPostTags(p));
+}
+
 
 
 
