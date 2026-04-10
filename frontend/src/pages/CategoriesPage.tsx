@@ -89,18 +89,20 @@ export function CategoriesPage() {
                         {category.description || `Các bài viết về ${category.name}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <FileText className="h-4 w-4" />
                         <span>{category.postCount} bài viết</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
-                        <span>{category.viewCount?.toLocaleString() || 0} lượt xem</span>
+                        <span className="hidden sm:inline">{category.viewCount?.toLocaleString() || 0} lượt xem</span>
+                        <span className="sm:hidden">{category.viewCount?.toLocaleString() || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        <span>{category.commentCount?.toLocaleString() || 0} bình luận</span>
+                        <span className="hidden sm:inline">{category.commentCount?.toLocaleString() || 0} bình luận</span>
+                        <span className="sm:hidden">{category.commentCount?.toLocaleString() || 0}</span>
                       </div>
                     </div>
                   </div>

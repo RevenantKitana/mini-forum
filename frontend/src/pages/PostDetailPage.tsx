@@ -250,7 +250,8 @@ export function PostDetailPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-3 text-center">
+                {/* Status Badges (Pinned/Locked) */}
                 {post.isPinned && (
                   <Badge variant="default">
                     <Pin className="h-3 w-3 mr-1" />
@@ -263,24 +264,26 @@ export function PostDetailPage() {
                     Locked
                   </Badge>
                 )}
-              </div>
-              
-              <div className="flex items-center gap-3 mb-3">
+                
+                {/* Category & Title */}
                 {post.category && (
-                  <Link to={`/?category=${post.category.slug}`}>
-                    <Badge variant="outline" size="lg" className="font-bold">
+                  <Link to={`/?category=${post.category.slug}`} className="inline-flex items-center">
+                    <Badge variant="outline" size="sm" className="font-bold sm:size-default">
                       {post.category.name}
                     </Badge>
                   </Link>
                 )}
                 {/* Category color indicator (postcard-like icon) */}
                 {post.category?.color && (
-                  <CategoryColorIcon
-                    color={post.category.color}
-                    name={post.category.name}
-                  />
+                  <span className="inline-flex items-center">
+                    <CategoryColorIcon
+                      color={post.category.color}
+                      name={post.category.name}
+                    />
+                  </span>
                 )}
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                <span className="text-muted-foreground/50 hidden sm:inline">»</span>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold w-full sm:w-auto text-center">
                   {decodeHtmlEntities(post.title)}
                 </h1>
               </div>
@@ -341,10 +344,10 @@ export function PostDetailPage() {
           <MarkdownRenderer content={post.content} />
           
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4">
               {post.tags.map((tag) => (
                 <Link key={tag.id} to={`/?tag=${tag.slug}`}>
-                  <Badge variant="secondary">{tag.name}</Badge>
+                  <Badge variant="secondary" size="sm">{tag.name}</Badge>
                 </Link>
               ))}
             </div>
@@ -352,52 +355,54 @@ export function PostDetailPage() {
         </CardContent>
 
         <CardFooter className="border-t pt-2">
-          <div className="flex items-center gap-8 w-full">
-            {/* Voting */}
-            <VoteButtons
-              targetId={post.id}
-              targetType="post"
-              upvoteCount={post.upvoteCount}
-              downvoteCount={post.downvoteCount}
-              authorId={post.authorId}
-              size="md"
-              orientation="horizontal"
-            />
-            <VoteScore
-              score={voteScore}
-              upvoteCount={post.upvoteCount}
-              downvoteCount={post.downvoteCount}
-            />
-            <Separator orientation="vertical" className="h-80" />
-
-            {/* Stats */}
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <MessageSquare className="h-4 w-4 mr-4" />
-              <span>{post.commentCount} comments</span>
+          {/* Mobile (<640px): 2 rows — vote+stats on top, actions below
+              sm+(640px): single row, actions pushed to right */}
+          <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center">
+            {/* Row 1: Vote + Stats */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <VoteButtons
+                targetId={post.id}
+                targetType="post"
+                upvoteCount={post.upvoteCount}
+                downvoteCount={post.downvoteCount}
+                authorId={post.authorId}
+                size="md"
+                orientation="horizontal"
+              />
+              <VoteScore
+                score={voteScore}
+                upvoteCount={post.upvoteCount}
+                downvoteCount={post.downvoteCount}
+              />
+              <Separator orientation="vertical" className="h-6 mx-1" />
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MessageSquare className="h-4 w-4" />
+                <span>{post.commentCount} bình luận</span>
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="ml-auto flex gap-2">
-              <BookmarkButton postId={post.id} size="md" showText showConfirmOnRemove />
+            {/* Row 2 (mobile) / Right side (sm+): Actions */}
+            <div className="flex items-center gap-1 sm:ml-auto">
+              <BookmarkButton postId={post.id} size="sm" showText showConfirmOnRemove />
               <Button variant="ghost" size="sm" className="btn-press" onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 toast.success('Link copied to clipboard');
               }}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
+                <Share2 className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1.5">Chia sẻ</span>
               </Button>
               {isAuthenticated && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setReportTarget({ type: 'post', id: post.id });
                     setReportModalOpen(true);
                   }}
                   className="text-muted-foreground hover:text-destructive"
                 >
-                  <Flag className="h-4 w-4 mr-2" />
-                  Báo cáo
+                  <Flag className="h-4 w-4" />
+                  <span className="hidden min-[480px]:inline ml-1.5">Báo cáo</span>
                 </Button>
               )}
             </div>
@@ -801,7 +806,7 @@ function CommentItem({
                   </Link>
 
                   <div className="flex items-center gap-2">
-                    <Link to={`/users/${comment.author.username}`} className="font-medium hover:text-foreground transition-colors">
+                    <Link to={`/users/${comment.author.username}`} className="inline-flex items-center font-medium hover:text-foreground transition-colors">
                       {authorDisplayName}
                     </Link>
 
@@ -832,7 +837,7 @@ function CommentItem({
               )}
 
               {isEditing ? (
-                <div className="space-y-10 animate-slide-expand">
+                <div className="space-y-2 animate-slide-expand">
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}

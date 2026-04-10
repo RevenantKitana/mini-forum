@@ -50,7 +50,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* h-12 on mobile, h-14 on sm+ | px-4 mobile (16px), px-responsive on sm+ */}
-      <div className="w-full flex h-12 sm:h-14 items-center px- sm:px-responsive gap-3 sm:gap-responsive">
+      <div className="w-full flex h-12 sm:h-14 items-center px-3 sm:px-responsive gap-2 sm:gap-responsive">
         {/* Mobile hamburger menu */}
         <MobileNav />
 

@@ -67,7 +67,7 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-4" align="start">
+        <PopoverContent className="w-[min(320px,calc(100vw-2rem))] p-4" align="start">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-sm">Lọc theo tags</h4>

@@ -1638,11 +1638,10 @@ textarea {
     font-size: max(16px, 1rem); /* Prevent iOS zoom on focus */
   }
 
-  /* Larger badge/tag touch targets */
-  .badge,
+  /* Badges are decorative labels; interactive badges are wrapped in <a>/<button>
+     which already provide 44px touch targets — no min-height override needed */
   [data-slot="badge"] {
-    min-height: 36px;
-    padding-inline: 0.75rem;
+    min-height: revert;
   }
   
   /* Tooltip triggers need adequate size */

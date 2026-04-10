@@ -221,7 +221,7 @@ export function HomePage() {
       {/* Sticky Header Section - full width, positioned at container top */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur py-2 sm:py-1 px-4 md:px-4 border-b">
         {/* Header - Dynamic based on selected category */}
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-20">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2 sm:gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-responsive-sm">
               {headerContent.icon ? (
@@ -231,7 +231,7 @@ export function HomePage() {
               ) : (
                 <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float flex-shrink-0" />
               )}
-              <h1 className="font-bold max-w-[30%] truncate text-responsive-2xl">
+              <h1 className="font-bold max-w-[45%] sm:max-w-[30%] truncate text-responsive-2xl">
                 {headerContent.title}
                 {categorySlug && selectedCategory && (<span className="ml-1">({selectedCategory.postCount})</span>)}
               </h1>
@@ -243,7 +243,7 @@ export function HomePage() {
         </div>
 
         {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-2 flex justify-between">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Sort buttons with toggle functionality - fixed width */}
           <div className="flex items-center gap-2 bg-muted rounded-lg">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
