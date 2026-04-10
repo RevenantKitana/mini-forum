@@ -91,9 +91,11 @@ export function MainLayout() {
           )}
           
           {/* Main content - scrolls independently with smooth transitions */}
-          <main className="flex-1 min-w-0 overflow-y-auto bg-background rounded-lg border shadow-sm p-4 md:p-0 scroll-smooth scrollbar-gutter-stable">
-            <div className="animate-fade-in-up">
-              <Outlet />
+          <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background rounded-lg border shadow-sm scroll-smooth scrollbar-gutter-stable">
+            <div className="flex-1 overflow-y-auto">
+              <div className="animate-fade-in-up">
+                <Outlet />
+              </div>
             </div>
           </main>
           {/* Right Sidebar - responsive width using CSS variables, smart hiding */}

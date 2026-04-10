@@ -85,11 +85,11 @@ export function TagSearchInput({
             <Badge
               key={tag.id}
               variant={isActive ? 'default' : 'outline'}
+              size={compact ? 'sm' : 'default'}
               className={cn(
                 'hover:bg-primary hover:text-primary-foreground transition-all duration-200 cursor-pointer btn-press',
                 isInactive && 'opacity-60',
-                isActive && 'animate-pop-in',
-                compact && 'text-xs'
+                isActive && 'animate-pop-in'
               )}
               onClick={() => onTagToggle(tag.slug)}
             >

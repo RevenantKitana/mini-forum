@@ -35,7 +35,7 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
         </h4>
         <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
           {post.category && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Badge variant="secondary" size="xs">
               {post.category.name}
             </Badge>
           )}
@@ -100,7 +100,7 @@ function PinnedPostContentDialog({ postId, open, onOpenChange }: { postId: numbe
             {!isLoading && post && (
               <>
                 {post.category && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="secondary" size="xs">
                     {post.category.name}
                   </Badge>
                 )}

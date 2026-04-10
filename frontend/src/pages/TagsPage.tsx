@@ -57,17 +57,18 @@ export function TagsPage() {
   const groupedTags = groupTagsByPopularity(tags);
 
   const TagBadge = ({ tag, size = 'default' }: { tag: typeof tags extends (infer T)[] | undefined ? T : never; size?: 'sm' | 'default' | 'lg' }) => {
-    const sizeClasses = {
-      sm: 'text-xs px-2 py-0.5',
-      default: 'text-sm px-3 py-1',
-      lg: 'text-base px-4 py-1.5',
+    const badgeSizeMap = {
+      sm: 'sm' as const,
+      default: 'default' as const,
+      lg: 'lg' as const,
     };
 
     return (
       <Link key={tag.id} to={`/?tag=${tag.slug}`}>
         <Badge
           variant="outline"
-          className={`hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer hover:scale-105 ${sizeClasses[size]}`}
+          size={badgeSizeMap[size]}
+          className="hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer hover:scale-105"
         >
           <Hash className="h-3 w-3 mr-1" />
           {tag.name}

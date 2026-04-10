@@ -185,7 +185,7 @@ export function MobileNav({ className }: MobileNavProps) {
                       )}
                     >
                       <span className="flex-1">Tất cả bài viết</span>
-                      <Badge variant="secondary" className="ml-2">{totalPosts}</Badge>
+                      <Badge variant="secondary" size="sm" className="ml-2">{totalPosts}</Badge>
                     </button>
                     {categories?.map((category) => {
                       const isRestricted = category.viewPermission && category.viewPermission !== 'ALL';
@@ -210,7 +210,7 @@ export function MobileNav({ className }: MobileNavProps) {
                           {!isRestricted && (
                             <Globe className="h-3 w-3 text-green-500 flex-shrink-0" />
                           )}
-                          <Badge variant="secondary" className="flex-shrink-0">{category.postCount}</Badge>
+                          <Badge variant="secondary" size="sm" className="flex-shrink-0">{category.postCount}</Badge>
                         </button>
                       );
                     })}
@@ -266,8 +266,9 @@ export function MobileNav({ className }: MobileNavProps) {
                         <Badge
                           key={tag.id}
                           variant={isActive ? 'default' : 'outline'}
+                          size="sm"
                           className={cn(
-                            "cursor-pointer transition-colors min-h-[32px] px-3",
+                            "cursor-pointer transition-colors",
                             isActive && 'animate-pop-in'
                           )}
                           onClick={() => handleTagClick(tag.slug)}

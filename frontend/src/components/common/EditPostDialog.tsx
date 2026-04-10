@@ -183,7 +183,7 @@ export function EditPostDialog({ postId, open, onOpenChange, onSuccess }: EditPo
                 {selectedTags.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedTags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
+                      <Badge key={tag} variant="secondary" size="sm">
                         {tag}
                       </Badge>
                     ))}

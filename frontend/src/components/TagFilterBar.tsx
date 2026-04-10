@@ -103,6 +103,7 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
                   <Badge
                     key={tag.id}
                     variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
                     className={cn(
                       'cursor-pointer transition-all duration-200 hover:scale-105',
                       isSelected && 'pr-1.5'
@@ -146,7 +147,7 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
 
       {/* Show active tag badges */}
       {hasActiveFilter && (
-        <Badge variant="secondary" className="gap-1 animate-pop-in">
+        <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in">
           <TagIcon className="h-3 w-3" />
           {appliedTags.length} tag đang lọc
           <X

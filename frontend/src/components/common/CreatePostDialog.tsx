@@ -513,6 +513,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
                         <Badge
                           key={tag}
                           variant="default"
+                          size="sm"
                           className="cursor-pointer bg-green-600 hover:bg-green-700"
                           onClick={() => removeCustomTag(tag)}
                         >
@@ -560,6 +561,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
                           <Badge
                             key={tag.id}
                             variant={isAlreadySelected ? 'default' : 'outline'}
+                            size="sm"
                             className={`cursor-pointer ${isAlreadySelected ? '' : 'border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground'}`}
                             onClick={() => !isAlreadySelected && addRecommendedTag(tag.id)}
                           >
@@ -580,6 +582,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
                       <Badge
                         key={tag.id}
                         variant={selectedTags.includes(tag.id) ? 'default' : 'outline'}
+                        size="sm"
                         className="cursor-pointer"
                         onClick={() => toggleTag(tag.id)}
                       >

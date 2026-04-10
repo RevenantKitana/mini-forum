@@ -219,7 +219,7 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur py-10 sm:py-1 -mx-4 sm:-mx-1 px-4 sm:px-4 border-b border-border/50">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur py-2 sm:py-1 px-4 md:px-4 border-b">
         {/* Header - Dynamic based on selected category */}
           <div className="flex items-center justify-between mb-2 flex-wrap gap-20">
           <div className="min-w-0 flex-1">
@@ -296,6 +296,7 @@ export function HomePage() {
                     <Badge
                       key={preset.label}
                       variant="outline"
+                      size="sm"
                       className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press"
                       onClick={() => {
                         const range = preset.getValue();
@@ -341,7 +342,7 @@ export function HomePage() {
 
           {/* Active date filter badge */}
           {hasDateFilter && (
-            <Badge variant="secondary" className="gap-1 animate-pop-in">
+            <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in">
               <CalendarDays className="h-3 w-3" />
               <span className="hidden sm:inline">Đang lọc theo thời gian</span>
               <span className="sm:hidden">Thời gian</span>
@@ -362,7 +363,7 @@ export function HomePage() {
       </div>
 
       {/* Scrollable Posts List */}
-      <div className="flex-1 overflow-y-auto pt-3">
+      <div className="flex-1 overflow-y-auto pt-3 px-2 md:px-1">
         {/* Mobile Category Bar */}
         <MobileCategoryBar
           categories={visibleCategories}
@@ -380,7 +381,7 @@ export function HomePage() {
           <PostListSkeleton count={5} />
         ) : data?.data && data.data.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
               {data.data.map((post, index) => (
                 <div 
                   key={post.id} 

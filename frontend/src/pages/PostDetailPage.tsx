@@ -8,6 +8,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/app/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { Badge } from '@/app/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Separator } from '@/app/components/ui/separator';
@@ -243,7 +244,7 @@ export function PostDetailPage() {
   const authorAvatar = post?.author?.avatarUrl;
 
   return (
-    <div className="m-2 space-y-2 animate-fade-in-up">
+    <div className="animate-fade-in-up">
       {/* Post Card */}
       <Card className="animate-fade-in-scale">
         <CardHeader>
@@ -267,7 +268,7 @@ export function PostDetailPage() {
               <div className="flex items-center gap-3 mb-3">
                 {post.category && (
                   <Link to={`/?category=${post.category.slug}`}>
-                    <Badge variant="outline" className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                    <Badge variant="outline" size="lg" className="font-bold">
                       {post.category.name}
                     </Badge>
                   </Link>
@@ -302,7 +303,7 @@ export function PostDetailPage() {
                         if (!cfg) return null;
                         const Icon = cfg.icon as any;
                         return (
-                          <Badge role={roleKey} variant="outline" className="text-[10px] px-1 py-0 h-5 flex items-center gap-1">
+                          <Badge role={roleKey} variant="outline" size="xs" className="flex items-center gap-1">
                             <Icon className="h-3 w-3" />
                             {cfg.label}
                           </Badge>
@@ -516,7 +517,7 @@ export function PostDetailPage() {
             </Card>
           );
         })()}
-        <div className="pt-1 px-2 text-sm">
+        <div className="pt-1 pb-2 px-2 text-sm border-b flex items-center justify-between">
           {/* Comment Sort Dropdown */}
           {post.commentCount > 0 && (
             <Select value={commentSort} onValueChange={(v) => setCommentSort(v as typeof commentSort)}>
@@ -550,7 +551,7 @@ export function PostDetailPage() {
         {commentsLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : comments && comments.length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-2">
             {comments.map((comment, index) => {
               // Calculate canComment for each comment/reply context
               const canCommentInCategory = checkPermissionLevel(
@@ -759,23 +760,32 @@ function CommentItem({
   };
 
   return (
-    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-5 mt-1' : ''}>
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-5 mt-0' : ''}>
       <Card className={isReply ? 'border-l-2 border-l-primary/30' : ''}>
-        <CardContent className="pt-4 !pb-1">
+        <CardContent className="pt-0 !pb-0 space-y-0">
           {/* Quoted Comment - Clickable to scroll */}
           {comment.quotedComment && (
             <div 
-              className="mb-3 p-3 bg-muted rounded-lg border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors"
+              className="mb-1 p-1 bg-muted rounded-lg border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={handleQuotedCommentClick}
               title="Click để xem bình luận gốc"
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Trả lời @{comment.quotedComment.author?.username || 'Unknown'}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="block max-w-[50%] whitespace-nowrap">Trả lời @{comment.quotedComment.author?.username || 'Unknown'}</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    {comment.quotedComment.author?.username || 'Unknown'}
+                  </TooltipContent>
+                </Tooltip>
                 <span className="text-primary">↩</span>
+
+                <div className="text-sm text-muted-foreground line-clamp-1">
+                  <MarkdownRenderer content={comment.quotedComment.content} />
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground line-clamp-1">
-                <MarkdownRenderer content={comment.quotedComment.content} />
-              </div>
+
             </div>
           )}
           
@@ -802,7 +812,7 @@ function CommentItem({
                       if (!cfg) return null;
                       const Icon = cfg.icon as any;
                       return (
-                        <Badge role={roleKey} variant="outline" className="text-[10px] px-1 py-0 h-5 flex items-center gap-1">
+                        <Badge role={roleKey} variant="outline" size="xs" className="flex items-center gap-1">
                           <Icon className="h-3 w-3" />
                           {cfg.label}
                         </Badge>

@@ -58,7 +58,7 @@ function PinnedPostContent({ postId }: { postId: number }) {
         </DialogTitle>
         <DialogDescription className="text-xs flex items-center gap-3 flex-wrap">
           {post.category && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Badge variant="secondary" size="xs">
               {post.category.name}
             </Badge>
           )}

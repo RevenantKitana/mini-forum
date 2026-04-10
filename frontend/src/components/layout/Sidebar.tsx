@@ -247,7 +247,7 @@ export function Sidebar() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span>Tất cả bài viết</span>
-                          <Badge variant="secondary" className="flex-shrink-0">
+                          <Badge variant="secondary" size="sm" className="flex-shrink-0">
                             {totalPosts}
                           </Badge>
                         </div>
@@ -280,12 +280,13 @@ export function Sidebar() {
                               <span className="truncate text-left">{category.name}</span>
                               {/* PUBLIC label for categories visible to ALL */}
                               {!isRestricted && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 flex-shrink-0 text-green-600 border-green-300 dark:text-green-400 dark:border-green-600">
+                                <Badge variant="outline" size="xs" className="flex-shrink-0 text-green-600 border-green-300 dark:text-green-400 dark:border-green-600">
                                   <Globe className="h-2.5 w-2.5 mr-0.5" /></Badge>
                               )}
                             </span>
                             <Badge
                               variant="secondary"
+                              size="sm"
                               className="flex-shrink-0 border-1"
                               style={{
                                 backgroundColor: undefined,
@@ -361,6 +362,7 @@ export function Sidebar() {
                         <Badge
                           key={tag.id}
                           variant={isActive ? 'default' : 'outline'}
+                          size="sm"
                           className={`hover:bg-primary hover:text-primary-foreground transition-all duration-200 cursor-pointer btn-press ${
                             isInactive ? 'opacity-60' : ''
                           } ${isActive ? 'animate-pop-in' : ''}`}

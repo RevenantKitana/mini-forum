@@ -59,7 +59,7 @@ export function PostCard({ post }: PostCardProps) {
     const { icon: Icon, label } = ROLE_CONFIG[role];
 
     return (
-      <Badge role={role} className="text-responsive-xs ">
+      <Badge role={role} size="xs">
         <Icon className="h-3 w-3" />
         {label}
       </Badge>
@@ -145,7 +145,7 @@ export function PostCard({ post }: PostCardProps) {
                 to={`/?category=${post.category.slug}`}
                 className="inline-block hover:opacity-80 transition-opacity"
               >
-                <Badge variant="outline" className="gap-1 text-responsive-xs font-medium inline-flex items-center">
+                <Badge variant="outline" size="sm" className="gap-1 font-medium inline-flex items-center">
                   {post.category.name}
                   {post.category.viewPermission && post.category.viewPermission !== 'ALL' }
                 </Badge>
@@ -158,7 +158,7 @@ export function PostCard({ post }: PostCardProps) {
                 <div className="flex items-center gap-1 flex-wrap">
                   {post.tags.slice(0, 4).map((tag) => (
                     <Link key={tag.id} to={`/?tag=${tag.slug}`}>
-                      <Badge variant="secondary" className="hover:bg-primary hover:text-primary-foreground cursor-pointer text-responsive-xs transition-all duration-200 btn-press">
+                      <Badge variant="secondary" size="sm" className="hover:bg-primary hover:text-primary-foreground cursor-pointer transition-all duration-200 btn-press">
                         {tag.name}
                       </Badge>
                     </Link>
@@ -166,7 +166,7 @@ export function PostCard({ post }: PostCardProps) {
                   {post.tags.length > 4 && (
                     <Tooltip>
                       <TooltipTrigger>
-                        <Badge variant="outline" className="text-responsive-xs cursor-help">
+                        <Badge variant="outline" size="sm" className="cursor-help">
                           +{post.tags.length - 4} {post.tags.length - 4 === 1 ? 'tag' : 'tags'}
                         </Badge>
                       </TooltipTrigger>

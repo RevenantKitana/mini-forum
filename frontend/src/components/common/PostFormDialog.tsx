@@ -665,6 +665,7 @@ export function PostFormDialog({
                             <Badge
                               key={tagName}
                               variant="default"
+                              size="sm"
                               className="cursor-pointer bg-blue-600 hover:bg-blue-700 gap-1"
                               onClick={() => {
                                 const tag = availableTags.find(t => t.name === tagName);
@@ -679,6 +680,7 @@ export function PostFormDialog({
                             <Badge
                               key={tag}
                               variant="default"
+                              size="sm"
                               className="cursor-pointer bg-green-600 hover:bg-green-700 gap-1"
                               onClick={() => removeCustomTag(tag)}
                             >
@@ -751,6 +753,7 @@ export function PostFormDialog({
                               <Badge
                                 key={tag.id}
                                 variant={isAlreadySelected ? 'default' : 'outline'}
+                                size="sm"
                                 className={`cursor-pointer transition-all ${
                                   isAlreadySelected
                                     ? 'bg-blue-600 hover:bg-blue-700'
@@ -788,6 +791,7 @@ export function PostFormDialog({
                             <Badge
                               key={tag.id}
                               variant={isSelected ? 'default' : 'outline'}
+                              size="sm"
                               className={`cursor-pointer transition-all ${
                                 isSelected
                                   ? 'bg-blue-600 hover:bg-blue-700'
@@ -814,7 +818,7 @@ export function PostFormDialog({
                     {customTags.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {customTags.map((tag) => (
-                          <Badge key={tag} variant="secondary">
+                          <Badge key={tag} variant="secondary" size="sm">
                             {tag}
                           </Badge>
                         ))}

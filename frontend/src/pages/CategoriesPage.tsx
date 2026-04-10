@@ -122,6 +122,7 @@ export function CategoriesPage() {
                         >
                           <Badge
                             variant="secondary"
+                            size="sm"
                             className="hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
                           >
                             <Hash className="h-3 w-3 mr-1" />

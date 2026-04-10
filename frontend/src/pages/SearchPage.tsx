@@ -216,7 +216,7 @@ export function SearchPage() {
                               <span className="font-medium">
                                 {user.displayName || user.username}
                               </span>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" size="xs">
                                 {user.role}
                               </Badge>
                             </div>

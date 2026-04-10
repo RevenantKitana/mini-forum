@@ -195,7 +195,7 @@ export function EditPostPage() {
                 {selectedTags.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedTags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
+                      <Badge key={tag} variant="secondary" size="sm">
                         {tag}
                       </Badge>
                     ))}

@@ -110,21 +110,21 @@ export function ProfilePage() {
     switch (role) {
       case 'ADMIN':
         return (
-          <Badge variant="destructive" className="gap-1">
+          <Badge variant="destructive" size="md" className="gap-1">
             <Shield className="h-3 w-3" />
             Admin
           </Badge>
         );
       case 'MODERATOR':
         return (
-          <Badge variant="default" className="gap-1 bg-blue-600">
+          <Badge variant="default" size="md" className="gap-1 bg-blue-600">
             <ShieldCheck className="h-3 w-3" />
             Moderator
           </Badge>
         );
       case 'BOT':
         return (
-          <Badge variant="default" className="gap-1 bg-emerald-600">
+          <Badge variant="default" size="md" className="gap-1 bg-emerald-600">
             <Shield className="h-3 w-3" />
             Bot
           </Badge>
@@ -460,7 +460,7 @@ export function ProfilePage() {
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge variant={vote.targetType === 'POST' ? 'default' : 'secondary'}>
+                          <Badge variant={vote.targetType === 'POST' ? 'default' : 'secondary'} size="xs">
                             {vote.targetType === 'POST' ? 'Bài viết' : 'Bình luận'}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
