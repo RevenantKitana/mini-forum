@@ -121,9 +121,9 @@ export function PostCard({ post }: PostCardProps) {
           </Tooltip>
         </div>
       )}
-      <CardHeader className="pb-1.5 sm:pb-2 relative">
+      <CardHeader className="pb-1 sm:pb-1.5 relative">
         {/* Title & Status Row */}
-        <div className="space-y-0.5 sm:space-y-1 mb-0 min-w-0 w-full">
+        <div className="space-y-0 sm:space-y-0.5 mb-0 min-w-0 w-full">
           <Link to={`/posts/${post.id}`} className="block group">
             <div className="flex items-center gap-2">
               {/* Category color indicator: SendHorizontal icon filled with category color */}
@@ -139,7 +139,7 @@ export function PostCard({ post }: PostCardProps) {
 
         {/* Category & Tags Row (single row, separated) */}
         {(post.category || (post.tags && post.tags.length > 0)) && (
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
             {post.category && (
               <Link
                 to={`/?category=${post.category.slug}`}
@@ -183,7 +183,7 @@ export function PostCard({ post }: PostCardProps) {
 
 
         {/* Author & Meta Row */}
-        <div className="border-t flex items-center gap-2 sm:gap-3 pt-1.5 sm:pt-2 flex-wrap text-xs sm:text-sm">
+        <div className="border-t flex items-center gap-1.5 sm:gap-2.5 pt-1 sm:pt-1.5 flex-wrap text-xs sm:text-sm">
           {post.author && (
             <Link
               to={`/users/${post.author.username}`}
@@ -235,17 +235,17 @@ export function PostCard({ post }: PostCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="pb-2 sm:pb-3 flex-1 space-y-1.5 sm:space-y-2 border-b">
+      <CardContent className="pb-1.5 sm:pb-2 flex-1 space-y-1 sm:space-y-1.5 border-b">
         {/* Excerpt */}
-        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:line-clamp-3 whitespace-pre-line leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 whitespace-pre-line leading-relaxed">
           {decodedExcerpt}
         </p>
       </CardContent>
 
       {/* Footer Stats & Actions */}
-      <CardFooter className="pb-1.5 sm:pb-2 pt-1.5 sm:pt-2 flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap">
+      <CardFooter className="pb-1 sm:pb-1.5 pt-1 sm:pt-1.5 flex items-center justify-between gap-1 sm:gap-1.5 flex-wrap">
         {/* Stats Row */}
-        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
 
           <VoteButtons
             targetId={post.id}
