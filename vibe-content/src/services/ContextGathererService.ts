@@ -175,8 +175,8 @@ export class ContextGathererService {
 
     const personality = await this.getPersonality(userId);
 
-    // Decide to vote on post (60%) or comment (40%)
-    const voteOnPost = Math.random() < 0.6;
+    // Decide to vote on post (40%) or comment (60%)
+    const voteOnPost = Math.random() < 0.4;
 
     if (voteOnPost) {
       // Find a recent post this user hasn't voted on

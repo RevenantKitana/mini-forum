@@ -5,9 +5,9 @@ import logger from '../utils/logger.js';
 
 // Weighted probabilities for action selection
 const ACTION_WEIGHTS: { action: ActionType; weight: number }[] = [
-  { action: 'post', weight: 40 },
-  { action: 'comment', weight: 35 },
-  { action: 'vote', weight: 25 },
+  { action: 'post', weight: 15 },
+  { action: 'comment', weight: 30 },
+  { action: 'vote', weight: 55 },
 ];
 
 export class ActionSelectorService {

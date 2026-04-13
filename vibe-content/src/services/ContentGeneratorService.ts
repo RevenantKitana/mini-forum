@@ -349,7 +349,7 @@ export class ContentGeneratorService {
     logger.info(`[context_gather] Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
 
     // 2. Decide strategy: random voting rate vs. LLM-based (personality-driven)
-    const isRandomVoter = Math.random() < 0.3;
+    const isRandomVoter = Math.random() < 0.7; // 70% of votes are random to add variability and prevent overfitting to LLM patterns
     let voteType: 'up' | 'down';
     let reason: string;
     let provider: string;
