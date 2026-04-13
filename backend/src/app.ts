@@ -81,6 +81,14 @@ app.get('/', (_req: express.Request, res: express.Response) => {
   });
 });
 
+// Health check for Render deployment
+app.get('/ping', (_req: express.Request, res: express.Response) => {
+  res.json({
+    success: true,
+    message: 'pong',
+  });
+});
+
 // 404 handler
 app.use(notFoundMiddleware);
 

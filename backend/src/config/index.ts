@@ -1,7 +1,14 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+// Get the directory of this file (__dirname equivalent in ESM)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from .env file in the backend root directory
+const envPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: envPath });
 
 interface Config {
   port: number;
@@ -20,10 +27,7 @@ interface Config {
     editTimeLimit: number; // Time limit in minutes for editing comments
   };
   brevo: {
-    smtpHost: string;
-    smtpPort: number;
-    smtpUser: string;
-    smtpKey: string;
+    apiKey: string;
     fromEmail: string;
     fromName: string;
   };
@@ -44,10 +48,7 @@ const requiredEnvVars = [
   'JWT_REFRESH_EXPIRES_IN',
   'FRONTEND_URL',
   'COMMENT_EDIT_TIME_LIMIT',
-  'BREVO_SMTP_HOST',
-  'BREVO_SMTP_PORT',
-  'BREVO_SMTP_USER',
-  'BREVO_SMTP_KEY',
+  'BREVO_API_KEY',
   'BREVO_FROM_EMAIL',
   'BREVO_FROM_NAME',
   'OTP_LENGTH',
@@ -79,10 +80,7 @@ const config: Config = {
     editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT!, 10),
   },
   brevo: {
-    smtpHost: process.env.BREVO_SMTP_HOST!,
-    smtpPort: parseInt(process.env.BREVO_SMTP_PORT!, 10),
-    smtpUser: process.env.BREVO_SMTP_USER!,
-    smtpKey: process.env.BREVO_SMTP_KEY!,
+    apiKey: process.env.BREVO_API_KEY!,
     fromEmail: process.env.BREVO_FROM_EMAIL!,
     fromName: process.env.BREVO_FROM_NAME!,
   },

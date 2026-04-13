@@ -1,9 +1,23 @@
-import config from '../config/index.js';
-import { sendOtpEmailViaApi } from './brevoApiService.js';
-
 /**
- * Email Service - Handles sending OTP emails via Brevo API
+ * Brevo API Service - Handles sending emails via Brevo API (not SMTP)
+ * Uses sib-api-v3-sdk for API communication
  */
+
+import config from '../config/index.js';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const require = createRequire(import.meta.url);
+
+// Type definitions for sib-api-v3-sdk
+interface TransactionalEmailPayload {
+  to: Array<{ email: string; name?: string }>;
+  subject: string;
+  htmlContent: string;
+  sender: { email: string; name?: string };
+  replyTo?: { email: string; name?: string };
+}
 
 interface SendOtpEmailOptions {
   to: string;
@@ -13,10 +27,9 @@ interface SendOtpEmailOptions {
 }
 
 /**
- * Send OTP email for registration or password reset
- * Uses Brevo API exclusively
+ * Initialize and send email via Brevo API
  */
-export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> {
+export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<void> {
   const { to, otp, purpose, expiresInMinutes } = options;
 
   if (!config.brevo.apiKey) {
@@ -25,11 +38,48 @@ export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> 
     );
   }
 
+  // Use CommonJS require for better compatibility with sib-api-v3-sdk
   try {
-    await sendOtpEmailViaApi(options);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SibApiV3Sdk: any = require('sib-api-v3-sdk');
+
+    // Set up the API client
+    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    const apiKey = defaultClient.authentications['api-key'];
+    apiKey.apiKey = config.brevo.apiKey;
+
+    // Create transactional email API instance
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+    // Prepare email content
+    const subject = purpose === 'register'
+      ? `${config.brevo.fromName} - Mã xác thực đăng ký`
+      : `${config.brevo.fromName} - Mã xác thực đặt lại mật khẩu`;
+
+    const htmlContent = purpose === 'register'
+      ? createRegisterOtpTemplate(otp, expiresInMinutes)
+      : createResetOtpTemplate(otp, expiresInMinutes);
+
+    // Build email payload
+    const emailPayload = {
+      to: [{ email: to }],
+      subject,
+      htmlContent,
+      sender: {
+        email: config.brevo.fromEmail,
+        name: config.brevo.fromName,
+      },
+    };
+
+    // Send the email via API
+    const response = await apiInstance.sendTransacEmail(emailPayload);
+    
+    if (!response || !response.messageId) {
+      throw new Error('Failed to get message ID from Brevo API response');
+    }
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Failed to send OTP email via Brevo API: ${error.message}`);
+      throw new Error(`Failed to send email via Brevo API: ${error.message}`);
     }
     throw error;
   }
