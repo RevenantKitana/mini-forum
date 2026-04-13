@@ -848,7 +848,14 @@ export async function getRelatedPosts(
       [randomCandidates[i], randomCandidates[j]] = [randomCandidates[j], randomCandidates[i]];
     }
 
-    result = [...result, ...randomCandidates.slice(0, limit - result.length)];
+    // Add internal scoring props to random candidates for consistent typing
+    const scoredRandomCandidates = randomCandidates.slice(0, limit - result.length).map(p => ({
+      ...p,
+      _tagMatchCount: 0,
+      _sameCat: p.category_id === sourcePost.category_id,
+    }));
+
+    result = [...result, ...scoredRandomCandidates];
   }
 
   // Strip internal scoring props then transform to public shape

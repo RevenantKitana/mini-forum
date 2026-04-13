@@ -34,7 +34,7 @@ npm install
 Tạo file `.env.local`:
 
 ```env
-VITE_API_URL=http://localhost:5000/api/v1
+VITE_API_URL=http://localhost:5000/api/v1   //URL BACKEN API
 ```
 
 ## Scripts
