@@ -19,7 +19,7 @@ export function startCronScheduler(generator: ContentGeneratorService): cron.Sch
 
     try {
       for (let i = 0; i < config.cron.batchSize; i++) {
-        const result = await generator.runOnce();
+        const result = await generator.runOnce('cron');
         logger.info(
           `Cron result: ${result.success ? 'success' : 'failed'} ${result.actionType} ` +
           `by user ${result.userId} via ${result.provider} (${result.latencyMs}ms)` +

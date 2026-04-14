@@ -105,6 +105,9 @@ export interface ActionResult {
   provider: string;
   latencyMs: number;
   error?: string;
+  actionId?: string;
+  completedAt?: string;
+  triggerSource?: ActionTriggerSource;
 }
 
 export interface SelectedAction {
@@ -112,4 +115,72 @@ export interface SelectedAction {
   actionType: ActionType;
   targetId?: number;
   targetType?: 'post' | 'comment';
+}
+
+export type ActionTriggerSource = 'cron' | 'manual' | 'retry';
+
+export type ProviderUnavailableReason =
+  | 'missing_api_key'
+  | 'cooldown'
+  | 'auth_error'
+  | 'rate_limited'
+  | 'timeout'
+  | 'unavailable';
+
+export interface ProviderStatusSnapshot {
+  id: string;
+  available: boolean;
+  reason?: ProviderUnavailableReason;
+  message?: string;
+  checkedAt: string;
+  cooldownUntil?: string;
+}
+
+export interface ActionLevelHistoryItem {
+  actionId: string;
+  actionType: ActionType;
+  userId: number;
+  provider: string;
+  success: boolean;
+  latencyMs: number;
+  error?: string;
+  triggerSource: ActionTriggerSource;
+  completedAt: string;
+}
+
+export interface ActionStatsSnapshot {
+  totalActions: number;
+  successCount: number;
+  failedCount: number;
+  successRate: string;
+  byTrigger: Record<ActionTriggerSource, number>;
+  byAction: Record<ActionType, number>;
+  byActionTrigger: Record<ActionType, Record<ActionTriggerSource, number>>;
+}
+
+export interface ProviderStackItem {
+  priority: number;
+  id: string;
+  providerType?: 'gemini' | 'groq' | 'cerebras' | 'nvidia';
+  model?: string;
+  available: boolean;
+  reason?: ProviderUnavailableReason;
+  message?: string;
+  checkedAt: string;
+  cooldownUntil?: string;
+}
+
+export interface GeneratorStatusSnapshot {
+  providers: string[];
+  modelStack: ProviderStackItem[];
+  providerStatus: {
+    available: ProviderStatusSnapshot[];
+    unavailable: ProviderStatusSnapshot[];
+    all: ProviderStatusSnapshot[];
+  };
+  todayStats: ActionStatsSnapshot;
+  recentActions: ActionLevelHistoryItem[];
+  lastAction: ActionLevelHistoryItem | null;
+  todayActions: Record<string, unknown>;
+  queue: Record<string, unknown>;
 }

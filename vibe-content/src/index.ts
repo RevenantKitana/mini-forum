@@ -1,23 +1,16 @@
 import express from 'express';
 import config from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
+import { StatusService } from './services/StatusService.js';
 import { startCronScheduler } from './scheduler/cronScheduler.js';
-import { ActionResult } from './types/index.js';
 import logger from './utils/logger.js';
 
 const app = express();
 app.use(express.json());
 
 const generator = new ContentGeneratorService();
-
-// Stats tracking
-const stats = {
-  startedAt: new Date(),
-  totalActions: 0,
-  successCount: 0,
-  failedCount: 0,
-  lastResult: null as ActionResult | null,
-};
+const startedAt = new Date();
+const statusService = new StatusService(generator, startedAt);
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -25,60 +18,23 @@ app.get('/health', (_req, res) => {
 });
 
 // Enhanced status endpoint (Phase 4.3)
-app.get('/status', (_req, res) => {
-  const uptimeSec = Math.floor(process.uptime());
-  const hours = Math.floor(uptimeSec / 3600);
-  const minutes = Math.floor((uptimeSec % 3600) / 60);
-
-  const rateLimiterStats = generator.getRateLimiterStats();
-  const retryQueueStats = generator.getRetryQueueStats();
-
-  res.json({
-    status: 'ok',
-    uptime: `${hours}h ${minutes}m`,
-    startedAt: stats.startedAt.toISOString(),
-    env: config.nodeEnv,
-    forumApi: config.forumApiUrl,
-    cronSchedule: config.cron.schedule,
-    providers: generator.getLLMProviders(),
-    todayStats: {
-      totalActions: stats.totalActions,
-      successCount: stats.successCount,
-      failedCount: stats.failedCount,
-      successRate: stats.totalActions > 0
-        ? `${Math.round((stats.successCount / stats.totalActions) * 100)}%`
-        : 'N/A',
-    },
-    todayActions: rateLimiterStats,
-    queue: retryQueueStats,
-    lastAction: stats.lastResult
-      ? {
-          type: stats.lastResult.actionType,
-          userId: stats.lastResult.userId,
-          provider: stats.lastResult.provider,
-          success: stats.lastResult.success,
-          latencyMs: stats.lastResult.latencyMs,
-          at: new Date().toISOString(),
-          error: stats.lastResult.error,
-        }
-      : null,
-  });
+app.get('/status', async (_req, res) => {
+  try {
+    res.json(await statusService.getStatusPayload());
+  } catch (error: any) {
+    logger.error(`Status endpoint error: ${error.message}`);
+    res.status(500).json({ status: 'error', error: error.message });
+  }
 });
 
 // Manual trigger — supports both GET (browser) and POST
 async function handleTrigger(_req: express.Request, res: express.Response) {
   logger.info('Manual trigger received');
   try {
-    const result = await generator.runOnce();
-    stats.totalActions++;
-    if (result.success) stats.successCount++;
-    else stats.failedCount++;
-    stats.lastResult = result;
+    const result = await generator.runOnce('manual');
 
     res.json({ result });
   } catch (error: any) {
-    stats.totalActions++;
-    stats.failedCount++;
     logger.error(`Trigger error: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
@@ -87,16 +43,10 @@ async function handleTrigger(_req: express.Request, res: express.Response) {
 async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req: express.Request, res: express.Response) {
   logger.info(`Manual trigger received for action: ${actionType}`);
   try {
-    const result = await generator.runOnceForAction(actionType);
-    stats.totalActions++;
-    if (result.success) stats.successCount++;
-    else stats.failedCount++;
-    stats.lastResult = result;
+    const result = await generator.runOnceForAction(actionType, 'manual');
 
     res.json({ result });
   } catch (error: any) {
-    stats.totalActions++;
-    stats.failedCount++;
     logger.error(`Trigger error (${actionType}): ${error.message}`);
     res.status(500).json({ error: error.message });
   }

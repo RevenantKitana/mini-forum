@@ -1,10 +1,16 @@
 import { ILLMProvider, LLMError } from './ILLMProvider.js';
 import { LLM_STACK } from '../../config/llm.js';
-import { LLMOutput } from '../../types/index.js';
+import {
+  LLMOutput,
+  ProviderStackItem,
+  ProviderStatusSnapshot,
+  ProviderUnavailableReason,
+} from '../../types/index.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
 import { CerebrasProvider } from './CerebrasProvider.js';
 import { NvidiaProvider } from './NvidiaProvider.js';
+import config from '../../config/index.js';
 import logger from '../../utils/logger.js';
 
 function sleep(ms: number): Promise<void> {
@@ -17,27 +23,44 @@ export interface LLMGenerateResult {
 }
 
 const COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
+const TRANSIENT_UNAVAILABLE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const VALID_UNAVAILABLE_REASONS: ProviderUnavailableReason[] = [
+  'missing_api_key',
+  'cooldown',
+  'auth_error',
+  'rate_limited',
+  'timeout',
+  'unavailable',
+];
+
+interface ProviderRuntimeState {
+  reason: ProviderUnavailableReason;
+  message?: string;
+  at: number;
+}
+
+interface LLMProviderManagerOptions {
+  providers?: ILLMProvider[];
+  now?: () => number;
+  hasApiKey?: (providerId: string) => boolean;
+}
 
 export class LLMProviderManager {
   private providers: ILLMProvider[] = [];
   private cooldowns = new Map<string, number>(); // providerId -> cooled-down-until timestamp
+  private lastUnavailable = new Map<string, ProviderRuntimeState>();
+  private now: () => number;
+  private hasApiKey: (providerId: string) => boolean;
 
-  private setCooldown(id: string): void {
-    const until = Date.now() + COOLDOWN_MS;
-    this.cooldowns.set(id, until);
-    const untilStr = new Date(until).toLocaleTimeString('vi-VN');
-    logger.warn(`${id} — đặt cooldown 2h (bị bỏ qua đến ${untilStr})`);
-  }
+  constructor(options?: LLMProviderManagerOptions) {
+    this.now = options?.now || (() => Date.now());
+    this.hasApiKey = options?.hasApiKey || ((providerId: string) => this.defaultHasApiKey(providerId));
 
-  private isOnCooldown(id: string): boolean {
-    const until = this.cooldowns.get(id);
-    if (!until) return false;
-    if (Date.now() < until) return true;
-    this.cooldowns.delete(id); // hết cooldown, xoá khỏi danh sách
-    return false;
-  }
+    if (options?.providers) {
+      this.providers = options.providers;
+      return;
+    }
 
-  constructor() {
     for (const entry of LLM_STACK) {
       switch (entry.providerType) {
         case 'gemini':
@@ -59,30 +82,36 @@ export class LLMProviderManager {
   async generate(prompt: string): Promise<LLMGenerateResult> {
     for (const provider of this.providers) {
       if (this.isOnCooldown(provider.id)) {
-        const until = new Date(this.cooldowns.get(provider.id)!).toLocaleTimeString('vi-VN');
-        logger.debug(`${provider.id} — bỏ qua (cooldown đến ${until})`);
+        const cooldownUntil = this.cooldowns.get(provider.id)!;
+        const until = new Date(cooldownUntil).toLocaleTimeString('vi-VN');
+        logger.debug(`${provider.id} - skipped (cooldown until ${until})`);
         continue;
       }
 
       try {
         const available = await provider.isAvailable();
         if (!available) {
-          logger.debug(`${provider.id} — skipped (unavailable)`);
+          const reason = this.hasApiKey(provider.id) ? 'unavailable' : 'missing_api_key';
+          this.setUnavailableReason(provider.id, reason);
+          logger.debug(`${provider.id} - skipped (unavailable)`);
           continue;
         }
 
         const output = await this.callWithRetry(provider, prompt, 3);
-        logger.info(`${provider.id} — success`);
+        this.clearUnavailableReason(provider.id);
+        logger.info(`${provider.id} - success`);
         return { output, provider: provider.id };
       } catch (err: any) {
-        logger.warn(`${provider.id} — failed: ${err.message}`);
-        if (err instanceof LLMError && (err.code === 'RATE_LIMIT' || err.code === 'AUTH')) {
+        const unavailableReason = this.mapErrorToReason(err);
+        this.setUnavailableReason(provider.id, unavailableReason, err?.message);
+        logger.warn(`${provider.id} - failed: ${err.message}`);
+
+        if (err instanceof LLMError && err.code === 'RATE_LIMIT') {
           this.setCooldown(provider.id);
         }
-        // continue to next provider
       }
     }
-    // All LLM providers exhausted or unavailable
+
     throw new Error('All LLM providers exhausted - no quota remaining');
   }
 
@@ -111,20 +140,180 @@ export class LLMProviderManager {
 
   private isRetryable(err: any): boolean {
     if (err instanceof LLMError) {
-      return err.code === 'TIMEOUT'; // RATE_LIMIT và AUTH sẽ trigger cooldown, không retry
+      return err.code === 'TIMEOUT';
     }
     return false;
+  }
+
+  private mapErrorToReason(err: unknown): ProviderUnavailableReason {
+    if (err instanceof LLMError) {
+      if (err.code === 'RATE_LIMIT') return 'rate_limited';
+      if (err.code === 'AUTH') return 'auth_error';
+      if (err.code === 'TIMEOUT') return 'timeout';
+    }
+    return 'unavailable';
+  }
+
+  private setUnavailableReason(id: string, reason: ProviderUnavailableReason, message?: string): void {
+    this.lastUnavailable.set(id, { reason, message, at: this.now() });
+  }
+
+  private clearUnavailableReason(id: string): void {
+    this.lastUnavailable.delete(id);
+  }
+
+  private setCooldown(id: string): void {
+    const until = this.now() + COOLDOWN_MS;
+    this.cooldowns.set(id, until);
+    this.setUnavailableReason(id, 'cooldown', 'Provider is cooling down after rate limit');
+    const untilStr = new Date(until).toLocaleTimeString('vi-VN');
+    logger.warn(`${id} - set cooldown 2h (until ${untilStr})`);
+  }
+
+  private isOnCooldown(id: string): boolean {
+    const until = this.cooldowns.get(id);
+    if (!until) return false;
+    if (this.now() < until) return true;
+
+    this.cooldowns.delete(id);
+    const current = this.lastUnavailable.get(id);
+    if (current?.reason === 'cooldown') {
+      this.lastUnavailable.delete(id);
+    }
+    return false;
+  }
+
+  private defaultHasApiKey(providerId: string): boolean {
+    if (providerId.startsWith('gemini')) return !!config.llm.geminiApiKey;
+    if (providerId.startsWith('groq')) return !!config.llm.groqApiKey;
+    if (providerId.startsWith('cerebras')) return !!config.llm.cerebrasApiKey;
+    if (providerId.startsWith('nvidia')) return !!config.llm.nvidiaApiKey;
+    return true;
+  }
+
+  private normalizeUnavailableReason(reason: unknown): ProviderUnavailableReason {
+    if (typeof reason === 'string' && VALID_UNAVAILABLE_REASONS.includes(reason as ProviderUnavailableReason)) {
+      return reason as ProviderUnavailableReason;
+    }
+    return 'unavailable';
   }
 
   getProviderIds(): string[] {
     return this.providers.map((p) => p.id);
   }
 
+  async getProviderStatusSnapshot(): Promise<ProviderStatusSnapshot[]> {
+    const snapshot: ProviderStatusSnapshot[] = [];
+
+    for (const provider of this.providers) {
+      const checkedAt = new Date(this.now()).toISOString();
+      if (this.isOnCooldown(provider.id)) {
+        const cooldownUntilEpoch = this.cooldowns.get(provider.id)!;
+        snapshot.push({
+          id: provider.id,
+          available: false,
+          reason: 'cooldown',
+          message: 'Provider is in cooldown window after previous failure',
+          checkedAt,
+          cooldownUntil: new Date(cooldownUntilEpoch).toISOString(),
+        });
+        continue;
+      }
+
+      if (!this.hasApiKey(provider.id)) {
+        snapshot.push({
+          id: provider.id,
+          available: false,
+          reason: 'missing_api_key',
+          message: 'API key is not configured',
+          checkedAt,
+        });
+        continue;
+      }
+
+      const lastUnavailable = this.lastUnavailable.get(provider.id);
+      if (lastUnavailable) {
+        const isTransientExpired =
+          (lastUnavailable.reason === 'timeout' || lastUnavailable.reason === 'unavailable')
+          && this.now() - lastUnavailable.at > TRANSIENT_UNAVAILABLE_TTL_MS;
+
+        if (isTransientExpired) {
+          this.lastUnavailable.delete(provider.id);
+        } else {
+          snapshot.push({
+            id: provider.id,
+            available: false,
+            reason: this.normalizeUnavailableReason(lastUnavailable.reason),
+            message: lastUnavailable.message,
+            checkedAt,
+          });
+          continue;
+        }
+      }
+
+      let isAvailable = true;
+      try {
+        isAvailable = await provider.isAvailable();
+      } catch (err: any) {
+        const reason = this.mapErrorToReason(err);
+        this.setUnavailableReason(provider.id, reason, err?.message);
+        snapshot.push({
+          id: provider.id,
+          available: false,
+          reason,
+          message: err?.message,
+          checkedAt,
+        });
+        continue;
+      }
+
+      if (!isAvailable) {
+        snapshot.push({
+          id: provider.id,
+          available: false,
+          reason: this.normalizeUnavailableReason('unavailable'),
+          checkedAt,
+        });
+        continue;
+      }
+
+      snapshot.push({
+        id: provider.id,
+        available: true,
+        checkedAt,
+      });
+    }
+
+    return snapshot;
+  }
+
+  async getProviderStackSnapshot(): Promise<ProviderStackItem[]> {
+    const statusSnapshot = await this.getProviderStatusSnapshot();
+    const statusById = new Map(statusSnapshot.map((item) => [item.id, item]));
+
+    return this.providers.map((provider, index) => {
+      const status = statusById.get(provider.id);
+      const stackMeta = LLM_STACK.find((entry) => entry.id === provider.id);
+
+      return {
+        priority: index + 1,
+        id: provider.id,
+        providerType: stackMeta?.providerType,
+        model: stackMeta?.model,
+        available: status?.available ?? false,
+        reason: status?.reason ? this.normalizeUnavailableReason(status.reason) : undefined,
+        message: status?.message,
+        checkedAt: status?.checkedAt || new Date(this.now()).toISOString(),
+        cooldownUntil: status?.cooldownUntil,
+      };
+    });
+  }
+
   getCooldownStatus(): Record<string, string> {
     const status: Record<string, string> = {};
     for (const [id, until] of this.cooldowns.entries()) {
-      if (Date.now() < until) {
-        status[id] = `cooldown đến ${new Date(until).toLocaleTimeString('vi-VN')}`;
+      if (this.now() < until) {
+        status[id] = `cooldown until ${new Date(until).toLocaleTimeString('vi-VN')}`;
       }
     }
     return status;

@@ -1,4 +1,4 @@
-import { ActionResult, BotUser, ActionType } from '../types/index.js';
+import { ActionResult, BotUser, ActionType, ActionTriggerSource, GeneratorStatusSnapshot } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import { PromptBuilderService } from './PromptBuilderService.js';
 import { ValidationService } from './ValidationService.js';
@@ -8,6 +8,7 @@ import { ActionSelectorService } from './ActionSelectorService.js';
 import { RateLimiter } from '../tracking/RateLimiter.js';
 import { PersonalityService } from './PersonalityService.js';
 import { RetryQueue, FailedAction } from '../scheduler/retryQueue.js';
+import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
 import logger, { logAction } from '../utils/logger.js';
 
 export class ContentGeneratorService {
@@ -20,6 +21,7 @@ export class ContentGeneratorService {
   private rateLimiter: RateLimiter;
   private personalityService: PersonalityService;
   private retryQueue: RetryQueue;
+  private actionHistory: ActionHistoryTracker;
 
   constructor() {
     this.contextGatherer = new ContextGathererService();
@@ -31,12 +33,13 @@ export class ContentGeneratorService {
     this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter);
     this.personalityService = new PersonalityService(this.llmManager);
     this.retryQueue = new RetryQueue(3);
+    this.actionHistory = new ActionHistoryTracker();
 
     // Start retry queue processing
     this.retryQueue.startProcessing(async (action: FailedAction) => {
       logger.info(`[retry_queue] Retrying ${action.actionType} for user #${action.userId}`);
       try {
-        const result = await this.runOnceForAction(action.actionType);
+        const result = await this.runOnceForAction(action.actionType, 'retry');
         return result.success;
       } catch {
         return false;
@@ -44,7 +47,7 @@ export class ContentGeneratorService {
     });
   }
 
-  async runOnce(): Promise<ActionResult> {
+  async runOnce(triggerSource: ActionTriggerSource = 'cron'): Promise<ActionResult> {
     const startTime = Date.now();
     const actionId = `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -53,14 +56,14 @@ export class ContentGeneratorService {
       const selected = await this.actionSelector.selectNextAction();
       if (!selected) {
         logAction({ actionId, stage: 'action_select', status: 'skipped', error: 'All users rate-limited' });
-        return {
+        return this.finalizeActionResult({
           success: false,
           actionType: 'post',
           userId: 0,
           provider: 'none',
           latencyMs: Date.now() - startTime,
           error: 'No available action (all users rate-limited or no bot users)',
-        };
+        }, actionId, triggerSource);
       }
 
       logAction({
@@ -108,21 +111,21 @@ export class ContentGeneratorService {
         error: result.error,
       });
 
-      return result;
+      return this.finalizeActionResult(result, actionId, triggerSource);
     } catch (error: any) {
       logAction({ actionId, stage: 'complete', status: 'failed', error: error.message });
-      return {
+      return this.finalizeActionResult({
         success: false,
         actionType: 'post',
         userId: 0,
         provider: 'unknown',
         latencyMs: Date.now() - startTime,
         error: error.message,
-      };
+      }, actionId, triggerSource);
     }
   }
 
-  async runOnceForAction(actionType: ActionType): Promise<ActionResult> {
+  async runOnceForAction(actionType: ActionType, triggerSource: ActionTriggerSource = 'manual'): Promise<ActionResult> {
     const startTime = Date.now();
     const actionId = `action-${actionType}-${Date.now()}`;
 
@@ -130,10 +133,10 @@ export class ContentGeneratorService {
       const botUsers = await this.contextGatherer.getAllBotUsers();
       if (botUsers.length === 0) {
         logAction({ actionId, actionType, stage: 'action_select', status: 'failed', error: 'No bot users' });
-        return {
+        return this.finalizeActionResult({
           success: false, actionType, userId: 0, provider: 'none',
           latencyMs: Date.now() - startTime, error: 'No active bot users found',
-        };
+        }, actionId, triggerSource);
       }
 
       let selectedUserId: number | null = null;
@@ -146,10 +149,10 @@ export class ContentGeneratorService {
 
       if (!selectedUserId) {
         logAction({ actionId, actionType, stage: 'action_select', status: 'skipped', error: 'All rate-limited' });
-        return {
+        return this.finalizeActionResult({
           success: false, actionType, userId: 0, provider: 'none',
           latencyMs: Date.now() - startTime, error: `All bot users are rate-limited for ${actionType} action`,
-        };
+        }, actionId, triggerSource);
       }
 
       logAction({ actionId, userId: selectedUserId, actionType, stage: 'action_select', status: 'success' });
@@ -174,13 +177,13 @@ export class ContentGeneratorService {
         await this.personalityService.trackAndUpdate(selectedUserId);
       }
 
-      return result;
+      return this.finalizeActionResult(result, actionId, triggerSource);
     } catch (error: any) {
       logAction({ actionId, actionType, stage: 'complete', status: 'failed', error: error.message });
-      return {
+      return this.finalizeActionResult({
         success: false, actionType, userId: 0, provider: 'unknown',
         latencyMs: Date.now() - startTime, error: error.message,
-      };
+      }, actionId, triggerSource);
     }
   }
 
@@ -434,8 +437,46 @@ export class ContentGeneratorService {
     return this.llmManager.getProviderIds();
   }
 
+  async getStatusSnapshot(): Promise<GeneratorStatusSnapshot> {
+    const providerStatus = await this.llmManager.getProviderStatusSnapshot();
+    const modelStack = await this.llmManager.getProviderStackSnapshot();
+    const available = providerStatus.filter((provider) => provider.available);
+    const unavailable = providerStatus.filter((provider) => !provider.available);
+    const todayStats = this.actionHistory.getTodayStats();
+    const todayRateLimiterStats = this.getRateLimiterStats() as Record<string, unknown>;
+
+    return {
+      providers: this.getLLMProviders(),
+      modelStack,
+      providerStatus: {
+        available,
+        unavailable,
+        all: providerStatus,
+      },
+      todayStats,
+      recentActions: this.actionHistory.getRecentActions(10),
+      lastAction: this.actionHistory.getLastAction(),
+      todayActions: {
+        ...todayRateLimiterStats,
+        byTrigger: todayStats.byTrigger,
+      },
+      queue: this.getRetryQueueStats() as Record<string, unknown>,
+    };
+  }
+
   getRetryQueueStats() {
     return this.retryQueue.getStats();
+  }
+
+  private finalizeActionResult(result: ActionResult, actionId: string, triggerSource: ActionTriggerSource): ActionResult {
+    const finalizedResult: ActionResult = {
+      ...result,
+      actionId,
+      triggerSource,
+      completedAt: result.completedAt || new Date().toISOString(),
+    };
+    this.actionHistory.record(finalizedResult, { actionId, triggerSource });
+    return finalizedResult;
   }
 
   async disconnect(): Promise<void> {

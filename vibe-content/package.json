@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
+    "test": "npm run build && node dist/src/tests/run-tests.js",
     "build": "tsc --outDir dist",
     "start:prod": "node dist/src/index.js",
     "db:generate": "copy /Y ..\\backend\\prisma\\schema.prisma prisma\\schema.prisma && prisma generate",
