@@ -27,6 +27,10 @@
       "description": "Google Gemini API key (primary LLM provider)"
     },
     {
+      "key": "BEEKNOEE_API_KEY",
+      "description": "API key for https://platform.beeknoee.com/ (OpenAI-compatible)"
+    },
+    {
       "key": "GROQ_API_KEY",
       "description": "Groq API key (fallback provider #1)"
     },

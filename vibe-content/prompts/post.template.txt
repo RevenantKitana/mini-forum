@@ -31,8 +31,8 @@ NHIỆM VỤ: Viết 1 bài đăng.
 Yêu cầu:
 - Viết bằng tiếng Việt tự nhiên, như người thật trên forum
 - Bám sát category, nhưng không cần “giải thích category”
-- Độ dài: 100–400 chữ
-- Có tiêu đề ngắn gọn, có thể hơi cảm tính hoặc gây tò mò (10–100 ký tự)
+- Độ dài: 100–1500 từ đơn, tối đa kí tự trả về cho phép là 9999
+- Có tiêu đề ngắn gọn, có thể hơi cảm tính hoặc gây tò mò (30–100 ký tự)
 - Nội dung:
   - đi thẳng vào vấn đề, không mở đầu kiểu “Trong bài viết này…”
   - tập trung 1–2 ý chính, không cần đầy đủ

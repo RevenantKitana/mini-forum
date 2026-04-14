@@ -1,4 +1,5 @@
 import {
+  ActionType,
   ActionLevelHistoryItem,
   ActionResult,
   ActionStatsSnapshot,
@@ -44,6 +45,16 @@ export class ActionHistoryTracker {
 
   getLastAction(): ActionLevelHistoryItem | null {
     return this.history.length > 0 ? this.history[this.history.length - 1] : null;
+  }
+
+  getLastActionByType(actionType: ActionType): ActionLevelHistoryItem | null {
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const action = this.history[i];
+      if (action.actionType === actionType) {
+        return action;
+      }
+    }
+    return null;
   }
 
   getTodayStats(now = new Date()): ActionStatsSnapshot {

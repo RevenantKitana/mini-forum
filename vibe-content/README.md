@@ -70,10 +70,11 @@
 - Templates bằng tiếng Việt
 
 #### LLMProviderManager
-- Hỗ trợ 5 LLM providers với fallback:
+- Hỗ trợ nhiều LLM providers với fallback:
   1. Google Gemini (primary)
   2. Groq (2 models)
   3. Cerebras (2 models)
+  4...
 - Timeout 30s per request
 - Tự động retry với provider khác khi lỗi
 

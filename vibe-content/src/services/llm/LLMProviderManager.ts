@@ -1,5 +1,11 @@
 import { ILLMProvider, LLMError } from './ILLMProvider.js';
-import { LLM_STACK } from '../../config/llm.js';
+import {
+  COMMENT_PROVIDER_QUEUE,
+  LLM_STACK,
+  MODEL_LABEL_MAP,
+  POST_PROVIDER_QUEUE,
+  VOTE_LLM_PROVIDER_QUEUE,
+} from '../../config/llm.js';
 import {
   LLMOutput,
   ProviderStackItem,
@@ -10,6 +16,7 @@ import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
 import { CerebrasProvider } from './CerebrasProvider.js';
 import { NvidiaProvider } from './NvidiaProvider.js';
+import { BeeknoeeProvider } from './BeeknoeeProvider.js';
 import config from '../../config/index.js';
 import logger from '../../utils/logger.js';
 
@@ -21,6 +28,8 @@ export interface LLMGenerateResult {
   output: LLMOutput;
   provider: string;
 }
+
+export type LLMTaskType = 'post' | 'comment' | 'vote_llm' | 'default';
 
 const COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
 const TRANSIENT_UNAVAILABLE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -75,12 +84,20 @@ export class LLMProviderManager {
         case 'nvidia':
           this.providers.push(new NvidiaProvider(entry.id, entry.model));
           break;
+        case 'beeknoee':
+          this.providers.push(new BeeknoeeProvider(entry.id, entry.model));
+          break;
       }
     }
   }
 
   async generate(prompt: string): Promise<LLMGenerateResult> {
-    for (const provider of this.providers) {
+    return this.generateByTask(prompt, 'post');
+  }
+
+  async generateByTask(prompt: string, taskType: LLMTaskType): Promise<LLMGenerateResult> {
+    const queue = this.buildProviderQueue(taskType);
+    for (const provider of queue) {
       if (this.isOnCooldown(provider.id)) {
         const cooldownUntil = this.cooldowns.get(provider.id)!;
         const until = new Date(cooldownUntil).toLocaleTimeString('vi-VN');
@@ -113,6 +130,66 @@ export class LLMProviderManager {
     }
 
     throw new Error('All LLM providers exhausted - no quota remaining');
+  }
+
+  async generateWithProvider(prompt: string, providerId: string): Promise<LLMGenerateResult> {
+    const provider = this.providers.find((item) => item.id === providerId);
+    if (!provider) {
+      throw new Error(`Unknown provider id: ${providerId}`);
+    }
+
+    if (this.isOnCooldown(provider.id)) {
+      const cooldownUntil = this.cooldowns.get(provider.id)!;
+      throw new Error(`${provider.id} is in cooldown until ${new Date(cooldownUntil).toISOString()}`);
+    }
+
+    const available = await provider.isAvailable();
+    if (!available) {
+      const reason = this.hasApiKey(provider.id) ? 'unavailable' : 'missing_api_key';
+      this.setUnavailableReason(provider.id, reason);
+      throw new Error(`${provider.id} is unavailable (${reason})`);
+    }
+
+    try {
+      const output = await this.callWithRetry(provider, prompt, 3);
+      this.clearUnavailableReason(provider.id);
+      logger.info(`${provider.id} - success`);
+      return { output, provider: provider.id };
+    } catch (err: any) {
+      const unavailableReason = this.mapErrorToReason(err);
+      this.setUnavailableReason(provider.id, unavailableReason, err?.message);
+      logger.warn(`${provider.id} - failed: ${err.message}`);
+
+      if (err instanceof LLMError && err.code === 'RATE_LIMIT') {
+        this.setCooldown(provider.id);
+      }
+      throw err;
+    }
+  }
+
+  private buildProviderQueue(taskType: LLMTaskType): ILLMProvider[] {
+    const providerById = new Map(this.providers.map((provider) => [provider.id, provider]));
+    const configuredQueueIds =
+      taskType === 'comment'
+        ? COMMENT_PROVIDER_QUEUE
+        : taskType === 'vote_llm'
+          ? VOTE_LLM_PROVIDER_QUEUE
+          : POST_PROVIDER_QUEUE;
+
+    const queue: ILLMProvider[] = [];
+    for (const providerId of configuredQueueIds) {
+      const provider = providerById.get(providerId);
+      if (provider) queue.push(provider);
+    }
+
+    // Preserve compatibility for test providers or future providers
+    for (const provider of this.providers) {
+      if (!queue.some((item) => item.id === provider.id)) {
+        queue.push(provider);
+      }
+    }
+
+    return queue;
   }
 
   private async callWithRetry(
@@ -188,6 +265,7 @@ export class LLMProviderManager {
     if (providerId.startsWith('groq')) return !!config.llm.groqApiKey;
     if (providerId.startsWith('cerebras')) return !!config.llm.cerebrasApiKey;
     if (providerId.startsWith('nvidia')) return !!config.llm.nvidiaApiKey;
+    if (providerId.startsWith('beeknoee')) return !!config.llm.beeknoeeApiKey;
     return true;
   }
 
@@ -200,6 +278,10 @@ export class LLMProviderManager {
 
   getProviderIds(): string[] {
     return this.providers.map((p) => p.id);
+  }
+
+  getProviderIdByLabel(label: number): string | undefined {
+    return MODEL_LABEL_MAP[label];
   }
 
   async getProviderStatusSnapshot(): Promise<ProviderStatusSnapshot[]> {

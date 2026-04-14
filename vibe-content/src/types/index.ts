@@ -161,7 +161,7 @@ export interface ActionStatsSnapshot {
 export interface ProviderStackItem {
   priority: number;
   id: string;
-  providerType?: 'gemini' | 'groq' | 'cerebras' | 'nvidia';
+  providerType?: 'gemini' | 'groq' | 'cerebras' | 'nvidia' | 'beeknoee';
   model?: string;
   available: boolean;
   reason?: ProviderUnavailableReason;

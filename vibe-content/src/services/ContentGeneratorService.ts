@@ -30,10 +30,10 @@ export class ContentGeneratorService {
     this.apiExecutor = new APIExecutorService();
     this.llmManager = new LLMProviderManager();
     this.rateLimiter = new RateLimiter();
-    this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter);
+    this.actionHistory = new ActionHistoryTracker();
+    this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter, this.actionHistory);
     this.personalityService = new PersonalityService(this.llmManager);
     this.retryQueue = new RetryQueue(3);
-    this.actionHistory = new ActionHistoryTracker();
 
     // Start retry queue processing
     this.retryQueue.startProcessing(async (action: FailedAction) => {
@@ -125,7 +125,11 @@ export class ContentGeneratorService {
     }
   }
 
-  async runOnceForAction(actionType: ActionType, triggerSource: ActionTriggerSource = 'manual'): Promise<ActionResult> {
+  async runOnceForAction(
+    actionType: ActionType,
+    triggerSource: ActionTriggerSource = 'manual',
+    forcedProviderId?: string,
+  ): Promise<ActionResult> {
     const startTime = Date.now();
     const actionId = `action-${actionType}-${Date.now()}`;
 
@@ -160,13 +164,13 @@ export class ContentGeneratorService {
       let result: ActionResult;
       switch (actionType) {
         case 'post':
-          result = await this.executePost(selectedUserId, startTime, actionId);
+          result = await this.executePost(selectedUserId, startTime, actionId, forcedProviderId);
           break;
         case 'comment':
-          result = await this.executeComment(selectedUserId, startTime, actionId);
+          result = await this.executeComment(selectedUserId, startTime, actionId, forcedProviderId);
           break;
         case 'vote':
-          result = await this.executeVote(selectedUserId, startTime, actionId);
+          result = await this.executeVote(selectedUserId, startTime, actionId, forcedProviderId);
           break;
         default:
           throw new Error(`Unknown action type: ${actionType}`);
@@ -187,7 +191,12 @@ export class ContentGeneratorService {
     }
   }
 
-  private async executePost(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
+  private async executePost(
+    userId: number,
+    startTime: number,
+    actionId: string,
+    forcedProviderId?: string,
+  ): Promise<ActionResult> {
     // 1. Gather context
     logAction({ actionId, userId, actionType: 'post', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherPostContext(userId);
@@ -199,7 +208,9 @@ export class ContentGeneratorService {
 
     // 3. Call LLM (with fallback stack)
     logAction({ actionId, userId, actionType: 'post', stage: 'llm_call', status: 'info' });
-    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
+    const { output: llmOutput, provider } = forcedProviderId
+      ? await this.llmManager.generateWithProvider(prompt, forcedProviderId)
+      : await this.llmManager.generateByTask(prompt, 'post');
     logger.info(`[llm_call] Response via ${provider} — title: "${llmOutput.title}"`);
 
     // 4. Validate
@@ -266,7 +277,12 @@ export class ContentGeneratorService {
     return { success: true, actionType: 'post', userId, provider, latencyMs };
   }
 
-  private async executeComment(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
+  private async executeComment(
+    userId: number,
+    startTime: number,
+    actionId: string,
+    forcedProviderId?: string,
+  ): Promise<ActionResult> {
     // 1. Gather context
     logAction({ actionId, userId, actionType: 'comment', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherCommentContext(userId);
@@ -279,7 +295,9 @@ export class ContentGeneratorService {
 
     // 3. Call LLM
     logAction({ actionId, userId, actionType: 'comment', stage: 'llm_call', status: 'info' });
-    const { output: llmOutput, provider } = await this.llmManager.generate(prompt);
+    const { output: llmOutput, provider } = forcedProviderId
+      ? await this.llmManager.generateWithProvider(prompt, forcedProviderId)
+      : await this.llmManager.generateByTask(prompt, 'comment');
     logger.info(`[llm_call] Comment response via ${provider}`);
 
     // 4. Validate
@@ -338,7 +356,12 @@ export class ContentGeneratorService {
     return { success: true, actionType: 'comment', userId, provider, latencyMs };
   }
 
-  private async executeVote(userId: number, startTime: number, actionId: string): Promise<ActionResult> {
+  private async executeVote(
+    userId: number,
+    startTime: number,
+    actionId: string,
+    forcedProviderId?: string,
+  ): Promise<ActionResult> {
     // 1. Gather context
     logAction({ actionId, userId, actionType: 'vote', stage: 'context_gather', status: 'info' });
     const context = await this.contextGatherer.gatherVoteContext(userId);
@@ -352,7 +375,7 @@ export class ContentGeneratorService {
     logger.info(`[context_gather] Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
 
     // 2. Decide strategy: random voting rate vs. LLM-based (personality-driven)
-    const isRandomVoter = Math.random() < 0.7; // 70% of votes are random to add variability and prevent overfitting to LLM patterns
+    const isRandomVoter = !forcedProviderId && Math.random() < 0.7; // Force LLM path when specific model is requested
     let voteType: 'up' | 'down';
     let reason: string;
     let provider: string;
@@ -367,7 +390,9 @@ export class ContentGeneratorService {
 
       logAction({ actionId, userId, actionType: 'vote', stage: 'llm_call', status: 'info' });
       const prompt = this.promptBuilder.buildVotePrompt(context);
-      const llmResult = await this.llmManager.generate(prompt);
+      const llmResult = forcedProviderId
+        ? await this.llmManager.generateWithProvider(prompt, forcedProviderId)
+        : await this.llmManager.generateByTask(prompt, 'vote_llm');
       provider = llmResult.provider;
 
       logAction({ actionId, userId, actionType: 'vote', stage: 'validation', status: 'info', provider });
@@ -435,6 +460,10 @@ export class ContentGeneratorService {
 
   getLLMProviders(): string[] {
     return this.llmManager.getProviderIds();
+  }
+
+  getProviderIdByLabel(label: number): string | undefined {
+    return this.llmManager.getProviderIdByLabel(label);
   }
 
   async getStatusSnapshot(): Promise<GeneratorStatusSnapshot> {

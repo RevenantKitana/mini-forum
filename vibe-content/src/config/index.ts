@@ -28,6 +28,7 @@ const config = {
   },
   llm: {
     geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
+    beeknoeeApiKey: process.env.BEEKNOEE_API_KEY || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
     cerebrasApiKey: process.env.CEREBRAS_API_KEY || '',
     nvidiaApiKey: process.env.NVIDIA_API_KEY || '',

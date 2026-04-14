@@ -52,6 +52,33 @@ async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req
   }
 }
 
+async function handleTriggerActionByLabel(
+  actionType: 'post' | 'comment' | 'vote',
+  req: express.Request,
+  res: express.Response,
+) {
+  const label = Number(req.params.label);
+  if (!Number.isInteger(label)) {
+    res.status(400).json({ error: 'label must be an integer (1-10)' });
+    return;
+  }
+
+  const providerId = generator.getProviderIdByLabel(label);
+  if (!providerId) {
+    res.status(400).json({ error: `invalid label ${label}. supported: 1-10` });
+    return;
+  }
+
+  logger.info(`Manual trigger received for action: ${actionType}, label: ${label}, provider: ${providerId}`);
+  try {
+    const result = await generator.runOnceForAction(actionType, 'manual', providerId);
+    res.json({ label, providerId, result });
+  } catch (error: any) {
+    logger.error(`Trigger error (${actionType}/${label}): ${error.message}`);
+    res.status(500).json({ error: error.message, label, providerId });
+  }
+}
+
 app.get('/trigger', handleTrigger);
 app.post('/trigger', handleTrigger);
 
@@ -63,12 +90,20 @@ app.post('/trigger/comment', (req, res) => handleTriggerAction('comment', req, r
 app.get('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
 app.post('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
 
+// Model-label verification endpoints
+app.get('/trigger/post/:label', (req, res) => handleTriggerActionByLabel('post', req, res));
+app.post('/trigger/post/:label', (req, res) => handleTriggerActionByLabel('post', req, res));
+app.get('/trigger/comment/:label', (req, res) => handleTriggerActionByLabel('comment', req, res));
+app.post('/trigger/comment/:label', (req, res) => handleTriggerActionByLabel('comment', req, res));
+app.get('/trigger/vote/:label', (req, res) => handleTriggerActionByLabel('vote', req, res));
+app.post('/trigger/vote/:label', (req, res) => handleTriggerActionByLabel('vote', req, res));
+
 // Start server + cron
 const server = app.listen(config.port, () => {
   logger.info(`Vibe Content Service started on port ${config.port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
   logger.info(`Forum API: ${config.forumApiUrl}/v1`);
-  logger.info(`Endpoints: /health, /status, /trigger, /trigger/{post,comment,vote}`);
+  logger.info(`Endpoints: /health, /status, /trigger, /trigger/{post,comment,vote}, /trigger/{post,comment,vote}/:label`);
 
   // Start cron scheduler
   startCronScheduler(generator);

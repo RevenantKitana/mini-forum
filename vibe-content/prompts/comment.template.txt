@@ -27,11 +27,11 @@ NHIỆM VỤ: Viết một bình luận.
 
 Yêu cầu:
 - Viết bằng tiếng Việt tự nhiên, như người thật trên forum
-- Độ dài: 20–200 chữ
+- Độ dài: 0–100 chữ
 - Nội dung phải liên quan trực tiếp đến bài viết hoặc một comment cụ thể
 - Không cần cân bằng hay trung lập, được phép thiên lệch theo tính cách
 - Không cần quá đầy đủ hoặc quá logic, có thể thiếu sót nhẹ như người thật
-- Tránh văn phong “giải thích đầy đủ”, “liệt kê sạch sẽ”, “kết luận tròn trịa”
+- Tránh văn phong quá “giải thích đầy đủ”, “liệt kê sạch sẽ”, “kết luận tròn trịa”
 - Có thể:
   - đồng ý hoặc phản bác một điểm cụ thể
   - kể trải nghiệm cá nhân ngắn
