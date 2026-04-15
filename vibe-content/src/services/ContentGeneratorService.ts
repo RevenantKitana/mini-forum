@@ -336,6 +336,7 @@ export class ContentGeneratorService {
       postId: context.targetPost.id,
       content: validation.data!.content,
       parentId: context.parentComment?.id,
+      quotedCommentId: context.parentComment?.id,
     });
 
     if (!apiResult.success) {

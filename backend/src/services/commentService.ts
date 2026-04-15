@@ -451,11 +451,22 @@ export async function createComment(postId: number, data: CreateCommentInput, au
     }
   }
 
+  // Enforce quoted reply behavior:
+  // - Reply must always quote the same parent comment.
+  // - For backward compatibility, auto-fill quote from parent if omitted.
+  const effectiveQuotedCommentId = data.parent_id
+    ? (data.quoted_comment_id ?? data.parent_id)
+    : data.quoted_comment_id;
+
+  if (data.parent_id && data.quoted_comment_id && data.quoted_comment_id !== data.parent_id) {
+    throw new BadRequestError('Reply must quote the same parent comment');
+  }
+
   // Verify quoted comment if provided
   let quoted_comment_id: { id: number; author_id: number } | null = null;
-  if (data.quoted_comment_id) {
+  if (effectiveQuotedCommentId) {
     quoted_comment_id = await prisma.comments.findUnique({
-      where: { id: data.quoted_comment_id },
+      where: { id: effectiveQuotedCommentId },
       select: { id: true, author_id: true, post_id: true },
     }) as any;
 
@@ -478,7 +489,7 @@ export async function createComment(postId: number, data: CreateCommentInput, au
       author_id,
       post_id: postId,
       parent_id: data.parent_id,
-      quoted_comment_id: data.quoted_comment_id,
+      quoted_comment_id: effectiveQuotedCommentId,
     },
     select: {
       ...commentSelect,

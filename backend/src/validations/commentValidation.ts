@@ -18,6 +18,14 @@ export const createCommentSchema = z.object({
     .int()
     .positive()
     .optional(),
+}).superRefine((data, ctx) => {
+  if (data.parent_id && data.quoted_comment_id && data.parent_id !== data.quoted_comment_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['quoted_comment_id'],
+      message: 'quoted_comment_id must match parent_id for replies',
+    });
+  }
 });
 
 /**

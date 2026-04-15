@@ -18,6 +18,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:clear": "tsx scripts/clearData.ts",
+    "db:wipe": "tsx scripts/wipeAllDb.ts",
     "db:backup": "tsx scripts/backupDb.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "npm run db:clear && npm run db:seed"

@@ -140,14 +140,19 @@ export class APIExecutorService {
   async createComment(
     userId: number,
     email: string,
-    data: { postId: number; content: string; parentId?: number },
+    data: { postId: number; content: string; parentId?: number; quotedCommentId?: number },
   ): Promise<{ success: boolean; commentId?: number; error?: string }> {
     try {
       const token = await this.getToken(userId, email);
 
       const body: Record<string, any> = { content: data.content };
       if (data.parentId) {
+        const quotedCommentId = data.quotedCommentId ?? data.parentId;
+        if (quotedCommentId !== data.parentId) {
+          return { success: false, error: 'Invalid reply payload: quotedCommentId must match parentId' };
+        }
         body.parent_id = data.parentId;
+        body.quoted_comment_id = quotedCommentId;
       }
 
       const res = await this.client.post(

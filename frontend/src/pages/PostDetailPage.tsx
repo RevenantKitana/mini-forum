@@ -40,6 +40,9 @@ import {
   TrendingUp,
   Clock,
   History,
+  Reply,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   Select,
@@ -48,7 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { ReportModal } from '@/components/common/ReportModal';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { EmojiPicker } from '@/components/common/EmojiPicker';
@@ -56,6 +59,7 @@ import { decodeHtmlEntities } from '@/lib/utils';
 
 // Default fallback - will be overridden by config from API
 const DEFAULT_COMMENT_EDIT_TIME_LIMIT_MINUTES = 30;
+const DEFAULT_VISIBLE_REPLIES = 1;
 
 // Permission labels for Vietnamese display
 const permissionLabels: Record<string, string> = {
@@ -573,6 +577,7 @@ export function PostDetailPage() {
               <CommentItem
                 comment={comment}
                 postId={id!}
+                threadIndex={index}
                 isPostLocked={post.isLocked}
                 canComment={isAuthenticated && canCommentInCategory}
                 commentEditTimeLimit={commentEditTimeLimit}
@@ -654,6 +659,7 @@ export function PostDetailPage() {
 interface CommentItemProps {
   comment: Comment;
   postId: string;
+  threadIndex?: number;
   isPostLocked?: boolean;
   canComment?: boolean; // Whether user has permission to comment in this category
   commentEditTimeLimit: number; // Dynamic edit time limit from backend config
@@ -674,6 +680,7 @@ interface CommentItemProps {
 function CommentItem({ 
   comment, 
   postId,
+  threadIndex = 0,
   isPostLocked = false,
   canComment = true,
   commentEditTimeLimit,
@@ -693,6 +700,7 @@ function CommentItem({
   const isReplyingToThis = replyToId === comment.id;
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
   
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
@@ -708,6 +716,30 @@ function CommentItem({
   const isModOrAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
   const canEdit = isCommentAuthor && (canEditTimeLimit || isModOrAdmin);
   const canDelete = isCommentAuthor || isModOrAdmin;
+  const threadToneIndex = Math.abs(threadIndex) % 4;
+  const threadTones = [
+    {
+      rootBorder: 'border-l-sky-500/50',
+      rootRing: 'ring-sky-500/20',
+      replyBorder: 'border-sky-500/35',
+    },
+    {
+      rootBorder: 'border-l-emerald-500/50',
+      rootRing: 'ring-emerald-500/20',
+      replyBorder: 'border-emerald-500/35',
+    },
+    {
+      rootBorder: 'border-l-amber-500/50',
+      rootRing: 'ring-amber-500/20',
+      replyBorder: 'border-amber-500/35',
+    },
+    {
+      rootBorder: 'border-l-rose-500/50',
+      rootRing: 'ring-rose-500/20',
+      replyBorder: 'border-rose-500/35',
+    },
+  ] as const;
+  const threadTone = threadTones[threadToneIndex];
 
   const handleSaveEdit = () => {
     if (!editContent.trim()) {
@@ -764,14 +796,46 @@ function CommentItem({
     }
   };
 
+  const replies = !isReply && comment.replies ? comment.replies : [];
+  const totalCommentCount = !isReply ? replies.length : 0;
+  const totalReplyCount = !isReply
+    ? replies.filter((reply) => {
+        const quotedCommentId = reply.quotedCommentId ?? reply.quotedComment?.id ?? null;
+        return quotedCommentId === Number(comment.id);
+      }).length
+    : 0;
+  const hasReplies = replies.length > 0;
+  const visibleReplies = isRepliesExpanded ? replies : replies.slice(0, DEFAULT_VISIBLE_REPLIES);
+  const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);
+  const canToggleReplies = replies.length > DEFAULT_VISIBLE_REPLIES;
+
+  // Auto-expand if the active reply target is currently hidden.
+  useEffect(() => {
+    if (isReply || !replyToId || isRepliesExpanded || !hasReplies) return;
+    const containsReplyTarget = replies
+      .slice(DEFAULT_VISIBLE_REPLIES)
+      .some((reply) => String(reply.id) === replyToId);
+    if (containsReplyTarget) {
+      setIsRepliesExpanded(true);
+    }
+  }, [isReply, replyToId, isRepliesExpanded, hasReplies, replies]);
+
   return (
-    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-5 mt-0' : ''}>
-      <Card className={isReply ? 'border-l-2 border-l-primary/30' : ''}>
-        <CardContent className="pt-0 !pb-0 space-y-0">
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-4 mt-1' : ''}>
+      <Card
+        className={
+          isReply
+            ? 'border border-border/60 bg-muted/45 shadow-none'
+            : 'border border-border/70 shadow-sm'
+        }
+      >
+        <CardContent className={isReply ? 'pt-1 !pb-0 space-y-0' : 'pt-1.8 !pb-1 space-y-0'}>
           {/* Quoted Comment - Clickable to scroll */}
           {comment.quotedComment && (
             <div 
-              className="mb-1 p-1 bg-muted rounded-lg border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors"
+              className={isReply
+                ? 'mb-1 p-1 bg-muted/55 rounded border-l-2 border-primary/45 cursor-pointer hover:bg-muted/65 transition-colors'
+                : 'mb-1 p-1 bg-muted rounded-lg border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors'}
               onClick={handleQuotedCommentClick}
               title="Click để xem bình luận gốc"
             >
@@ -794,12 +858,12 @@ function CommentItem({
             </div>
           )}
           
-          <div className="flex gap-2 sm:gap-4">
-            <div className="flex-1 min-w-0 mb-0">
+          <div className={isReply ? 'flex gap-2' : 'flex gap-2 sm:gap-4'}>
+            <div className={isReply ? 'flex-1 min-w-0 mb-1 mt-0' : 'flex-1 min-w-0 mb-1.5 mt-1.5'}>
               {comment.author && (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+                <div className={isReply ? 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-1' : 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-2'}>
                   <Link to={`/users/${comment.author.username}`} className="flex items-center gap-2 hover:text-foreground transition-colors">
-                    <Avatar className="h-6 w-6 flex-shrink-0">
+                    <Avatar className={isReply ? 'h-5 w-5 flex-shrink-0' : 'h-6 w-6 flex-shrink-0'}>
                       <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
                       <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -868,12 +932,12 @@ function CommentItem({
                   </div>
                 </div>
               ) : (
-                <MarkdownRenderer content={comment.content} className="text-sm" />
+                <MarkdownRenderer content={comment.content} className={isReply ? 'text-[0.92rem] leading-relaxed' : 'text-[0.95rem] leading-relaxed'} />
               )}
 
               {!isEditing && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between gap-2">
+                <div className={isReply ? 'mt-2' : 'mt-3'}>
+                  <div className={isReply ? 'flex items-center justify-between gap-2 flex-wrap' : 'flex items-center justify-between gap-2'}>
                     <div className="flex items-center gap-2">
                       <VoteButtons
                         targetId={comment.id}
@@ -889,11 +953,49 @@ function CommentItem({
                         upvoteCount={comment.upvoteCount}
                         downvoteCount={comment.downvoteCount}
                       />
+                      {!isReply && totalCommentCount > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1" title="Reply count">
+                            <Reply className="h-3.5 w-3.5" />
+                            <span>{totalReplyCount}</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1" title="Comment count">
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            <span>{totalCommentCount}</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className={isReply ? 'flex items-center gap-0.5 flex-wrap' : 'flex items-center gap-1'}>
+                      {!isReply && canToggleReplies && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="btn-press text-muted-foreground"
+                          onClick={() => setIsRepliesExpanded((prev) => !prev)}
+                        >
+                          {isRepliesExpanded ? (
+                            <>
+                              <ChevronUp className="h-4 w-4 mr-1" />
+                              Thu gọn
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4 mr-1" />
+                              Xem thêm phản hồi
+                            </>
+                          )}
+                        </Button>
+                      )}
                       {isAuthenticated && canComment && !isPostLocked && comment.status !== 'DELETED' && (
-                        <Button variant="ghost" size="sm" className="btn-press" onClick={() => onReply(comment)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-foreground' : 'btn-press'}
+                          onClick={() => onReply(comment)}
+                        >
                           Trả lời
                         </Button>
                       )}
@@ -901,11 +1003,11 @@ function CommentItem({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="btn-press"
+                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-foreground' : 'btn-press'}
                           onClick={() => setIsEditing(true)}
                           title={!isModOrAdmin && canEditTimeLimit ? `Còn ${getRemainingEditTime()} để chỉnh sửa` : undefined}
                         >
-                          <Edit className="h-4 w-4 mr-1" />
+                          <Edit className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
                           Sửa
                         </Button>
                       )}
@@ -913,11 +1015,11 @@ function CommentItem({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="btn-press"
+                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-destructive' : 'btn-press'}
                           onClick={handleDelete}
                           disabled={deleteCommentMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
+                          <Trash2 className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
                           Xóa
                         </Button>
                       )}
@@ -926,9 +1028,9 @@ function CommentItem({
                           variant="ghost" 
                           size="sm" 
                           onClick={() => onReport(parseInt(comment.id))}
-                          className="text-muted-foreground hover:text-destructive btn-press"
+                          className={isReply ? 'text-muted-foreground hover:text-destructive btn-press h-7 px-2 text-xs' : 'text-muted-foreground hover:text-destructive btn-press'}
                         >
-                          <Flag className="h-4 w-4 mr-1" />
+                          <Flag className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
                           Báo cáo
                         </Button>
                       )}
@@ -994,14 +1096,17 @@ function CommentItem({
       </Card>
 
       {/* Level 1 Replies - Only render if this is a root comment (not a reply) */}
-      {!isReply && comment.replies && comment.replies.length > 0 && (
-        <div className="mt-3 space-y-3">
-          {comment.replies.map((reply) => (
+      {!isReply && hasReplies && (
+        <div className={`mt-1 ml-2 sm:ml-3 pl-3 space-y-1 border-l border-dashed ${threadTone.replyBorder}`}>
+          {visibleReplies.map((reply) => (
             <CommentItem
               key={reply.id}
               comment={reply}
               postId={postId}
+              threadIndex={threadIndex}
               isPostLocked={isPostLocked}
+              canComment={canComment}
+              commentEditTimeLimit={commentEditTimeLimit}
               onReply={onReply}
               isReply={true}
               replyToId={replyToId}
