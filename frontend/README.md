@@ -1,194 +1,161 @@
-# Frontend — Mini Forum User Portal
+# Frontend Service
 
-Giao diện người dùng (SPA) cho hệ thống Mini Forum, xây dựng trên React 18 + Vite + Tailwind CSS.
+## Tổng quan
+
+Giao diện người dùng cuối (end-user) của diễn đàn Mini Forum. Single-page application cho phép người dùng đọc, tạo nội dung, tương tác và quản lý tài khoản cá nhân.
 
 ## Tech Stack
 
-| Công nghệ | Phiên bản | Mục đích |
-|---|---|---|
-| React | 18.3.1 | UI framework |
-| Vite | 6.3.5 | Build tool & dev server |
-| TypeScript | - | Type safety |
-| Tailwind CSS | 4.1.12 | Styling |
-| React Router | 7.13.0 | Client-side routing |
-| TanStack React Query | 5.90.20 | Server state management |
-| Axios | 1.13.4 | HTTP client |
-| React Hook Form | 7.55.0 | Form management |
-| Zod | - | Form validation |
-| Radix UI | - | Accessible UI primitives (30+ components) |
-| Motion | 12.23.24 | Animations |
-| Sonner | - | Toast notifications |
-| Lucide React | - | Icons |
-| Recharts | - | Charts |
-| Vitest | - | Testing |
-
-## Cài đặt
-
-```bash
-cd frontend
-npm install
-```
-
-## Biến môi trường
-
-Tạo file `.env.local`:
-
-```env
-VITE_API_URL=http://localhost:5000/api/v1   //URL BACKEN API
-```
-
-## Scripts
-
-| Lệnh | Mô tả |
+| Thành phần | Công nghệ |
 |---|---|
-| `npm run dev` | Dev server tại `http://localhost:5173` |
-| `npm run build` | Build production → `dist/` |
-| `npm run preview` | Preview bản build production |
-| `npm test` | Chạy tests (Vitest) |
-| `npm run test:watch` | Tests ở chế độ watch |
-| `npm run test:ui` | UI test runner |
-| `npm run test:coverage` | Coverage report |
+| Framework | React 18.3 |
+| Build tool | Vite 6.4 |
+| Language | TypeScript 5 |
+| Styling | Tailwind 4.1, Emotion (cho MUI) |
+| UI Components | Radix UI, Material-UI, Lucide Icons |
+| Routing | React Router 7.13 |
+| State Management | TanStack Query 5.90 (server state), React Context (client state) |
+| Forms | React Hook Form 7.55, Zod 4.3 |
+| Drag & Drop | React-DND |
+| Notifications | Sonner 2.0 |
+| Charts | Recharts 2.15 |
+| Testing | Vitest 4.0, React Testing Library |
 
 ## Cấu trúc thư mục
 
 ```
 frontend/src/
-├── main.tsx                  # Entry point
+├── main.tsx                   # Entry point
 ├── app/
-│   └── App.tsx               # Router setup, providers
-├── pages/                    # Route page components
-│   ├── HomePage.tsx          # Trang chủ — feed bài viết
-│   ├── PostDetailPage.tsx    # Chi tiết bài viết + bình luận
-│   ├── EditPostPage.tsx      # Chỉnh sửa bài viết (protected)
-│   ├── ProfilePage.tsx       # Hồ sơ người dùng
-│   ├── SearchPage.tsx        # Tìm kiếm bài viết & users
-│   ├── CategoriesPage.tsx    # Duyệt danh mục
-│   ├── TagsPage.tsx          # Duyệt tags
-│   ├── BookmarksPage.tsx     # Bài viết đã lưu (protected)
-│   ├── EditProfilePage.tsx   # Cài đặt hồ sơ (protected)
-│   ├── BlockedUsersPage.tsx  # Quản lý chặn (protected)
-│   ├── NotificationsPage.tsx # Thông báo (protected)
-│   └── NotFoundPage.tsx      # Trang 404
-├── routes/
-│   └── PrivateRoute.tsx      # Route guard — redirect nếu chưa đăng nhập
-├── components/               # UI components
-│   ├── ui/                   # Radix UI primitives tùy chỉnh
-│   ├── layout/               # Header, Sidebar, Footer, MainLayout
-│   └── ...                   # Feature components
+│   └── App.tsx                # Root component (providers + routing)
 ├── api/
-│   ├── axios.ts              # Axios instance + interceptors
-│   ├── endpoints.ts          # API endpoint constants
-│   └── services/             # API service functions
-├── contexts/
-│   ├── AuthContext.tsx        # Authentication state
-│   ├── SidebarContext.tsx     # Sidebar collapse/expand
-│   ├── FontSizeContext.tsx    # Accessibility — font scale
-│   └── GlobalLoadingContext.tsx # Loading overlay
-├── hooks/                    # Custom React hooks
-├── types/                    # TypeScript interfaces
-├── lib/                      # Utility functions
-├── styles/                   # Global CSS + Tailwind
-└── test/                     # Test setup
+│   ├── axios.ts               # Axios instance (interceptors, token refresh)
+│   ├── endpoints.ts           # API endpoint constants
+│   └── services/              # 10 API service files
+├── pages/                     # 14 page components
+├── components/                # Shared UI components
+├── contexts/                  # 5 React Context providers
+├── hooks/                     # 11 custom hooks
+├── routes/                    # Route config + PrivateRoute guard
+├── constants/                 # App constants
+├── types/                     # TypeScript types
+├── utils/                     # Utility functions
+├── lib/                       # Third-party integrations
+└── styles/                    # Global CSS
 ```
 
-## Routing
+## Pages
 
-### Trang công khai
-
-| Route | Component | Mô tả |
+| Page | Route | Mô tả |
 |---|---|---|
-| `/` | HomePage | Feed bài viết chính, bộ lọc |
-| `/posts/:id` | PostDetailPage | Xem bài viết + bình luận |
-| `/users/:username` | ProfilePage | Hồ sơ & hoạt động người dùng |
-| `/search` | SearchPage | Tìm kiếm bài viết & users |
-| `/categories` | CategoriesPage | Duyệt danh mục |
-| `/tags` | TagsPage | Duyệt tags |
-| `/login` | LoginPage | Đăng nhập |
-| `/register` | RegisterPage | Đăng ký (OTP) |
-| `/forgot-password` | ForgotPasswordPage | Quên mật khẩu (OTP) |
+| `HomePage` | `/` | Danh sách bài viết, bộ lọc danh mục/thẻ |
+| `PostDetailPage` | `/posts/:id` | Chi tiết bài viết + bình luận |
+| `EditPostPage` | `/posts/:id/edit` | Tạo/sửa bài viết |
+| `CategoriesPage` | `/categories` | Danh sách danh mục |
+| `TagsPage` | `/tags` | Danh sách thẻ |
+| `SearchPage` | `/search` | Tìm kiếm nội dung |
+| `LoginPage` | `/login` | Đăng nhập |
+| `RegisterPage` | `/register` | Đăng ký (kèm OTP) |
+| `ForgotPasswordPage` | `/forgot-password` | Quên mật khẩu |
+| `ProfilePage` | `/users/:id` | Hồ sơ người dùng |
+| `EditProfilePage` | `/profile/edit` | Sửa hồ sơ |
+| `NotificationsPage` | `/notifications` | Thông báo |
+| `BookmarksPage` | `/bookmarks` | Bài viết đã bookmark |
+| `BlockedUsersPage` | `/blocked` | Danh sách đã chặn |
 
-### Trang yêu cầu đăng nhập
+## API Integration
 
-| Route | Component | Mô tả |
+### Axios Configuration (`api/axios.ts`)
+
+- **Base URL**: Từ biến `VITE_API_URL`
+- **Auto-attach token**: Gắn `Authorization: Bearer <token>` từ `localStorage` key `forum_access_token`
+- **401 Interceptor**: Tự động refresh token khi access token hết hạn, queue các request đang chờ
+- **429 Interceptor**: Exponential backoff retry khi bị rate limit
+- **Token storage**: `forum_access_token`, `forum_refresh_token` trong `localStorage`
+
+### API Services (10 files)
+
+| Service | Chức năng |
+|---|---|
+| `authService` | Đăng ký, đăng nhập, logout, refresh, OTP, reset password |
+| `postService` | CRUD bài viết, featured, latest |
+| `commentService` | CRUD bình luận |
+| `userService` | Hồ sơ, reputation |
+| `voteService` | Upvote/downvote |
+| `bookmarkService` | Bookmark bài viết |
+| `categoryService` | Lấy danh sách danh mục |
+| `tagService` | Lấy danh sách thẻ |
+| `notificationService` | Quản lý thông báo |
+| `searchService` | Tìm kiếm |
+
+## State Management
+
+### React Context (Client State)
+
+| Context | Trách nhiệm |
+|---|---|
+| `AuthContext` | User hiện tại, isAuthenticated, login/logout |
+| `ThemeContext` | Dark/light mode toggle |
+| `SidebarContext` | Đóng/mở sidebar |
+| `FontSizeContext` | Điều chỉnh cỡ chữ (accessibility) |
+| `GlobalLoadingContext` | Global loading indicator |
+
+### TanStack Query (Server State)
+
+Tất cả dữ liệu từ API được quản lý qua React Query — caching, refetch, invalidation, optimistic updates.
+
+## Custom Hooks (11 hooks)
+
+| Hook | Chức năng |
+|---|---|
+| `useAuth` | Truy cập AuthContext |
+| `usePosts` | Query/mutation bài viết |
+| `useComments` | Query/mutation bình luận |
+| `useVotes` | Mutation vote |
+| `useBookmarks` | Query/mutation bookmark |
+| `useCategories` | Query danh mục |
+| `useTags` | Query thẻ |
+| `useUsers` | Query hồ sơ user |
+| `useNotifications` | Query thông báo |
+| `useSearch` | Query tìm kiếm |
+| `useResponsive` | Breakpoint detection |
+
+## Biến môi trường
+
+| Biến | Bắt buộc | Mô tả |
 |---|---|---|
-| `/posts/:id/edit` | EditPostPage | Chỉnh sửa bài viết |
-| `/bookmarks` | BookmarksPage | Bài viết đã lưu |
-| `/settings/profile` | EditProfilePage | Hồ sơ & đổi mật khẩu |
-| `/settings/blocked` | BlockedUsersPage | Quản lý chặn người dùng |
-| `/notifications` | NotificationsPage | Thông báo |
+| `VITE_API_URL` | Có | URL Backend API (ví dụ: `http://localhost:5000/api/v1`) |
 
-## Contexts
+**Lưu ý:** Vite config sẽ throw error nếu `VITE_API_URL` không được set.
 
-### AuthContext
-Quản lý trạng thái đăng nhập toàn cục.
+## Vite Configuration
 
-| Method | Mô tả |
-|---|---|
-| `login(credentials)` | Đăng nhập, lưu token |
-| `register(data)` | Đăng ký tài khoản |
-| `logout()` | Đăng xuất, xóa token |
-| `updateProfile(data)` | Cập nhật hồ sơ |
-| `refreshUser()` | Refresh thông tin user |
+- **Dev server port**: 5173 (strict)
+- **API Proxy**: `/api` → `VITE_API_URL` (tránh CORS trong development)
+- **Path alias**: `@` → `src/`
+- **Build optimization**: Manual chunking cho vendor libraries (react, mui, radix, charts, query, motion, forms)
 
-### SidebarContext
-Điều khiển hiển thị sidebar trái/phải.
+## Scripts
 
-### FontSizeContext
-Hỗ trợ accessibility — 5 mức scale font: `xs` (0.7x), `sm` (0.85x), `md` (1x), `lg` (1.15x), `xl` (1.3x).
+```bash
+npm run dev              # Dev server tại localhost:5173
+npm run build            # Production build
+npm test                 # Chạy Vitest
+npm run test:watch       # Watch mode
+npm run test:ui          # Vitest UI
+npm run test:coverage    # Coverage report
+```
 
-### GlobalLoadingContext
-Loading overlay toàn trang.
+## Tương tác với các Service khác
 
-## Custom Hooks
+| Service | Hướng | Chi tiết |
+|---|---|---|
+| Backend | → gửi request | REST API qua Vite proxy (`/api` → Backend), JWT auth |
 
-### Data Fetching
+**Không tương tác trực tiếp** với Admin-Client, Vibe-Content, hoặc PostgreSQL.
 
-| Hook | Mô tả |
-|---|---|
-| `usePosts(params)` | Lấy danh sách bài viết (phân trang, lọc) |
-| `useComments(postId, params)` | Lấy bình luận của bài viết |
-| `useCategories()` | Lấy danh mục |
-| `useCategoriesWithTags()` | Danh mục kèm tags phổ biến |
-| `useTags(limit)` | Lấy danh sách tags |
-| `useBookmarks(userId)` | Bài viết đã lưu |
-| `useNotifications(page, limit)` | Thông báo (auto-refresh 60s) |
-| `useSearch(params)` | Tìm kiếm bài viết |
-| `useSearchUsers(q)` | Tìm kiếm người dùng |
-| `useUsers(userId)` | Lấy thông tin user |
-| `useUserByUsername(username)` | User theo username |
-| `useConfig()` | Cấu hình hệ thống |
+## Deployment
 
-### Mutations
-
-| Hook | Mô tả |
-|---|---|
-| `useCreateComment()` | Tạo bình luận |
-| `useUpdateComment()` | Sửa bình luận |
-| `useDeleteComment()` | Xóa bình luận |
-| `useVotePost()` | Vote bài viết |
-| `useVoteComment()` | Vote bình luận |
-| `useCreateBookmark()` | Lưu bài viết |
-| `useRemoveBookmark()` | Bỏ lưu bài viết |
-| `useUpdateProfile()` | Cập nhật hồ sơ |
-| `useChangePassword()` | Đổi mật khẩu |
-| `useUpdateAvatar()` | Đổi avatar |
-
-### UI Utilities
-
-| Hook | Mô tả |
-|---|---|
-| `useBreakpoint()` | Detect Tailwind breakpoint hiện tại |
-| `useScrollLock(isLocked)` | Lock scroll cho modal/dialog |
-| `useDebounce(value, delay)` | Debounce giá trị |
-| `useResponsive()` | Responsive utilities |
-
-## Cấu hình React Query
-
-- **Stale time**: 5 phút
-- **Retry**: 1 lần
-- **Refetch on window focus**: Tắt
-- **Notifications**: Stale time 30s, refetch interval 60s
-
-## Deploy
-
-Đã cấu hình `vercel.json` cho Vercel deployment — SPA rewrites tất cả routes về `index.html`.
+- **Vercel**: Cấu hình sẵn (`vercel.json`)
+- **Build output**: Static files — deploy trên bất kỳ CDN/static hosting nào
+- **Yêu cầu**: Set `VITE_API_URL` trỏ đến Backend production URL
