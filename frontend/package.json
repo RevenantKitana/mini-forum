@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc -p ./tsconfig.json --noEmit && vite build",
     "dev": "vite",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
