@@ -187,6 +187,11 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
   };
   const tokens = generateTokenPair(tokenPayload);
 
+  // Delete old refresh tokens for this user to prevent unique constraint violations
+  await prisma.refresh_tokens.deleteMany({
+    where: { user_id: user.id },
+  });
+
   // Store hashed refresh token (SHA-256) to protect against DB compromise
   await prisma.refresh_tokens.create({
     data: {

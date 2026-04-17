@@ -12,7 +12,7 @@ async function main() {
     const hashedPassword = await bcrypt.hash('Admin@123', 10);
 
     const adminUser = await prisma.users.upsert({
-      where: { email: 'sfw.forum@atomicmail.io' },
+      where: { email: 'admin@forum.com' },
       update: {
         username: 'admin',
         password_hash: hashedPassword,
@@ -22,7 +22,7 @@ async function main() {
         is_active: true,
       },
       create: {
-        email: 'sfw.forum@atomicmail.io',
+        email: 'admin@forum.com',
         username: 'admin',
         password_hash: hashedPassword,
         role: Role.ADMIN,
