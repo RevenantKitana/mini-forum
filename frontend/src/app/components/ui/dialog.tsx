@@ -6,36 +6,16 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "./utils";
 
-const Dialog = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
->(({ ...props }, ref) => (
-  <DialogPrimitive.Root ref={ref} data-slot="dialog" {...props} />
-));
+const Dialog = DialogPrimitive.Root;
 Dialog.displayName = "Dialog";
 
-const DialogTrigger = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
->(({ ...props }, ref) => (
-  <DialogPrimitive.Trigger ref={ref} data-slot="dialog-trigger" {...props} />
-));
+const DialogTrigger = DialogPrimitive.Trigger;
 DialogTrigger.displayName = "DialogTrigger";
 
-const DialogPortal = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Portal>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>
->(({ ...props }, ref) => (
-  <DialogPrimitive.Portal ref={ref} data-slot="dialog-portal" {...props} />
-));
+const DialogPortal = DialogPrimitive.Portal;
 DialogPortal.displayName = "DialogPortal";
 
-const DialogClose = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Close>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Close>
->(({ ...props }, ref) => (
-  <DialogPrimitive.Close ref={ref} data-slot="dialog-close" {...props} />
-));
+const DialogClose = DialogPrimitive.Close;
 DialogClose.displayName = "DialogClose";
 
 const DialogOverlay = React.forwardRef<

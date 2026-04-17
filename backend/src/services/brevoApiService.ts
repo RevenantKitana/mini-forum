@@ -5,10 +5,6 @@
 
 import config from '../config/index.js';
 import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const require = createRequire(import.meta.url);
 
 // Type definitions for sib-api-v3-sdk
 interface TransactionalEmailPayload {
@@ -26,6 +22,25 @@ interface SendOtpEmailOptions {
   expiresInMinutes: number;
 }
 
+// Lazy-loaded require for better Jest compatibility
+let sibApiV3Sdk: any;
+
+function getSibApiV3Sdk(): any {
+  if (!sibApiV3Sdk) {
+    // Create require function only when needed
+    try {
+      // Use dynamic import for better ESM/Jest compatibility
+      // Fall back to createRequire if needed
+      const requireFunc = createRequire(process.cwd());
+      sibApiV3Sdk = requireFunc('sib-api-v3-sdk');
+    } catch {
+      // In case of Jest environment issues, try a direct approach
+      throw new Error('Failed to load sib-api-v3-sdk. Make sure it is installed.');
+    }
+  }
+  return sibApiV3Sdk;
+}
+
 /**
  * Initialize and send email via Brevo API
  */
@@ -41,7 +56,7 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
   // Use CommonJS require for better compatibility with sib-api-v3-sdk
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SibApiV3Sdk: any = require('sib-api-v3-sdk');
+    const SibApiV3Sdk: any = getSibApiV3Sdk();
 
     // Set up the API client
     const defaultClient = SibApiV3Sdk.ApiClient.instance;
@@ -146,3 +161,4 @@ function createResetOtpTemplate(otp: string, expiresInMinutes: number): string {
     </html>
   `;
 }
+

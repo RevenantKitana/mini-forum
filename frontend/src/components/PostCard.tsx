@@ -94,7 +94,7 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <Card className="ml-2 relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
       {/* Corner icons: pinned (left) and locked (right) */}
-      {post.isPinned && post.pinType === 'CATEGORY' && (
+      {post.isPinned && (post.pinType === 'CATEGORY' || post.pinType === 'GLOBAL') && (
         <div className="absolute top-0 left-0 translate-x-1/2 -translate-y-1/2 -rotate-45">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -103,7 +103,7 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {'Pinned category'}
+              {post.pinType === 'GLOBAL' ? 'Pinned globally' : 'Pinned category'}
             </TooltipContent>
           </Tooltip>
         </div>

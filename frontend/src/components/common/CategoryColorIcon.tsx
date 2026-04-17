@@ -21,7 +21,6 @@ export function CategoryColorIcon({ color, name }: CategoryColorIconProps) {
     <SendHorizontal
       className="flex-shrink-0 h-6 w-6 transition-transform group-hover:scale-125"
       style={{ color }}
-      title={name}
       aria-label={`Category: ${name}`}
       stroke="none"
       fill={color}

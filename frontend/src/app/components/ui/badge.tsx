@@ -11,6 +11,7 @@ const badgeVariants = cva(
         default: "",
         outline: "bg-transparent border",
         secondary: "bg-muted text-muted-foreground",
+        destructive: "border-transparent bg-destructive/20 text-destructive",
       },
       role: {
         admin: "border-transparent bg-red-600/60 text-white [a&]:hover:bg-red-700",

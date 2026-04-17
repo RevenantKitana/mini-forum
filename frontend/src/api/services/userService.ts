@@ -6,6 +6,8 @@ import { User, PaginatedResponse } from '@/types';
 export interface UserProfile extends User {
   postCount: number;
   commentCount: number;
+  isBlockedByMe?: boolean;
+  lastActiveAt?: string | null;
 }
 
 export interface UserPost {

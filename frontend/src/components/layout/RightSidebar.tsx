@@ -27,7 +27,7 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
           {showOrder}
         </span>
       ) : post.isPinned && post.pinType === 'GLOBAL' ? (
-        <Pin className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" title="Ghim toàn cục" />
+        <Pin className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" aria-label="Ghim toàn cục" />
       ) : null}
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">

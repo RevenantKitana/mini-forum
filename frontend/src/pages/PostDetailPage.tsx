@@ -96,9 +96,9 @@ export function PostDetailPage() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [replyToId, setReplyToId] = useState<string | undefined>();
+  const [replyToId, setReplyToId] = useState<number | undefined>();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [quotedCommentId, setQuotedCommentId] = useState<string | undefined>();
+  const [quotedCommentId, setQuotedCommentId] = useState<number | undefined>();
   const [quotedComment, setQuotedComment] = useState<Comment | undefined>();
   const [replyContent, setReplyContent] = useState<string>('');
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -180,8 +180,8 @@ export function PostDetailPage() {
     createCommentMutation.mutate(
       { 
         content: replyContent, 
-        parent_id: replyToId ? parseInt(replyToId) : undefined, 
-        quoted_comment_id: quotedCommentId ? parseInt(quotedCommentId) : undefined 
+        parent_id: replyToId, 
+        quoted_comment_id: quotedCommentId 
       },
       {
         onSuccess: () => {
@@ -666,7 +666,7 @@ interface CommentItemProps {
   onReply: (comment: Comment) => void;
   isReply?: boolean;
   // Props for inline reply form
-  replyToId?: string;
+  replyToId?: number;
   quotedComment?: Comment;
   replyContent: string;
   setReplyContent: (content: string) => void;
@@ -814,7 +814,7 @@ function CommentItem({
     if (isReply || !replyToId || isRepliesExpanded || !hasReplies) return;
     const containsReplyTarget = replies
       .slice(DEFAULT_VISIBLE_REPLIES)
-      .some((reply) => String(reply.id) === replyToId);
+      .some((reply) => reply.id === replyToId);
     if (containsReplyTarget) {
       setIsRepliesExpanded(true);
     }
@@ -1027,7 +1027,7 @@ function CommentItem({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={() => onReport(parseInt(comment.id))}
+                          onClick={() => onReport(comment.id)}
                           className={isReply ? 'text-muted-foreground hover:text-destructive btn-press h-7 px-2 text-xs' : 'text-muted-foreground hover:text-destructive btn-press'}
                         >
                           <Flag className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
@@ -1064,7 +1064,7 @@ function CommentItem({
                     />
                     <div className="absolute right-2 bottom-5">
                       <EmojiPicker 
-                        onEmojiSelect={(emoji) => setReplyContent((prev) => prev + emoji)}
+                        onEmojiSelect={(emoji) => setReplyContent(replyContent + emoji)}
                         side="top"
                         align="end"
                       />

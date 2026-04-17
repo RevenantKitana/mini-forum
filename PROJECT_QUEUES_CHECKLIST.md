@@ -1,11 +1,15 @@
-# Product Experience
-- [x] Them realtime notifications (SSE hoac WebSocket).
-- [x] Toi uu loading state va skeleton cho trang chinh.
-- [x] Nang cap search ranking + typo tolerance.
-- [x] Them filter/sort nang cao cho posts/comments.
-- [x] Toi uu UX moderation trong admin (bulk actions, quick preview).
-- [x] Them analytics event co ban cho hanh vi nguoi dung.
-- [x] Toi uu mobile responsiveness cho cac trang nang.
-- [x] Toi uu accessibility co ban (focus, ARIA, contrast).
-- [x] Them e2e tests cho luong user chinh.
-- [x] Do lai conversion/retention sau moi release UX.
+## Tracking
+
+- Owner:
+- ETA:
+- PR link:
+- Last update:
+
+## Definition of Done (toan pipeline)
+
+- [ ] `Frontend - build & test` pass
+- [ ] `Backend - build & test` pass
+- [ ] `Admin Client - build & test` pass
+- [ ] `Vibe Content - build & test` pass
+- [ ] `Dependency vulnerability scan` pass theo policy team
+- [ ] `Secret scanning (Gitleaks)` van pass

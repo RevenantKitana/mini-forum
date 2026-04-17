@@ -1,13 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-// Get the directory of this file (__dirname equivalent in ESM)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Get the backend root directory using process.cwd() for better Jest compatibility
+const backendRootDir = process.cwd();
 
 // Load environment variables from .env file in the backend root directory
-const envPath = path.resolve(__dirname, '../../.env');
+const envPath = path.resolve(backendRootDir, '.env');
 dotenv.config({ path: envPath });
 
 interface Config {

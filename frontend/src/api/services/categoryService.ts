@@ -11,8 +11,11 @@ export interface Category {
   slug: string;
   description: string | null;
   color: string | null;
+  icon?: string | null;
   sortOrder: number;
   postCount: number;
+  viewCount?: number;
+  commentCount?: number;
   isActive: boolean;
   viewPermission?: PermissionLevel;
   postPermission?: PermissionLevel;

@@ -69,7 +69,7 @@ export function Sidebar() {
   const activeTags = legacyTag ? [legacyTag] : currentTags;
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const { data: popularTags, isLoading: tagsLoading } = usePopularTags(12, 'postCount', 'desc');
+  const { data: popularTags, isLoading: tagsLoading } = usePopularTags(12);
   
   // Tag filter state
   const [tagFilter, setTagFilter] = useState('');

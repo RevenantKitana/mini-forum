@@ -8,6 +8,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
+import { Input } from '@/app/components/ui/input';
 import {
   Form,
   FormControl,
