@@ -48,7 +48,8 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header role="banner" className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <a href="#main-content" className="skip-to-main">Chuyển đến nội dung chính</a>
       {/* h-12 on mobile, h-14 on sm+ | px-4 mobile (16px), px-responsive on sm+ */}
       <div className="w-full flex h-12 sm:h-14 items-center px-3 sm:px-responsive gap-2 sm:gap-responsive">
         {/* Mobile hamburger menu */}
@@ -63,7 +64,7 @@ export function Header() {
         </Link>
 
         {/* Navigation - Center-left */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1">
           <Link to="/">
             <Button 
               variant={location.pathname === '/' ? 'secondary' : 'ghost'} 
@@ -107,6 +108,7 @@ export function Header() {
             <Input
               type="search"
               placeholder="Tìm kiếm..."
+              aria-label="Tìm kiếm bài viết"
               className={cn(
                 "pl-9 pr-4 h-9 transition-all duration-200",
                 "w-[clamp(180px,20vw,320px)]",

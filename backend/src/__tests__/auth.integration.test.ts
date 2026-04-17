@@ -155,3 +155,107 @@ describe('Auth API Endpoints', () => {
     });
   });
 });
+
+/**
+ * Brute-force / rate-limit protection tests
+ * Each test uses a distinct X-Forwarded-For IP so they don't interfere with
+ * the main suite or each other (app.set('trust proxy', 1) is enabled).
+ */
+describe('Brute-force and rate-limit protection', () => {
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('should return 429 after exceeding OTP send rate limit (3 per 5 min)', async () => {
+    const ip = '10.111.0.1';
+    // Exhaust the 3-per-5-min limit; requests may fail for other reasons – that is fine
+    for (let i = 0; i < 3; i++) {
+      await request(app)
+        .post('/api/v1/auth/send-otp-register')
+        .set('X-Forwarded-For', ip)
+        .send({ email: `bruteforce_otp_${i}@test.invalid` });
+    }
+
+    const res = await request(app)
+      .post('/api/v1/auth/send-otp-register')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'bruteforce_otp_extra@test.invalid' });
+
+    expect(res.status).toBe(429);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should return 429 after exceeding OTP verify rate limit (10 per 10 min)', async () => {
+    const ip = '10.111.0.2';
+    for (let i = 0; i < 10; i++) {
+      await request(app)
+        .post('/api/v1/auth/verify-otp-register')
+        .set('X-Forwarded-For', ip)
+        .send({ email: 'bruteforce_verify@test.invalid', verificationToken: 'faketoken', otp: '000000' });
+    }
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-otp-register')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'bruteforce_verify@test.invalid', verificationToken: 'faketoken', otp: '000000' });
+
+    expect(res.status).toBe(429);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should return 429 after too many failed login attempts (authLimiter 10 per 15 min)', async () => {
+    const ip = '10.111.0.3';
+    // authLimiter skipSuccessfulRequests=true → only failed requests count
+    for (let i = 0; i < 10; i++) {
+      await request(app)
+        .post('/api/v1/auth/login')
+        .set('X-Forwarded-For', ip)
+        .send({ email: 'admin@forum.com', password: 'wrong_bf_password' });
+    }
+
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'admin@forum.com', password: 'wrong_bf_password' });
+
+    expect(res.status).toBe(429);
+    expect(res.body.success).toBe(false);
+    expect(res.body).toHaveProperty('retryAfter');
+  });
+
+  it('should return 429 after exceeding registration rate limit (5 per 15 min)', async () => {
+    const ip = '10.111.0.4';
+    for (let i = 0; i < 5; i++) {
+      await request(app)
+        .post('/api/v1/auth/register')
+        .set('X-Forwarded-For', ip)
+        .send({ email: `rl_reg_${i}@test.invalid`, username: `rl_reg_user${i}`, password: 'Test@1234' });
+    }
+
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'rl_reg_extra@test.invalid', username: 'rl_reg_extra', password: 'Test@1234' });
+
+    expect(res.status).toBe(429);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should return 429 after exceeding password reset rate limit (5 per 15 min)', async () => {
+    const ip = '10.111.0.5';
+    for (let i = 0; i < 5; i++) {
+      await request(app)
+        .post('/api/v1/auth/reset-password')
+        .set('X-Forwarded-For', ip)
+        .send({ email: `rl_reset_${i}@test.invalid`, resetToken: 'faketoken', newPassword: 'New@1234' });
+    }
+
+    const res = await request(app)
+      .post('/api/v1/auth/reset-password')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'rl_reset_extra@test.invalid', resetToken: 'faketoken', newPassword: 'New@1234' });
+
+    expect(res.status).toBe(429);
+    expect(res.body.success).toBe(false);
+  });
+});

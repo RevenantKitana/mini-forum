@@ -157,7 +157,7 @@ Mini Forum là nền tảng diễn đàn trực tuyến cho phép người dùng
 |---|---|---|
 | Frontend → Backend | REST API qua Vite proxy | `VITE_API_URL` → `/api/v1/*` |
 | Admin-Client → Backend | REST API qua Vite proxy | `VITE_API_URL` → `/api/v1/*` |
-| Vibe-Content → Backend | REST API trực tiếp | `FORUM_API_URL` — đăng nhập bot, tạo post/comment/vote |
+| Vibe-Content → Backend | REST API trực tiếp | `FORUM_API_URL` — URL đầy đủ kèm `/api/v1` (ví dụ: `http://host/api/v1`) — đăng nhập bot, tạo post/comment/vote |
 | Vibe-Content → PostgreSQL | Prisma ORM trực tiếp | Đọc context (posts, comments, users), ghi `user_content_context` |
 | Backend → PostgreSQL | Prisma ORM | Chủ sở hữu schema, toàn quyền đọc/ghi |
 
@@ -191,6 +191,8 @@ Cron trigger → ContentGeneratorService
 - **Database schema**: Backend sở hữu, Vibe-Content copy schema và chỉ generate Prisma client — **không được tạo migration**.
 - **JWT Token**: Backend phát hành, Frontend/Admin-Client lưu ở `localStorage`, Vibe-Content lấy token qua API login cho từng bot user.
 - **Response transform**: Backend tự động chuyển đổi `snake_case` → `camelCase` trong response.
+- **API Contract**: Xem [docs/openapi.yaml](docs/openapi.yaml) để biết đầy đủ các endpoint, request/response schema.
+- **Production Deploy**: Thực hiện [docs/PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) trước mỗi lần deploy.
 
 ---
 

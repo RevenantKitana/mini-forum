@@ -63,6 +63,14 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+const corsOrigins = process.env.FRONTEND_URL!.split(',').map((o) => o.trim());
+
+// Reject wildcard CORS in production to prevent accidental open-origin policy
+if (process.env.NODE_ENV === 'production' && corsOrigins.includes('*')) {
+  console.error('❌ FRONTEND_URL must not contain wildcard (*) in production.');
+  process.exit(1);
+}
+
 const config: Config = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -74,7 +82,7 @@ const config: Config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN!,
   },
   cors: {
-    origin: process.env.FRONTEND_URL!.split(','),
+    origin: corsOrigins,
   },
   comment: {
     editTimeLimit: parseInt(process.env.COMMENT_EDIT_TIME_LIMIT!, 10),

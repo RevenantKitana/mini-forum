@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as notificationService from '../services/notificationService.js';
+import * as sseService from '../services/sseService.js';
 import { sendSuccess, sendNoContent, sendPaginated } from '../utils/response.js';
 import { notificationQuerySchema } from '../validations/notificationValidation.js';
 import { AuthRequest } from '../middlewares/authMiddleware.js';
@@ -99,8 +100,35 @@ export async function restoreNotification(req: AuthRequest, res: Response, next:
   }
 }
 
+/**
+ * GET /api/v1/notifications/stream
+ * SSE stream for realtime notifications
+ */
+export async function streamNotifications(req: AuthRequest, res: Response, _next: NextFunction) {
+  const userId = req.user!.userId;
 
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
 
+  // Send initial connection event
+  res.write(`event: connected\ndata: ${JSON.stringify({ userId })}\n\n`);
+
+  const clientId = sseService.addClient(userId, res);
+
+  // Send heartbeat every 30 seconds to keep connection alive
+  const heartbeat = setInterval(() => {
+    res.write(`event: heartbeat\ndata: ${JSON.stringify({ time: Date.now() })}\n\n`);
+  }, 30000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseService.removeClient(clientId);
+  });
+}
 
 
 

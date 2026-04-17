@@ -1,5 +1,16 @@
 import axios, { AxiosInstance } from 'axios';
+import { createHash } from 'crypto';
 import config from '../config/index.js';
+
+/**
+ * Generate a stable idempotency key from a set of identifying fields.
+ * The key is a SHA-256 hex digest truncated to 32 chars (128-bit).
+ * Same inputs always produce the same key — safe to resend on retry.
+ */
+function makeIdempotencyKey(...parts: (string | number | undefined)[]): string {
+  const raw = parts.map(String).join(':');
+  return createHash('sha256').update(raw).digest('hex').slice(0, 32);
+}
 
 interface TokenCache {
   accessToken: string;
@@ -13,7 +24,7 @@ export class APIExecutorService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: `${config.forumApiUrl}/v1`,
+      baseURL: config.forumApiUrl,
       timeout: 15000,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -74,6 +85,8 @@ export class APIExecutorService {
   ): Promise<{ success: boolean; postId?: number; error?: string }> {
     try {
       const token = await this.getToken(userId, email);
+      // Stable key: same user+title will not create duplicates on retry
+      const idempotencyKey = makeIdempotencyKey('post', userId, data.title, data.categoryId);
 
       const res = await this.client.post(
         '/posts',
@@ -85,7 +98,10 @@ export class APIExecutorService {
           status: 'PUBLISHED',
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Idempotency-Key': idempotencyKey,
+          },
         },
       );
 
@@ -144,6 +160,7 @@ export class APIExecutorService {
   ): Promise<{ success: boolean; commentId?: number; error?: string }> {
     try {
       const token = await this.getToken(userId, email);
+      const idempotencyKey = makeIdempotencyKey('comment', userId, data.postId, data.parentId ?? '', data.content.slice(0, 40));
 
       const body: Record<string, any> = { content: data.content };
       if (data.parentId) {
@@ -158,7 +175,12 @@ export class APIExecutorService {
       const res = await this.client.post(
         `/posts/${data.postId}/comments`,
         body,
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Idempotency-Key': idempotencyKey,
+          },
+        },
       );
 
       const comment = res.data.data || res.data;
@@ -175,6 +197,7 @@ export class APIExecutorService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const token = await this.getToken(userId, email);
+      const idempotencyKey = makeIdempotencyKey('vote', userId, data.targetType, data.targetId, data.voteType);
 
       const url = data.targetType === 'post'
         ? `/posts/${data.targetId}/vote`
@@ -183,7 +206,12 @@ export class APIExecutorService {
       await this.client.post(
         url,
         { voteType: data.voteType },
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Idempotency-Key': idempotencyKey,
+          },
+        },
       );
 
       return { success: true };

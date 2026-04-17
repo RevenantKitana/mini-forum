@@ -13,6 +13,7 @@ import { MessageSquare, Eye, Pin, Lock, Shield } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
+import { trackPostInteraction } from '@/utils/analytics';
 
 /**
  * Decode HTML entities recursively to handle double-encoding
@@ -124,7 +125,7 @@ export function PostCard({ post }: PostCardProps) {
       <CardHeader className="pb-1 sm:pb-1.5 relative">
         {/* Title & Status Row */}
         <div className="space-y-0 sm:space-y-0.5 mb-0 min-w-0 w-full">
-          <Link to={`/posts/${post.id}`} className="block group">
+          <Link to={`/posts/${post.id}`} className="block group" onClick={() => trackPostInteraction('click', post.id, { title: post.title })}>
             <div className="flex items-center gap-2">
               {/* Category color indicator: SendHorizontal icon filled with category color */}
               {post.category?.color && (

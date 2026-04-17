@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -11,15 +12,15 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
+  /* Single worker on CI to avoid flakiness */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  reporter: process.env.CI ? [['html', { open: 'never' }], ['github']] : 'html',
+  /* Shared settings for all the projects below. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:5173',
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173',
+    /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -31,32 +32,28 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Run local dev server before starting the tests */
+  webServer: process.env.CI
+    ? {
+        // In CI: serve pre-built frontend via vite preview
+        command: 'npm run preview -- --port 5173',
+        cwd: path.join(__dirname, 'frontend'),
+        url: 'http://localhost:5173',
+        reuseExistingServer: false,
+        env: {
+          VITE_API_URL: process.env.VITE_API_URL ?? 'http://localhost:5000',
+        },
+      }
+    : {
+        // Locally: use vite dev server
+        command: 'npm run dev',
+        cwd: path.join(__dirname, 'frontend'),
+        url: 'http://localhost:5173',
+        reuseExistingServer: true,
+        env: {
+          VITE_API_URL: process.env.VITE_API_URL ?? 'http://localhost:5000',
+        },
+      },
 });

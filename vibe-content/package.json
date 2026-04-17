@@ -6,7 +6,9 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
-    "test": "npm run build && node dist/src/tests/run-tests.js",
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx/esm --test src/__tests__/**/*.test.ts src/tests/run-tests.ts",
+    "test:coverage": "node --import tsx/esm --test src/__tests__/**/*.test.ts src/tests/run-tests.ts",
     "build": "tsc --outDir dist",
     "start:prod": "node dist/src/index.js",
     "db:generate": "copy /Y ..\\backend\\prisma\\schema.prisma prisma\\schema.prisma && prisma generate",

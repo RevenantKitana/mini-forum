@@ -11,6 +11,7 @@ import { CategoriesPage } from '@/pages/CategoriesPage';
 import { TagsPage } from '@/pages/TagsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { AuditLogsPage } from '@/pages/AuditLogsPage';
+import { OperationalDashboardPage } from '@/pages/OperationalDashboardPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="tags" element={<TagsPage />} />
           <Route path="audit-logs" element={<AuditLogsPage />} />
+          <Route path="ops" element={<OperationalDashboardPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

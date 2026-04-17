@@ -123,6 +123,7 @@ export function NotificationBell() {
                 size="icon"
                 className="relative min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 btn-press hover:animate-wiggle"
                 disabled={isOnNotificationsPage}
+                aria-label={`Thông báo${unreadCount > 0 ? ` (${unreadCount} chưa đọc)` : ''}`}
               >
                 <Bell 
                   className={cn(

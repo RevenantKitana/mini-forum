@@ -24,6 +24,7 @@ import { Toaster } from '@/app/components/ui/sonner';
 import { TooltipProvider } from '@/app/components/ui/tooltip';
 import { Button } from '@/app/components/ui/button';
 import { Home, AlertTriangle } from 'lucide-react';
+import { RealtimeNotificationsProvider } from '@/components/common/RealtimeNotificationsProvider';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
+          <RealtimeNotificationsProvider>
           <SidebarProvider>
             <FontSizeProvider>
               <TooltipProvider>
@@ -111,6 +113,7 @@ export default function App() {
             </TooltipProvider>
           </FontSizeProvider>
         </SidebarProvider>
+      </RealtimeNotificationsProvider>
       </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

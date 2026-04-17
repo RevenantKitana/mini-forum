@@ -1,9 +1,18 @@
 import bcrypt from 'bcrypt';
+import crypto from 'node:crypto';
 import prisma from '../config/database.js';
 import { generateTokenPair, verifyRefreshToken, TokenPair, TokenPayload } from '../utils/jwt.js';
 import { BadRequestError, ConflictError, UnauthorizedError, NotFoundError } from '../utils/errors.js';
 import { RegisterInput, LoginInput } from '../validations/authValidation.js';
 import * as otpService from './otpService.js';
+
+/**
+ * Hash a refresh token with SHA-256 before storing in DB.
+ * Protects plaintext tokens in case of database compromise.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 const SALT_ROUNDS = 12;
 
@@ -96,10 +105,10 @@ export async function register(data: RegisterInput & { registrationToken?: strin
   };
   const tokens = generateTokenPair(tokenPayload);
 
-  // Store refresh token
+  // Store hashed refresh token (SHA-256) to protect against DB compromise
   await prisma.refresh_tokens.create({
     data: {
-      token: tokens.refreshToken,
+      token: hashToken(tokens.refreshToken),
       user_id: user.id,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
@@ -178,10 +187,10 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
   };
   const tokens = generateTokenPair(tokenPayload);
 
-  // Store refresh token
+  // Store hashed refresh token (SHA-256) to protect against DB compromise
   await prisma.refresh_tokens.create({
     data: {
-      token: tokens.refreshToken,
+      token: hashToken(tokens.refreshToken),
       user_id: user.id,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
@@ -216,10 +225,10 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
     throw new UnauthorizedError('Invalid refresh token');
   }
 
-  // Check if refresh token exists in database
+  // Check if hashed refresh token exists in database
   const storedToken = await prisma.refresh_tokens.findFirst({
     where: {
-      token: refreshToken,
+      token: hashToken(refreshToken),
       user_id: payload.userId,
       expires_at: { gt: new Date() },
     },
@@ -251,10 +260,10 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
   };
   const tokens = generateTokenPair(tokenPayload);
 
-  // Store new refresh token
+  // Store hashed new refresh token
   await prisma.refresh_tokens.create({
     data: {
-      token: tokens.refreshToken,
+      token: hashToken(tokens.refreshToken),
       user_id: user.id,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
@@ -268,7 +277,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
  */
 export async function logout(refreshToken: string): Promise<void> {
   await prisma.refresh_tokens.deleteMany({
-    where: { token: refreshToken },
+    where: { token: hashToken(refreshToken) },
   });
 }
 

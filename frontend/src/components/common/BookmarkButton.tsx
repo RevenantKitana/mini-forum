@@ -183,6 +183,8 @@ export function BookmarkButton({
             <Button
               variant="ghost"
               size="icon"
+              aria-label={getTooltipText()}
+              aria-pressed={bookmarked}
               className={cn(
                 sizeClasses[size],
                 'btn-press transition-all duration-200',

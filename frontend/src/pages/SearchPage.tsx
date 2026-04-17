@@ -3,6 +3,7 @@ import { useSearch, useSearchUsers } from '@/hooks/useSearch';
 import { PostCard } from '@/components/PostCard';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
+import { PostListSkeleton } from '@/components/common/LoadingStates';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Button } from '@/app/components/ui/button';
@@ -17,22 +18,28 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { useState, useEffect } from 'react';
+import { trackSearch } from '@/utils/analytics';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
   const sortParam = searchParams.get('sort') as 'latest' | 'popular' | 'trending' | 'oldest' | 'relevance' || 'relevance';
   const categoryParam = searchParams.get('category') || undefined;
+  const authorParam = searchParams.get('author') || undefined;
+  const tagParam = searchParams.get('tag') || undefined;
   const pageParam = parseInt(searchParams.get('page') || '1');
   const tabParam = searchParams.get('tab') || 'posts';
 
   const [searchQuery, setSearchQuery] = useState(queryParam);
+  const [showFilters, setShowFilters] = useState(!!categoryParam || !!authorParam || !!tagParam);
 
   // Posts search
   const { data: postsData, isLoading: postsLoading } = useSearch({
     q: queryParam,
     sort: sortParam,
     category: categoryParam,
+    author: authorParam,
+    tag: tagParam,
     page: pageParam,
     limit: 10,
   }, !!queryParam);
@@ -53,6 +60,13 @@ export function SearchPage() {
     setSearchQuery(queryParam);
   }, [queryParam]);
 
+  // Track search queries
+  useEffect(() => {
+    if (queryParam && postsPagination?.total !== undefined) {
+      trackSearch(queryParam, postsPagination.total);
+    }
+  }, [queryParam, postsPagination?.total]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -69,6 +83,27 @@ export function SearchPage() {
     params.set('page', '1');
     setSearchParams(params);
   };
+
+  const handleFilterChange = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.set('page', '1');
+    setSearchParams(params);
+  };
+
+  const clearFilters = () => {
+    const params = new URLSearchParams();
+    if (queryParam) params.set('q', queryParam);
+    params.set('sort', sortParam);
+    if (tabParam !== 'posts') params.set('tab', tabParam);
+    setSearchParams(params);
+  };
+
+  const activeFilterCount = [categoryParam, authorParam, tagParam].filter(Boolean).length;
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams);
@@ -109,20 +144,65 @@ export function SearchPage() {
               Kết quả tìm kiếm cho "{queryParam}"
             </p>
             
-            <Select value={sortParam} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SortAsc className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Sắp xếp" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="relevance">Liên quan</SelectItem>
-                <SelectItem value="latest">Mới nhất</SelectItem>
-                <SelectItem value="popular">Phổ biến</SelectItem>
-                <SelectItem value="trending">Trending</SelectItem>
-                <SelectItem value="oldest">Cũ nhất</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Button
+                variant={showFilters ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-1"
+              >
+                <Filter className="h-4 w-4" />
+                Bộ lọc
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+              <Select value={sortParam} onValueChange={handleSortChange}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SortAsc className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Sắp xếp" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Liên quan</SelectItem>
+                  <SelectItem value="latest">Mới nhất</SelectItem>
+                  <SelectItem value="popular">Phổ biến</SelectItem>
+                  <SelectItem value="trending">Trending</SelectItem>
+                  <SelectItem value="oldest">Cũ nhất</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-3 mb-4 p-3 bg-muted/50 rounded-lg animate-fade-in">
+              <Input
+                placeholder="Lọc theo tác giả..."
+                className="w-40"
+                value={authorParam || ''}
+                onChange={(e) => handleFilterChange('author', e.target.value)}
+              />
+              <Input
+                placeholder="Lọc theo danh mục..."
+                className="w-40"
+                value={categoryParam || ''}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+              />
+              <Input
+                placeholder="Lọc theo tag..."
+                className="w-40"
+                value={tagParam || ''}
+                onChange={(e) => handleFilterChange('tag', e.target.value)}
+              />
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  Xóa bộ lọc
+                </Button>
+              )}
+            </div>
+          )}
 
           <Tabs value={tabParam} onValueChange={handleTabChange}>
             <TabsList className="w-full sm:w-auto">
@@ -136,11 +216,7 @@ export function SearchPage() {
 
             <TabsContent value="posts" className="mt-6">
               {postsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-48 w-full" />
-                  ))}
-                </div>
+                <PostListSkeleton count={3} />
               ) : posts.length > 0 ? (
                 <>
                   <div className="space-y-4">
@@ -193,7 +269,17 @@ export function SearchPage() {
               {usersLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
+                    <Card key={i}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-5 w-32" />
+                            <Skeleton className="h-4 w-48" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : users.length > 0 ? (

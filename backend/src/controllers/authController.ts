@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import config from '../config/index.js';
 import * as authService from '../services/authService.js';
 import * as otpService from '../services/otpService.js';
 import { sendSuccess, sendCreated, sendNoContent } from '../utils/response.js';
+import { UnauthorizedError } from '../utils/errors.js';
 import {
   RegisterInput,
   LoginInput,
@@ -12,6 +14,30 @@ import {
   VerifyOtpResetInput,
   ResetPasswordInput,
 } from '../validations/authValidation.js';
+import { logger } from '../utils/logger.js';
+
+/** Cookie options for the HttpOnly refresh-token cookie */
+const REFRESH_COOKIE_NAME = 'refresh_token';
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: config.nodeEnv === 'production',
+  sameSite: 'strict' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  path: '/api/v1/auth',
+};
+
+function setRefreshCookie(res: Response, token: string) {
+  res.cookie(REFRESH_COOKIE_NAME, token, refreshCookieOptions);
+}
+
+function clearRefreshCookie(res: Response) {
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/v1/auth' });
+}
+
+/** Read refresh token from HttpOnly cookie OR request body (backward compatible). */
+function readRefreshToken(req: Request): string | undefined {
+  return (req.cookies as Record<string, string>)?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken;
+}
 
 /**
  * Check if email is available
@@ -57,7 +83,8 @@ export async function register(req: Request, res: Response, next: NextFunction):
   try {
     const data = req.body as RegisterInput & { registrationToken?: string };
     const result = await authService.register(data);
-
+    logger.info('auth.register', { event: 'register', email: data.email, requestId: req.requestId });
+    setRefreshCookie(res, (result as any).tokens.refreshToken);
     sendCreated(res, result, 'Registration successful');
   } catch (error) {
     next(error);
@@ -72,9 +99,11 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   try {
     const data = req.body as LoginInput;
     const result = await authService.login(data);
-
+    logger.info('auth.login', { event: 'login', identifier: data.identifier, userId: (result as any).user?.id, requestId: req.requestId });
+    setRefreshCookie(res, (result as any).tokens.refreshToken);
     sendSuccess(res, result, 'Login successful');
   } catch (error) {
+    logger.warn('auth.login_failed', { event: 'login_failed', identifier: (req.body as LoginInput)?.identifier, requestId: req.requestId });
     next(error);
   }
 }
@@ -85,9 +114,12 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
  */
 export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { refreshToken } = req.body as RefreshTokenInput;
+    const refreshToken = readRefreshToken(req);
+    if (!refreshToken) {
+      throw new UnauthorizedError('Refresh token required');
+    }
     const tokens = await authService.refreshAccessToken(refreshToken);
-
+    setRefreshCookie(res, tokens.refreshToken);
     sendSuccess(res, tokens, 'Token refreshed successfully');
   } catch (error) {
     next(error);
@@ -100,11 +132,12 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
  */
 export async function logout(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = readRefreshToken(req);
     if (refreshToken) {
       await authService.logout(refreshToken);
     }
-
+    clearRefreshCookie(res);
+    logger.info('auth.logout', { event: 'logout', userId: (req as any).user?.userId, requestId: req.requestId });
     sendNoContent(res);
   } catch (error) {
     next(error);
@@ -119,7 +152,8 @@ export async function logoutAll(req: Request, res: Response, next: NextFunction)
   try {
     const userId = req.user!.userId;
     await authService.logoutAll(userId);
-
+    clearRefreshCookie(res);
+    logger.info('auth.logout_all', { event: 'logout_all', userId, requestId: req.requestId });
     sendNoContent(res);
   } catch (error) {
     next(error);

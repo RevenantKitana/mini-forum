@@ -11,6 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +49,8 @@ export function PostsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [previewPost, setPreviewPost] = useState<AdminPost | null>(null);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -127,6 +136,48 @@ export function PostsPage() {
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.author.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredPosts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredPosts.map(p => p.id)));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkHide = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => adminService.hidePost(id.toString()))
+      );
+      toast.success(`Đã ẩn ${selectedIds.size} bài viết`);
+      setSelectedIds(new Set());
+      fetchPosts();
+    } catch {
+      toast.error('Không thể ẩn một số bài viết');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} bài viết?`)) return;
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => adminService.deletePost(id.toString()))
+      );
+      toast.success(`Đã xóa ${selectedIds.size} bài viết`);
+      setSelectedIds(new Set());
+      fetchPosts();
+    } catch {
+      toast.error('Không thể xóa một số bài viết');
+    }
+  };
 
   const getStatusBadge = (status: string, isPinned: boolean, isLocked: boolean, pinType?: 'GLOBAL' | 'CATEGORY' | null) => {
     const badges = [];
@@ -223,6 +274,22 @@ export function PostsPage() {
             <SelectItem value="DELETED">Đã xóa</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Bulk action toolbar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-md">
+            <span className="text-sm font-medium">{selectedIds.size} đã chọn</span>
+            <Button variant="outline" size="sm" onClick={handleBulkHide}>
+              <EyeOff className="h-3.5 w-3.5 mr-1" /> Ẩn
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              Bỏ chọn
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -230,6 +297,13 @@ export function PostsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={selectedIds.size === filteredPosts.length && filteredPosts.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Chọn tất cả"
+                />
+              </TableHead>
               <TableHead className="w-[300px]">Tiêu đề</TableHead>
               <TableHead>Tác giả</TableHead>
               <TableHead className="hidden sm:table-cell">Danh mục</TableHead>
@@ -243,7 +317,7 @@ export function PostsPage() {
           <TableBody>
             {filteredPosts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   Không tìm thấy bài viết nào
                 </TableCell>
               </TableRow>
@@ -251,10 +325,21 @@ export function PostsPage() {
               filteredPosts.map((post) => (
                 <TableRow key={post.id} className={post.status === 'DELETED' ? 'opacity-50' : ''}>
                   <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(post.id)}
+                      onCheckedChange={() => toggleSelect(post.id)}
+                      aria-label={`Chọn bài viết ${post.title}`}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <div className="max-w-[280px]">
-                      <div className="font-medium truncate" title={decodeHtmlEntities(post.title)}>
+                      <button
+                        className="font-medium truncate text-left hover:text-primary hover:underline cursor-pointer"
+                        title={decodeHtmlEntities(post.title)}
+                        onClick={() => setPreviewPost(post)}
+                      >
                         {truncateText(post.title, 50)}
-                      </div>
+                      </button>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -386,6 +471,49 @@ export function PostsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Quick Preview Dialog */}
+      <Dialog open={!!previewPost} onOpenChange={() => setPreviewPost(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{previewPost?.title}</DialogTitle>
+          </DialogHeader>
+          {previewPost && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>@{previewPost.author.username}</span>
+                <span>·</span>
+                <span>{formatDate(previewPost.createdAt)}</span>
+                <span>·</span>
+                {getStatusBadge(previewPost.status, previewPost.isPinned, previewPost.isLocked, previewPost.pinType)}
+              </div>
+              <div className="flex gap-4 text-sm">
+                <span>{previewPost.viewCount} lượt xem</span>
+                <span>{previewPost.upvoteCount} upvote</span>
+                <span>{previewPost.commentCount} bình luận</span>
+              </div>
+              {previewPost.content && (
+                <div className="prose prose-sm dark:prose-invert max-w-none border-t pt-4">
+                  <div dangerouslySetInnerHTML={{ __html: previewPost.content.substring(0, 2000) }} />
+                </div>
+              )}
+              <div className="flex gap-2 border-t pt-4">
+                <Button size="sm" variant="outline" asChild>
+                  <a href={`http://localhost:5173/posts/${previewPost.id}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> Xem đầy đủ
+                  </a>
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { handleToggleVisibility(previewPost); setPreviewPost(null); }}>
+                  {previewPost.status === 'HIDDEN' ? <><Eye className="h-3.5 w-3.5 mr-1" /> Hiện</> : <><EyeOff className="h-3.5 w-3.5 mr-1" /> Ẩn</>}
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => { handleDelete(previewPost.id); setPreviewPost(null); }}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

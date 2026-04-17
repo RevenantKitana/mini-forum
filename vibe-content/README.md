@@ -65,8 +65,8 @@ vibe-content/
 
 ```
 ┌──────────────┐     ┌─────────────────────┐
-│  Cron Job    │────▶│  ContentGenerator    │
-│  (30 phút)   │     │     Service          │
+│  Cron Job/   │───▶│  ContentGenerator    │
+│Custom Pings  │     │     Service         │
 └──────────────┘     └──────────┬──────────┘
                                │
               ┌────────────────┼────────────────┐
@@ -188,7 +188,7 @@ Cấu hình qua biến môi trường. Tách biệt với rate limit của Backe
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
 | `DATABASE_URL` | Có | PostgreSQL connection (cùng DB với Backend) |
-| `FORUM_API_URL` | Có | URL Backend API (mặc định: `http://localhost:5000/api`) |
+| `FORUM_API_URL` | Có | URL Backend API đầy đủ kèm `/api/v1` (ví dụ: `http://localhost:5000/api/v1`) |
 | `BOT_PASSWORD` | Có | Mật khẩu chung cho bot users (mặc định: `BotUser@123`) |
 | `GEMINI_API_KEY` | Có* | API key Google Gemini |
 | `GROQ_API_KEY` | Có* | API key Groq |

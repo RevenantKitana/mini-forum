@@ -2,8 +2,9 @@ import express from 'express';
 import config from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 import { StatusService } from './services/StatusService.js';
-import { startCronScheduler } from './scheduler/cronScheduler.js';
+import { startCronScheduler, stopCronScheduler } from './scheduler/cronScheduler.js';
 import logger from './utils/logger.js';
+import { getLLMMetricsSnapshot } from './services/llmMetrics.js';
 
 const app = express();
 app.use(express.json());
@@ -12,9 +13,19 @@ const generator = new ContentGeneratorService();
 const startedAt = new Date();
 const statusService = new StatusService(generator, startedAt);
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+// Health check — includes per-provider circuit breaker + availability details
+app.get('/health', async (_req, res) => {
+  try {
+    const providerStatus = await generator.getProviderHealthDetails();
+    const allHealthy = providerStatus.every((p) => p.circuitState === 'CLOSED');
+    res.status(allHealthy ? 200 : 207).json({
+      status: allHealthy ? 'ok' : 'degraded',
+      uptime: process.uptime(),
+      providers: providerStatus,
+    });
+  } catch (err: any) {
+    res.status(503).json({ status: 'error', uptime: process.uptime(), error: err.message });
+  }
 });
 
 // Enhanced status endpoint (Phase 4.3)
@@ -82,6 +93,11 @@ async function handleTriggerActionByLabel(
 app.get('/trigger', handleTrigger);
 app.post('/trigger', handleTrigger);
 
+// LLM metrics
+app.get('/metrics', (_req, res) => {
+  res.json(getLLMMetricsSnapshot());
+});
+
 // Specific action triggers (for testing)
 app.get('/trigger/post', (req, res) => handleTriggerAction('post', req, res));
 app.post('/trigger/post', (req, res) => handleTriggerAction('post', req, res));
@@ -129,6 +145,7 @@ async function gracefulShutdown(signal: string) {
   // Disconnect services
   try {
     await generator.disconnect();
+    await stopCronScheduler();
     logger.info('All services disconnected');
   } catch (err: any) {
     logger.error(`Error during shutdown: ${err.message}`);

@@ -167,7 +167,18 @@ export function NotificationsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-5 w-5 rounded mt-1 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded flex-shrink-0" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       ) : notifications.length === 0 ? (

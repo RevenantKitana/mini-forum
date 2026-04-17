@@ -1,6 +1,7 @@
 import prisma from '../config/database.js';
 import { NotFoundError } from '../utils/errors.js';
 import { CreateNotificationInput, NotificationQuery } from '../validations/notificationValidation.js';
+import { sendToUser } from './sseService.js';
 
 type NotificationType = 'COMMENT' | 'REPLY' | 'MENTION' | 'UPVOTE' | 'SYSTEM';
 
@@ -248,7 +249,7 @@ export async function restoreNotification(notificationId: number, userId: number
  * Create a notification
  */
 export async function createNotification(data: CreateNotificationInput & { title?: string }) {
-  return prisma.notifications.create({
+  const notification = await prisma.notifications.create({
     data: {
       userId: data.userId,
       type: data.type as NotificationType,
@@ -258,6 +259,11 @@ export async function createNotification(data: CreateNotificationInput & { title
       relatedId: data.referenceId,
     },
   });
+
+  // Push realtime notification via SSE
+  sendToUser(data.userId, 'notification', notification);
+
+  return notification;
 }
 
 /**

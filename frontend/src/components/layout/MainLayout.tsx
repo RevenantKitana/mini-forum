@@ -6,12 +6,14 @@ import { PinnedPostsModal } from '@/components/common/PinnedPostsModal';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useMediaQuery } from '@/hooks/useResponsive';
+import { usePageTracking } from '@/hooks/usePageTracking';
 import { Button } from '@/app/components/ui/button';
 import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 
 export function MainLayout() {
+  usePageTracking();
   const { isLeftSidebarCollapsed, toggleLeftSidebar } = useSidebar();
   const isLandscapeMobile = useMediaQuery('(orientation: landscape) and (max-height: 500px)');
   
@@ -91,7 +93,7 @@ export function MainLayout() {
           )}
           
           {/* Main content - scrolls independently with smooth transitions */}
-          <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background rounded-lg border shadow-sm scroll-smooth scrollbar-gutter-stable">
+          <main id="main-content" className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background rounded-lg border shadow-sm scroll-smooth scrollbar-gutter-stable">
             <div className="flex-1 overflow-y-auto">
               <div className="animate-fade-in-up">
                 <Outlet />

@@ -596,6 +596,53 @@ export async function getAuditLogs(params?: {
 }
 
 // ========================================
+// OPERATIONAL METRICS
+// ========================================
+
+export interface LatencyBucket {
+  p50: number;
+  p95: number;
+  p99: number;
+  avg: number;
+  max: number;
+  samples: number;
+}
+
+export interface MetricsWindow {
+  windowStart: number;
+  requests: number;
+  errors: number;
+}
+
+export interface LLMProviderMetrics {
+  provider: string;
+  model?: string;
+  success: number;
+  failure: number;
+  totalLatencyMs: number;
+  retries: number;
+  lastUpdated: number;
+}
+
+export interface OpsMetrics {
+  uptime_s: number;
+  total_requests: number;
+  total_errors: number;
+  error_rate: number;
+  throughput_rps: number;
+  latency: LatencyBucket;
+  windows: MetricsWindow[];
+  llm: LLMProviderMetrics[];
+  alert_active: boolean;
+  alerts: string[];
+}
+
+export async function getOpsMetrics(): Promise<OpsMetrics> {
+  const response = await apiClient.get<{ data: OpsMetrics }>(API_ENDPOINTS.ADMIN.METRICS);
+  return response.data.data;
+}
+
+// ========================================
 // EXPORT SERVICE OBJECT
 // ========================================
 
@@ -658,4 +705,7 @@ export const adminService = {
   
   // Audit Logs
   getAuditLogs,
+
+  // Operational Metrics
+  getOpsMetrics,
 };

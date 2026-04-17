@@ -18,6 +18,7 @@ import {
   ExternalLink,
   History,
   X,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -70,6 +71,11 @@ const navItems = [
     title: 'Audit Logs',
     href: '/audit-logs',
     icon: History,
+  },
+  {
+    title: 'Ops Dashboard',
+    href: '/ops',
+    icon: Activity,
   },
 ];
 

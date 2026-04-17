@@ -1,15 +1,17 @@
 /**
- * Logger utility for backend services
- * Provides structured logging with consistent formatting
- * 
+ * Logger utility for backend services.
+ * In production emits newline-delimited JSON (structured logging).
+ * In development emits colored, human-readable text.
+ *
  * @example
  * ```ts
  * import { logger } from '@/utils/logger';
- * 
+ *
  * logger.info('User logged in', { userId: 123 });
  * logger.error('Database error', { error: err.message });
  * logger.warn('High memory usage detected');
  * logger.debug('Query executed', { query: sql, duration: 45 });
+ * logger.info('Request handled', { requestId: req.requestId });
  * ```
  */
 
@@ -24,12 +26,33 @@ interface LogContext {
   [key: string]: any;
 }
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 /**
- * Format log message with timestamp and context
+ * Emit a JSON-structured log line (production mode).
+ */
+function emitJson(level: LogLevel, message: string, context?: LogContext): void {
+  const entry: Record<string, unknown> = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'backend',
+    message,
+    ...context,
+  };
+  const line = JSON.stringify(entry);
+  if (level === LogLevel.ERROR || level === LogLevel.WARN) {
+    process.stderr.write(line + '\n');
+  } else {
+    process.stdout.write(line + '\n');
+  }
+}
+
+/**
+ * Format log message with timestamp and context (development mode).
  */
 function formatLog(level: LogLevel, message: string, context?: LogContext): string {
   const timestamp = new Date().toISOString();
-  const contextStr = context && Object.keys(context).length > 0 
+  const contextStr = context && Object.keys(context).length > 0
     ? ` | ${JSON.stringify(context)}`
     : '';
   return `[${timestamp}] [${level}] ${message}${contextStr}`;
@@ -62,38 +85,37 @@ const resetColor = '\x1b[0m';
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
 
-  /**
-   * Log debug message
-   */
   debug(message: string, context?: LogContext): void {
-    const formatted = formatLog(LogLevel.DEBUG, message, context);
-    if (this.isDevelopment) {
+    if (!this.isDevelopment) return;
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.DEBUG, message, context);
+    } else {
+      const formatted = formatLog(LogLevel.DEBUG, message, context);
       console.log(`${getColorCode(LogLevel.DEBUG)}${formatted}${resetColor}`);
     }
   }
 
-  /**
-   * Log info message
-   */
   info(message: string, context?: LogContext): void {
-    const formatted = formatLog(LogLevel.INFO, message, context);
-    console.log(`${getColorCode(LogLevel.INFO)}${formatted}${resetColor}`);
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.INFO, message, context);
+    } else {
+      const formatted = formatLog(LogLevel.INFO, message, context);
+      console.log(`${getColorCode(LogLevel.INFO)}${formatted}${resetColor}`);
+    }
   }
 
-  /**
-   * Log warning message
-   */
   warn(message: string, context?: LogContext): void {
-    const formatted = formatLog(LogLevel.WARN, message, context);
-    console.warn(`${getColorCode(LogLevel.WARN)}${formatted}${resetColor}`);
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.WARN, message, context);
+    } else {
+      const formatted = formatLog(LogLevel.WARN, message, context);
+      console.warn(`${getColorCode(LogLevel.WARN)}${formatted}${resetColor}`);
+    }
   }
 
-  /**
-   * Log error message with error object
-   */
   error(message: string, error?: Error | string | LogContext, context?: LogContext): void {
     let errorContext = context || {};
-    
+
     if (error instanceof Error) {
       errorContext = {
         ...errorContext,
@@ -107,47 +129,55 @@ class Logger {
       errorContext = { ...errorContext, ...error };
     }
 
-    const formatted = formatLog(LogLevel.ERROR, message, errorContext);
-    console.error(`${getColorCode(LogLevel.ERROR)}${formatted}${resetColor}`);
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.ERROR, message, errorContext);
+    } else {
+      const formatted = formatLog(LogLevel.ERROR, message, errorContext);
+      console.error(`${getColorCode(LogLevel.ERROR)}${formatted}${resetColor}`);
+    }
   }
 
-  /**
-   * Log API request/response
-   */
   api(method: string, path: string, statusCode: number, duration: number, context?: LogContext): void {
     const logContext = {
       method,
       path,
       statusCode,
-      duration: `${duration}ms`,
+      duration_ms: duration,
       ...context,
     };
-    
     const level = statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
-    const formatted = formatLog(level, `API Request`, logContext);
-    
-    if (level === LogLevel.WARN) {
-      console.warn(`${getColorCode(level)}${formatted}${resetColor}`);
+    if (IS_PRODUCTION) {
+      emitJson(level, 'http_request', logContext);
     } else {
-      console.log(`${getColorCode(level)}${formatted}${resetColor}`);
+      const formatted = formatLog(level, 'API Request', logContext);
+      if (level === LogLevel.WARN) {
+        console.warn(`${getColorCode(level)}${formatted}${resetColor}`);
+      } else {
+        console.log(`${getColorCode(level)}${formatted}${resetColor}`);
+      }
     }
   }
 
-  /**
-   * Log database query
-   */
   query(operation: string, table: string, duration: number, context?: LogContext): void {
-    const logContext = {
-      operation,
-      table,
-      duration: `${duration}ms`,
-      ...context,
-    };
-    const formatted = formatLog(LogLevel.DEBUG, `Database Query`, logContext);
-    if (this.isDevelopment) {
+    const logContext = { operation, table, duration_ms: duration, ...context };
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.DEBUG, 'db_query', logContext);
+    } else if (this.isDevelopment) {
+      const formatted = formatLog(LogLevel.DEBUG, 'Database Query', logContext);
       console.log(`${getColorCode(LogLevel.DEBUG)}${formatted}${resetColor}`);
+    }
+  }
+
+  slowQuery(query: string, duration: number, context?: LogContext): void {
+    const logContext = { query: query.slice(0, 200), duration_ms: duration, ...context };
+    if (IS_PRODUCTION) {
+      emitJson(LogLevel.WARN, 'slow_query', logContext);
+    } else {
+      const formatted = formatLog(LogLevel.WARN, 'SLOW QUERY', logContext);
+      console.warn(`${getColorCode(LogLevel.WARN)}${formatted}${resetColor}`);
     }
   }
 }
 
 export const logger = new Logger();
+

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as authApi from '@/api/services/authService';
 import * as userService from '@/api/services/userService';
 import { getAccessToken, clearTokens } from '@/api/axios';
+import { trackConversion } from '@/utils/analytics';
 
 export interface User {
   id: number;
@@ -113,12 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const apiUser = await authApi.login({ identifier, password });
     const userData = transformUser(apiUser);
     setUser(userData);
+    trackConversion('login');
   };
 
   const register = async (username: string, email: string, password: string, displayName?: string, registrationToken?: string) => {
     const apiUser = await authApi.register({ email, username, password, displayName, registrationToken });
     const userData = transformUser(apiUser);
     setUser(userData);
+    trackConversion('register');
   };
 
   const logout = useCallback(async () => {

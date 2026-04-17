@@ -3,7 +3,7 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { PostCard } from '@/components/PostCard';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { PostListSkeleton } from '@/components/common/LoadingStates';
 import { Bookmark as BookmarkIcon } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -34,11 +34,7 @@ export function BookmarksPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
-          ))}
-        </div>
+        <PostListSkeleton count={3} />
       ) : bookmarks && bookmarks.length > 0 ? (
         <>
           <div className="space-y-3 sm:space-y-4">

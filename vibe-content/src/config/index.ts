@@ -10,12 +10,26 @@ if (!process.env.DATABASE_URL) {
   dotenv.config({ path: path.resolve(__dirname, '../../../../backend/.env') });
 }
 
+// Validate required environment variables at startup
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'FORUM_API_URL',
+  'BOT_PASSWORD',
+  'GEMINI_API_KEY',
+];
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.error('   Copy vibe-content/.env.example to vibe-content/.env and fill in the values.');
+  process.exit(1);
+}
+
 const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   logLevel: process.env.LOG_LEVEL || 'info',
   logDir: process.env.LOG_DIR || '',
-  forumApiUrl: process.env.FORUM_API_URL || 'http://localhost:5000/api',
+  forumApiUrl: process.env.FORUM_API_URL || 'http://localhost:5000/api/v1',
   databaseUrl: process.env.DATABASE_URL || '',
   cron: {
     schedule: process.env.CRON_SCHEDULE || '*/30 * * * *',

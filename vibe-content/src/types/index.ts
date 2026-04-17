@@ -183,4 +183,5 @@ export interface GeneratorStatusSnapshot {
   lastAction: ActionLevelHistoryItem | null;
   todayActions: Record<string, unknown>;
   queue: Record<string, unknown>;
+  jobLifecycle?: Record<string, unknown>;
 }

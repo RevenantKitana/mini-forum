@@ -99,6 +99,42 @@ export const otpVerifyLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiter for account registration (5 per 15 minutes per IP)
+export const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 registrations per 15 minutes
+  message: {
+    success: false,
+    message: 'Too many registration attempts, please try again later',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for password reset completion (5 per 15 minutes per IP)
+export const resetPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: {
+    success: false,
+    message: 'Too many password reset attempts, please try again later',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for token refresh (60 per 15 minutes per IP - benign normal use)
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60,
+  message: {
+    success: false,
+    message: 'Too many token refresh requests, please try again later',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Input sanitizer middleware - basic XSS prevention
 export function sanitizeInput(req: Request, _res: Response, next: NextFunction) {
   // Sanitize body

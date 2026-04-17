@@ -16,5 +16,6 @@ export const API_ENDPOINTS = {
     CATEGORIES: '/admin/categories',
     TAGS: '/admin/tags',
     AUDIT_LOGS: '/admin/audit-logs',
+    METRICS: '/admin/metrics',
   },
 };

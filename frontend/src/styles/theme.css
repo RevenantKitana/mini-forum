@@ -1807,3 +1807,97 @@ textarea {
     padding: 0.375rem !important;
   }
 }
+
+/* =====================================================
+   MOBILE-OPTIMIZED HEAVY PAGES
+   Notifications, Search, Bookmarks, Profile
+   ===================================================== */
+
+@media (max-width: 640px) {
+  /* Compact notification cards on mobile */
+  .space-y-3 > [class*="animate-stagger"] .p-4 {
+    padding: 0.625rem;
+  }
+
+  /* Search page: stack filters vertically */
+  .flex-wrap > input[type="search"],
+  .flex-wrap > input[placeholder*="Lọc"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Compact pagination on mobile */
+  .flex.justify-center.gap-2 {
+    gap: 0.375rem;
+  }
+
+  /* Better tab triggers on mobile */
+  [role="tablist"] {
+    width: 100%;
+  }
+  [role="tab"] {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+/* ===== Accessibility ===== */
+
+/* Global focus-visible ring for all interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="checkbox"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Remove default outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip to main content link (screen reader + keyboard) */
+.skip-to-main {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-to-main:focus {
+  top: 1rem;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 3px solid LinkText;
+  }
+}
+
+/* Reduced motion: disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

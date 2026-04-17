@@ -6,6 +6,8 @@ import { AuthRequest } from '../middlewares/authMiddleware.js';
 import bcrypt from 'bcrypt';
 import * as auditLogService from '../services/auditLogService.js';
 import { generateSlug } from '../utils/slug.js';
+import { getSnapshot } from '../services/metricsService.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * GET /api/v1/admin/dashboard
@@ -447,6 +449,17 @@ export async function changeUserRole(req: AuthRequest, res: Response, next: Next
       },
     });
 
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: 'ROLE_CHANGE',
+      targetType: 'USER',
+      targetId: id,
+      targetName: updatedUser.username,
+      oldValue: { role: user.role },
+      newValue: { role },
+      ipAddress: auditLogService.getClientIp(req),
+    });
+
     return sendSuccess(res, updatedUser, 'User role updated successfully');
   } catch (error) {
     next(error);
@@ -496,6 +509,25 @@ export async function changeUserStatus(req: AuthRequest, res: Response, next: Ne
       },
     });
 
+    logger.info('moderation.user_status_changed', {
+      event: 'user_status_changed',
+      targetUserId: id,
+      isActive: is_active,
+      actorUserId: req.user!.userId,
+      requestId: (req as any).requestId,
+    });
+
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: is_active ? 'UNBAN' : 'BAN',
+      targetType: 'USER',
+      targetId: id,
+      targetName: updatedUser.username,
+      oldValue: { is_active: !is_active },
+      newValue: { is_active },
+      ipAddress: auditLogService.getClientIp(req),
+    });
+
     return sendSuccess(
       res,
       updatedUser,
@@ -534,9 +566,21 @@ export async function deleteUser(req: AuthRequest, res: Response, next: NextFunc
     }
 
     // Soft delete - deactivate the user
-    await prisma.users.update({
+    const deletedUser = await prisma.users.update({
       where: { id },
       data: { is_active: false },
+      select: { id: true, username: true },
+    });
+
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: 'DELETE',
+      targetType: 'USER',
+      targetId: id,
+      targetName: deletedUser.username,
+      oldValue: { is_active: true, role: user.role },
+      newValue: { is_active: false },
+      ipAddress: auditLogService.getClientIp(req),
     });
 
     return sendSuccess(res, null, 'User deleted successfully');
@@ -865,6 +909,28 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
       }
     }
 
+    logger.info('moderation.report_resolved', {
+      event: 'report_resolved',
+      reportId: id,
+      status,
+      action: action ?? null,
+      targetType: report.targetType,
+      targetId: report.targetId,
+      actorUserId: req.user!.userId,
+      requestId: (req as any).requestId,
+    });
+
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: 'UPDATE',
+      targetType: 'REPORT',
+      targetId: id,
+      targetName: `Report #${id} (${report.targetType})`,
+      oldValue: { status: report.status },
+      newValue: { status, action: action ?? null },
+      ipAddress: auditLogService.getClientIp(req),
+    });
+
     return sendSuccess(res, updatedReport, 'Report updated successfully');
   } catch (error) {
     next(error);
@@ -959,7 +1025,7 @@ export async function getPosts(req: Request, res: Response, next: NextFunction) 
  * PATCH /api/v1/admin/posts/:id/status
  * Update post status
  */
-export async function updatePostStatus(req: Request, res: Response, next: NextFunction) {
+export async function updatePostStatus(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const id = parseInt(req.params.id as string, 10);
     const { status } = req.body;
@@ -970,6 +1036,7 @@ export async function updatePostStatus(req: Request, res: Response, next: NextFu
 
     const post = await prisma.posts.findUnique({
       where: { id },
+      select: { id: true, title: true, status: true },
     });
 
     if (!post) {
@@ -984,6 +1051,18 @@ export async function updatePostStatus(req: Request, res: Response, next: NextFu
         title: true,
         status: true,
       },
+    });
+
+    const auditAction = status === 'HIDDEN' ? 'HIDE' : status === 'DELETED' ? 'DELETE' : status === 'PUBLISHED' ? 'SHOW' : 'UPDATE';
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: auditAction as any,
+      targetType: 'POST',
+      targetId: id,
+      targetName: post.title,
+      oldValue: { status: post.status },
+      newValue: { status },
+      ipAddress: auditLogService.getClientIp(req),
     });
 
     return sendSuccess(res, updatedPost, 'Post status updated');
@@ -1064,7 +1143,7 @@ export async function getComments(req: Request, res: Response, next: NextFunctio
  * PATCH /api/v1/admin/comments/:id/status
  * Update comment status
  */
-export async function updateCommentStatus(req: Request, res: Response, next: NextFunction) {
+export async function updateCommentStatus(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const id = parseInt(req.params.id as string, 10);
     const { status } = req.body;
@@ -1075,6 +1154,7 @@ export async function updateCommentStatus(req: Request, res: Response, next: Nex
 
     const comment = await prisma.comments.findUnique({
       where: { id },
+      select: { id: true, content: true, status: true },
     });
 
     if (!comment) {
@@ -1089,6 +1169,18 @@ export async function updateCommentStatus(req: Request, res: Response, next: Nex
         content: true,
         status: true,
       },
+    });
+
+    const auditAction = status === 'HIDDEN' ? 'HIDE' : status === 'DELETED' ? 'DELETE' : 'SHOW';
+    await auditLogService.createAuditLog({
+      userId: req.user!.userId,
+      action: auditAction as any,
+      targetType: 'COMMENT',
+      targetId: id,
+      targetName: comment!.content.substring(0, 50),
+      oldValue: { status: comment!.status },
+      newValue: { status },
+      ipAddress: auditLogService.getClientIp(req),
     });
 
     return sendSuccess(res, updatedComment, 'Comment status updated');
@@ -2016,6 +2108,14 @@ export async function getAuditLogs(req: Request, res: Response, next: NextFuncti
   } catch (error) {
     next(error);
   }
+}
+
+/**
+ * GET /api/v1/admin/metrics
+ * Operational metrics snapshot (latency, throughput, error rate, LLM stats, alerts)
+ */
+export function getMetrics(_req: Request, res: Response): void {
+  sendSuccess(res, getSnapshot(), 'Metrics retrieved');
 }
 
 

@@ -9,6 +9,7 @@ import { RateLimiter } from '../tracking/RateLimiter.js';
 import { PersonalityService } from './PersonalityService.js';
 import { RetryQueue, FailedAction } from '../scheduler/retryQueue.js';
 import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
+import { JobLifecycleStore } from '../tracking/JobLifecycleStore.js';
 import logger, { logAction } from '../utils/logger.js';
 
 export class ContentGeneratorService {
@@ -22,6 +23,7 @@ export class ContentGeneratorService {
   private personalityService: PersonalityService;
   private retryQueue: RetryQueue;
   private actionHistory: ActionHistoryTracker;
+  private jobLifecycle: JobLifecycleStore;
 
   constructor() {
     this.contextGatherer = new ContextGathererService();
@@ -34,6 +36,7 @@ export class ContentGeneratorService {
     this.actionSelector = new ActionSelectorService(this.contextGatherer, this.rateLimiter, this.actionHistory);
     this.personalityService = new PersonalityService(this.llmManager);
     this.retryQueue = new RetryQueue(3);
+    this.jobLifecycle = new JobLifecycleStore();
 
     // Start retry queue processing
     this.retryQueue.startProcessing(async (action: FailedAction) => {
@@ -51,11 +54,14 @@ export class ContentGeneratorService {
     const startTime = Date.now();
     const actionId = `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
+    this.jobLifecycle.markQueued(actionId, 'post' /* placeholder, updated after select */, triggerSource);
+
     try {
       // 1. Select action (user + action type) respecting rate limits
       const selected = await this.actionSelector.selectNextAction();
       if (!selected) {
         logAction({ actionId, stage: 'action_select', status: 'skipped', error: 'All users rate-limited' });
+        this.jobLifecycle.markFailed(actionId, 'No available action (all users rate-limited or no bot users)');
         return this.finalizeActionResult({
           success: false,
           actionType: 'post',
@@ -65,6 +71,8 @@ export class ContentGeneratorService {
           error: 'No available action (all users rate-limited or no bot users)',
         }, actionId, triggerSource);
       }
+
+      this.jobLifecycle.markRunning(actionId);
 
       logAction({
         actionId,
@@ -95,9 +103,13 @@ export class ContentGeneratorService {
         this.rateLimiter.record(selected.userId, selected.actionType);
         // Phase 3.1: Track personality updates
         await this.personalityService.trackAndUpdate(selected.userId);
-      } else if (result.error && !result.error.includes('Validation failed')) {
-        // Enqueue for retry (don't retry validation failures)
-        this.retryQueue.add(selected.userId, selected.actionType, result.error);
+        this.jobLifecycle.markSuccess(actionId);
+      } else {
+        if (result.error && !result.error.includes('Validation failed')) {
+          // Enqueue for retry (don't retry validation failures)
+          this.retryQueue.add(selected.userId, selected.actionType, result.error);
+        }
+        this.jobLifecycle.markFailed(actionId, result.error ?? 'unknown');
       }
 
       logAction({
@@ -114,6 +126,7 @@ export class ContentGeneratorService {
       return this.finalizeActionResult(result, actionId, triggerSource);
     } catch (error: any) {
       logAction({ actionId, stage: 'complete', status: 'failed', error: error.message });
+      this.jobLifecycle.markFailed(actionId, error.message);
       return this.finalizeActionResult({
         success: false,
         actionType: 'post',
@@ -491,11 +504,41 @@ export class ContentGeneratorService {
         byTrigger: todayStats.byTrigger,
       },
       queue: this.getRetryQueueStats() as Record<string, unknown>,
+      jobLifecycle: this.jobLifecycle.getSnapshot() as Record<string, unknown>,
     };
   }
 
   getRetryQueueStats() {
-    return this.retryQueue.getStats();
+    const stats = this.retryQueue.getStats();
+    const dlq = this.retryQueue.getDeadLetterQueue();
+    return { ...stats, dlq: dlq.slice(-10) }; // last 10 DLQ entries in status
+  }
+
+  /**
+   * Per-provider health: availability snapshot + circuit breaker state.
+   * Used by the /health endpoint.
+   */
+  async getProviderHealthDetails() {
+    const [statusSnapshot, cbStats] = await Promise.all([
+      this.llmManager.getProviderStatusSnapshot(),
+      Promise.resolve(this.llmManager.getCircuitBreakerStats()),
+    ]);
+
+    const cbMap = new Map(cbStats.map((c) => [c.id, c]));
+
+    return statusSnapshot.map((p) => {
+      const cb = cbMap.get(p.id);
+      return {
+        id: p.id,
+        available: p.available,
+        reason: p.reason,
+        checkedAt: p.checkedAt,
+        cooldownUntil: p.cooldownUntil,
+        circuitState: cb?.state ?? 'CLOSED',
+        circuitFailures: cb?.failureCount ?? 0,
+        circuitOpenSince: cb?.openSince ?? null,
+      };
+    });
   }
 
   private finalizeActionResult(result: ActionResult, actionId: string, triggerSource: ActionTriggerSource): ActionResult {

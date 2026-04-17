@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import config from './config/index.js';
 import routes from './routes/index.js';
 import { errorMiddleware, notFoundMiddleware } from './middlewares/errorMiddleware.js';
@@ -11,6 +11,9 @@ import {
   additionalSecurityHeaders,
 } from './middlewares/securityMiddleware.js';
 import { snakeToCamelObject } from './utils/snakeToCamel.js';
+import { requestIdMiddleware } from './middlewares/requestIdMiddleware.js';
+import { httpLoggerMiddleware } from './middlewares/httpLoggerMiddleware.js';
+import { metricsMiddleware } from './middlewares/metricsMiddleware.js';
 
 const app: Express = express();
 
@@ -45,6 +48,9 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Cookie parser (for HttpOnly refresh token cookie support)
+app.use(cookieParser());
+
 // Global response transform middleware
 // Converts all snake_case keys in JSON responses to camelCase
 // This ensures frontend always receives camelCase field names
@@ -56,18 +62,20 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Request ID (must be first so all subsequent middleware / logs have access to requestId)
+app.use(requestIdMiddleware);
+
+// Metrics collection
+app.use(metricsMiddleware);
+
 // Rate limiting
 app.use('/api/v1', apiLimiter);
 
 // Stricter rate limiting for auth routes
 app.use('/api/v1/auth', authLimiter);
 
-// Logging middleware
-if (config.nodeEnv === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+// HTTP request logging (structured, includes requestId)
+app.use(httpLoggerMiddleware);
 
 // API routes
 app.use('/api/v1', routes);

@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,7 @@ export function CommentsPage() {
   const [viewingContent, setViewingContent] = useState<string | null>(null);
   const [viewingComment, setViewingComment] = useState<AdminComment | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const fetchComments = async () => {
     setLoading(true);
@@ -138,6 +140,48 @@ export function CommentsPage() {
       comment.author.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredComments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredComments.map(c => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkHide = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => adminService.hideComment(id.toString()))
+      );
+      toast.success(`Đã ẩn ${selectedIds.size} bình luận`);
+      setSelectedIds(new Set());
+      fetchComments();
+    } catch {
+      toast.error('Không thể ẩn một số bình luận');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} bình luận?`)) return;
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => adminService.deleteComment(id.toString()))
+      );
+      toast.success(`Đã xóa ${selectedIds.size} bình luận`);
+      setSelectedIds(new Set());
+      fetchComments();
+    } catch {
+      toast.error('Không thể xóa một số bình luận');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'VISIBLE':
@@ -198,6 +242,22 @@ export function CommentsPage() {
             <SelectItem value="DELETED">Đã xóa</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Bulk action toolbar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-md">
+            <span className="text-sm font-medium">{selectedIds.size} đã chọn</span>
+            <Button variant="outline" size="sm" onClick={handleBulkHide}>
+              <EyeOff className="h-3.5 w-3.5 mr-1" /> Ẩn
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              Bỏ chọn
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -205,6 +265,13 @@ export function CommentsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={selectedIds.size === filteredComments.length && filteredComments.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Chọn tất cả"
+                />
+              </TableHead>
               <TableHead className="w-[350px]">Nội dung</TableHead>
               <TableHead>Tác giả</TableHead>
               <TableHead className="hidden sm:table-cell">Bài viết</TableHead>
@@ -217,13 +284,20 @@ export function CommentsPage() {
           <TableBody>
             {filteredComments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Không tìm thấy bình luận nào
                 </TableCell>
               </TableRow>
             ) : (
               filteredComments.map((comment) => (
                 <TableRow key={comment.id} className={comment.status === 'DELETED' ? 'opacity-50' : ''}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(comment.id)}
+                      onCheckedChange={() => toggleSelect(comment.id)}
+                      aria-label={`Chọn bình luận`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="max-w-[330px]">
                       {/* All comments are masked by default for privacy/security */}

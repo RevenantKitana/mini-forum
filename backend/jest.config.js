@@ -35,6 +35,14 @@ export default {
     '/node_modules/',
     '/dist/',
   ],
+  coverageThreshold: {
+    global: {
+      lines: 15,
+      branches: 10,
+      functions: 15,
+      statements: 15,
+    },
+  },
   testTimeout: 10000,
   // Force Jest to exit after all tests complete even if async ops (DB connections) are still open
   forceExit: true,

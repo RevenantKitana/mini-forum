@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as authController from '../controllers/authController.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../middlewares/validateMiddleware.js';
-import { otpSendLimiter, otpVerifyLimiter } from '../middlewares/securityMiddleware.js';
+import { otpSendLimiter, otpVerifyLimiter, registerLimiter, resetPasswordLimiter, refreshLimiter } from '../middlewares/securityMiddleware.js';
 import {
   registerSchema,
   loginSchema,
@@ -62,8 +62,9 @@ router.post(
  * @route   POST /api/v1/auth/register
  * @desc    Register a new user (optionally with OTP verification token)
  * @access  Public
+ * @rateLimit 5 requests per 15 minutes
  */
-router.post('/register', validateBody(registerSchema), authController.register);
+router.post('/register', registerLimiter, validateBody(registerSchema), authController.register);
 
 // ==================== OTP Password Reset Flow ====================
 
@@ -94,12 +95,15 @@ router.post(
 );
 
 /**
+/**
  * @route   POST /api/v1/auth/reset-password
  * @desc    Reset password after OTP verification
  * @access  Public
+ * @rateLimit 5 requests per 15 minutes
  */
 router.post(
   '/reset-password',
+  resetPasswordLimiter,
   validateBody(resetPasswordSchema),
   authController.resetPassword
 );
@@ -115,10 +119,11 @@ router.post('/login', validateBody(loginSchema), authController.login);
 
 /**
  * @route   POST /api/v1/auth/refresh
- * @desc    Refresh access token
+ * @desc    Refresh access token (reads from HttpOnly cookie or request body)
  * @access  Public
+ * @rateLimit 60 requests per 15 minutes
  */
-router.post('/refresh', validateBody(refreshTokenSchema), authController.refresh);
+router.post('/refresh', refreshLimiter, authController.refresh);
 
 /**
  * @route   POST /api/v1/auth/logout

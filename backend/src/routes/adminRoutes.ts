@@ -30,7 +30,7 @@ router.patch('/reports/:id', adminController.updateReportStatus as RequestHandle
 // Post Management
 router.get('/posts', adminController.getPosts);
 router.get('/posts/pinned', adminController.getPinnedPosts);
-router.patch('/posts/:id/status', adminController.updatePostStatus);
+router.patch('/posts/:id/status', adminController.updatePostStatus as RequestHandler);
 router.patch('/posts/:id/pin', adminController.togglePostPin as RequestHandler);
 router.patch('/posts/:id/pin-order', adminController.updatePinOrder as RequestHandler);
 router.patch('/posts/:id/lock', adminController.togglePostLock as RequestHandler);
@@ -40,7 +40,7 @@ router.delete('/posts/:id', adminController.deletePost as RequestHandler);
 // Comment Management
 router.get('/comments', adminController.getComments);
 router.get('/comments/:id/content', adminController.viewMaskedCommentContent as RequestHandler);
-router.patch('/comments/:id/status', adminController.updateCommentStatus);
+router.patch('/comments/:id/status', adminController.updateCommentStatus as RequestHandler);
 router.patch('/comments/:id/mask', adminController.toggleCommentMask as RequestHandler);
 router.delete('/comments/:id', adminController.deleteComment as RequestHandler);
 
@@ -52,12 +52,15 @@ router.delete('/categories/:id', requireRole(ROLES.ADMIN) as RequestHandler, adm
 
 // Tag Management
 router.get('/tags', adminController.getTags);
-router.post('/tags', adminController.createTag as RequestHandler);
-router.patch('/tags/:id', adminController.updateTag as RequestHandler);
-router.delete('/tags/:id', adminController.deleteTag as RequestHandler);
+router.post('/tags', requireRole(ROLES.ADMIN) as RequestHandler, adminController.createTag as RequestHandler);
+router.patch('/tags/:id', requireRole(ROLES.ADMIN) as RequestHandler, adminController.updateTag as RequestHandler);
+router.delete('/tags/:id', requireRole(ROLES.ADMIN) as RequestHandler, adminController.deleteTag as RequestHandler);
 
 // Audit Logs
 router.get('/audit-logs', requireRole(ROLES.ADMIN) as RequestHandler, adminController.getAuditLogs);
+
+// Operational Metrics
+router.get('/metrics', requireRole(ROLES.ADMIN) as RequestHandler, adminController.getMetrics as RequestHandler);
 
 export default router;
 

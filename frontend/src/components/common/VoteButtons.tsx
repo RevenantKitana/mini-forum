@@ -181,6 +181,8 @@ export function VoteButtons({
           <Button
             variant="ghost"
             size="icon"
+            aria-label={tooltip}
+            aria-pressed={active}
             className={cn(
               sizeClasses[size],
               'btn-press transition-all duration-200',
@@ -211,6 +213,8 @@ export function VoteButtons({
   return (
     <TooltipProvider delayDuration={300}>
       <div
+        role="group"
+        aria-label="Vote"
         className={cn(
           'flex items-center gap-4',
           orientation === 'vertical' ? 'flex-col' : 'flex-row',

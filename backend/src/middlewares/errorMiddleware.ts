@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError, ValidationError, OtpError } from '../utils/errors.js';
 import { sendError } from '../utils/response.js';
 import config from '../config/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Global error handler middleware
@@ -16,7 +17,7 @@ export function errorMiddleware(
   // Operational errors (4xx) are expected and don't need logging
   const isOperational = err instanceof AppError && err.isOperational;
   if (!isOperational && process.env.NODE_ENV !== 'test') {
-    console.error('Unexpected Error:', err);
+    logger.error('Unexpected error', err, { requestId: req.requestId, path: req.originalUrl });
   } else if (!isOperational) {
     // In test environment, still log truly unexpected errors (non-AppError)
     console.error('Unexpected Error:', err.message);

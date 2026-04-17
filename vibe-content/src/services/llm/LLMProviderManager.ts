@@ -17,8 +17,10 @@ import { GroqProvider } from './GroqProvider.js';
 import { CerebrasProvider } from './CerebrasProvider.js';
 import { NvidiaProvider } from './NvidiaProvider.js';
 import { BeeknoeeProvider } from './BeeknoeeProvider.js';
+import { CircuitBreaker } from '../../utils/circuitBreaker.js';
 import config from '../../config/index.js';
 import logger from '../../utils/logger.js';
+import { recordLLMCall } from '../llmMetrics.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,6 +60,7 @@ export class LLMProviderManager {
   private providers: ILLMProvider[] = [];
   private cooldowns = new Map<string, number>(); // providerId -> cooled-down-until timestamp
   private lastUnavailable = new Map<string, ProviderRuntimeState>();
+  private circuitBreakers = new Map<string, CircuitBreaker>();
   private now: () => number;
   private hasApiKey: (providerId: string) => boolean;
 
@@ -97,38 +100,59 @@ export class LLMProviderManager {
 
   async generateByTask(prompt: string, taskType: LLMTaskType): Promise<LLMGenerateResult> {
     const queue = this.buildProviderQueue(taskType);
+    let queueIndex = 0;
     for (const provider of queue) {
       if (this.isOnCooldown(provider.id)) {
         const cooldownUntil = this.cooldowns.get(provider.id)!;
         const until = new Date(cooldownUntil).toLocaleTimeString('vi-VN');
         logger.debug(`${provider.id} - skipped (cooldown until ${until})`);
+        queueIndex++;
         continue;
       }
 
+      const cb = this.getOrCreateCircuitBreaker(provider.id);
+      if (!cb.allowRequest()) {
+        logger.debug(`${provider.id} - skipped (circuit open)`);
+        this.setUnavailableReason(provider.id, 'unavailable', 'Circuit breaker is OPEN');
+        queueIndex++;
+        continue;
+      }
+
+      const callStart = Date.now();
       try {
         const available = await provider.isAvailable();
         if (!available) {
           const reason = this.hasApiKey(provider.id) ? 'unavailable' : 'missing_api_key';
           this.setUnavailableReason(provider.id, reason);
+          cb.recordFailure();
           logger.debug(`${provider.id} - skipped (unavailable)`);
+          queueIndex++;
           continue;
         }
 
         const output = await this.callWithRetry(provider, prompt, 3);
+        const latencyMs = Date.now() - callStart;
         this.clearUnavailableReason(provider.id);
-        logger.info(`${provider.id} - success`);
+        cb.recordSuccess();
+        logger.info(`${provider.id} - success`, { provider: provider.id, task: taskType, latency_ms: latencyMs });
+        recordLLMCall({ provider: provider.id, success: true, latencyMs, isFallback: queueIndex > 0 });
         return { output, provider: provider.id };
       } catch (err: any) {
+        const latencyMs = Date.now() - callStart;
         const unavailableReason = this.mapErrorToReason(err);
         this.setUnavailableReason(provider.id, unavailableReason, err?.message);
-        logger.warn(`${provider.id} - failed: ${err.message}`);
+        cb.recordFailure();
+        logger.warn(`${provider.id} - failed: ${err.message}`, { provider: provider.id, task: taskType, latency_ms: latencyMs, reason: unavailableReason });
+        recordLLMCall({ provider: provider.id, success: false, latencyMs, isFallback: queueIndex > 0 });
 
         if (err instanceof LLMError && err.code === 'RATE_LIMIT') {
           this.setCooldown(provider.id);
         }
       }
+      queueIndex++;
     }
 
+    logger.error('All LLM providers exhausted', { task: taskType, queueLength: queue.length });
     throw new Error('All LLM providers exhausted - no quota remaining');
   }
 
@@ -143,21 +167,29 @@ export class LLMProviderManager {
       throw new Error(`${provider.id} is in cooldown until ${new Date(cooldownUntil).toISOString()}`);
     }
 
+    const cb = this.getOrCreateCircuitBreaker(provider.id);
+    if (!cb.allowRequest()) {
+      throw new Error(`${provider.id} circuit breaker is OPEN`);
+    }
+
     const available = await provider.isAvailable();
     if (!available) {
       const reason = this.hasApiKey(provider.id) ? 'unavailable' : 'missing_api_key';
       this.setUnavailableReason(provider.id, reason);
+      cb.recordFailure();
       throw new Error(`${provider.id} is unavailable (${reason})`);
     }
 
     try {
       const output = await this.callWithRetry(provider, prompt, 3);
       this.clearUnavailableReason(provider.id);
+      cb.recordSuccess();
       logger.info(`${provider.id} - success`);
       return { output, provider: provider.id };
     } catch (err: any) {
       const unavailableReason = this.mapErrorToReason(err);
       this.setUnavailableReason(provider.id, unavailableReason, err?.message);
+      cb.recordFailure();
       logger.warn(`${provider.id} - failed: ${err.message}`);
 
       if (err instanceof LLMError && err.code === 'RATE_LIMIT') {
@@ -198,14 +230,20 @@ export class LLMProviderManager {
     maxRetries: number,
   ): Promise<LLMOutput> {
     let lastError: any;
+    let retryCount = 0;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return await provider.generate(prompt);
+        const result = await provider.generate(prompt);
+        if (retryCount > 0) {
+          logger.info(`${provider.id} succeeded after ${retryCount} retries`, { provider: provider.id, retries: retryCount });
+        }
+        return result;
       } catch (err: any) {
         lastError = err;
         if (attempt < maxRetries - 1 && this.isRetryable(err)) {
+          retryCount++;
           const backoff = Math.pow(2, attempt) * 1000;
-          logger.info(`${provider.id} retry ${attempt + 1}/${maxRetries} in ${backoff}ms`);
+          logger.info(`${provider.id} retry ${attempt + 1}/${maxRetries} in ${backoff}ms`, { provider: provider.id, attempt: attempt + 1, backoff_ms: backoff });
           await sleep(backoff);
           continue;
         }
@@ -215,9 +253,21 @@ export class LLMProviderManager {
     throw lastError;
   }
 
+  private getOrCreateCircuitBreaker(id: string): CircuitBreaker {
+    if (!this.circuitBreakers.has(id)) {
+      this.circuitBreakers.set(id, new CircuitBreaker(id, {
+        failureThreshold: 5,
+        windowMs: 60_000,
+        openDurationMs: 2 * 60_000,
+        now: this.now,
+      }));
+    }
+    return this.circuitBreakers.get(id)!;
+  }
+
   private isRetryable(err: any): boolean {
     if (err instanceof LLMError) {
-      return err.code === 'TIMEOUT';
+      return err.code === 'TIMEOUT' || (err.status !== undefined && err.status >= 500 && err.status < 600);
     }
     return false;
   }
@@ -278,6 +328,13 @@ export class LLMProviderManager {
 
   getProviderIds(): string[] {
     return this.providers.map((p) => p.id);
+  }
+
+  getCircuitBreakerStats() {
+    return this.providers.map((p) => {
+      const cb = this.circuitBreakers.get(p.id);
+      return cb ? cb.getStats() : { id: p.id, state: 'CLOSED' as const, failureCount: 0, openSince: null };
+    });
   }
 
   getProviderIdByLabel(label: number): string | undefined {
