@@ -70,9 +70,9 @@ describe('Comments API', () => {
 
   afterAll(async () => {
     if (testUserId) {
-      await prisma.refresh_tokens.deleteMany({ where: { userId: testUserId } });
+      await prisma.refresh_tokens.deleteMany({ where: { user_id: testUserId } });
       await prisma.votes.deleteMany({ where: { userId: testUserId } });
-      await prisma.comments.deleteMany({ where: { authorId: testUserId } });
+      await prisma.comments.deleteMany({ where: { author_id: testUserId } });
       await prisma.posts.deleteMany({ where: { author_id: testUserId } });
       await prisma.users.deleteMany({ where: { id: testUserId } });
     }

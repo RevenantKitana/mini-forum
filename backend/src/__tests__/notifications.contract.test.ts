@@ -40,7 +40,7 @@ describe('Notifications API Contract', () => {
 
   afterAll(async () => {
     if (testUserId) {
-      await prisma.refresh_tokens.deleteMany({ where: { userId: testUserId } });
+      await prisma.refresh_tokens.deleteMany({ where: { user_id: testUserId } });
       await prisma.notifications.deleteMany({ where: { userId: testUserId } });
       await prisma.users.deleteMany({ where: { id: testUserId } });
     }
@@ -107,6 +107,8 @@ describe('Notifications API Contract', () => {
         data: {
           userId: testUserId,
           type: 'COMMENT',
+          title: 'Test Notification',
+          content: 'This is a test notification',
           isRead: false,
         },
       });
@@ -195,6 +197,8 @@ describe('Notifications API Contract', () => {
         data: {
           userId: testUserId,
           type: 'UPVOTE',
+          title: 'Upvote Notification',
+          content: 'Someone upvoted your post',
           isRead: false,
         },
       });
@@ -240,7 +244,7 @@ describe('Notifications API Contract', () => {
         },
       });
       const otherNotif = await prisma.notifications.create({
-        data: { userId: otherUser.id, type: 'COMMENT', isRead: false },
+        data: { userId: otherUser.id, type: 'COMMENT', title: 'Other Comment', content: 'Test', isRead: false },
       });
 
       const res = await request(app)
@@ -266,6 +270,8 @@ describe('Notifications API Contract', () => {
         data: {
           userId: testUserId,
           type: 'REPLY',
+          title: 'Delete Test Notification',
+          content: 'This will be deleted',
           isRead: false,
         },
       });
@@ -307,8 +313,8 @@ describe('Notifications API Contract', () => {
       // Seed some notifications first
       await prisma.notifications.createMany({
         data: [
-          { userId: testUserId, type: 'COMMENT', isRead: true },
-          { userId: testUserId, type: 'UPVOTE', isRead: false },
+          { userId: testUserId, type: 'COMMENT', title: 'Comment 1', content: 'Test 1', isRead: true },
+          { userId: testUserId, type: 'UPVOTE', title: 'Upvote', content: 'Test 2', isRead: false },
         ],
       });
 
