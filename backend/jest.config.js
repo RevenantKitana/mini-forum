@@ -44,6 +44,8 @@ export default {
     },
   },
   testTimeout: 10000,
+  // Setup files to run before tests
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   // Force Jest to exit after all tests complete even if async ops (DB connections) are still open
   forceExit: true,
   // Detect and warn about open handles (useful for debugging, not failing tests)
