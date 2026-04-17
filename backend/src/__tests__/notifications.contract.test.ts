@@ -40,8 +40,8 @@ describe('Notifications API Contract', () => {
 
   afterAll(async () => {
     if (testUserId) {
-      await prisma.refresh_tokens.deleteMany({ where: { user_id: testUserId } });
-      await prisma.notifications.deleteMany({ where: { user_id: testUserId } });
+      await prisma.refresh_tokens.deleteMany({ where: { userId: testUserId } });
+      await prisma.notifications.deleteMany({ where: { userId: testUserId } });
       await prisma.users.deleteMany({ where: { id: testUserId } });
     }
     await prisma.$disconnect();
@@ -105,9 +105,9 @@ describe('Notifications API Contract', () => {
       // Seed a notification directly so we can verify the shape
       await prisma.notifications.create({
         data: {
-          user_id: testUserId,
-          type: 'NEW_COMMENT',
-          is_read: false,
+          userId: testUserId,
+          type: 'COMMENT',
+          isRead: false,
         },
       });
 
@@ -193,9 +193,9 @@ describe('Notifications API Contract', () => {
       // Create a new unread notification to test individual mark-read
       const n = await prisma.notifications.create({
         data: {
-          user_id: testUserId,
-          type: 'NEW_VOTE',
-          is_read: false,
+          userId: testUserId,
+          type: 'UPVOTE',
+          isRead: false,
         },
       });
       newNotificationId = n.id;
@@ -240,7 +240,7 @@ describe('Notifications API Contract', () => {
         },
       });
       const otherNotif = await prisma.notifications.create({
-        data: { user_id: otherUser.id, type: 'NEW_COMMENT', is_read: false },
+        data: { userId: otherUser.id, type: 'COMMENT', isRead: false },
       });
 
       const res = await request(app)
@@ -264,9 +264,9 @@ describe('Notifications API Contract', () => {
     beforeAll(async () => {
       const n = await prisma.notifications.create({
         data: {
-          user_id: testUserId,
+          userId: testUserId,
           type: 'REPLY',
-          is_read: false,
+          isRead: false,
         },
       });
       deletableNotificationId = n.id;
@@ -307,8 +307,8 @@ describe('Notifications API Contract', () => {
       // Seed some notifications first
       await prisma.notifications.createMany({
         data: [
-          { user_id: testUserId, type: 'NEW_COMMENT', is_read: true },
-          { user_id: testUserId, type: 'NEW_VOTE', is_read: false },
+          { userId: testUserId, type: 'COMMENT', isRead: true },
+          { userId: testUserId, type: 'UPVOTE', isRead: false },
         ],
       });
 

@@ -94,13 +94,13 @@ describe('Reports API', () => {
       await prisma.reports.deleteMany({
         where: {
           OR: [
-            { reporter_id: { in: userIds } },
-            { reported_user_id: { in: userIds } },
+            { reporterId: { in: userIds } },
+            { reportedUserId: { in: userIds } },
           ],
         },
       });
-      await prisma.refresh_tokens.deleteMany({ where: { user_id: { in: userIds } } });
-      await prisma.votes.deleteMany({ where: { user_id: { in: userIds } } });
+      await prisma.refresh_tokens.deleteMany({ where: { userId: { in: userIds } } });
+      await prisma.votes.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.comments.deleteMany({ where: { author_id: { in: userIds } } });
       await prisma.posts.deleteMany({ where: { author_id: { in: userIds } } });
       await prisma.users.deleteMany({ where: { id: { in: userIds } } });
