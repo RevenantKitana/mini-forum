@@ -169,4 +169,77 @@ describe('Posts API', () => {
       expect(res.body).toHaveProperty('pagination');
     });
   });
+
+  // ─── Update Post ─────────────────────────────────────────────────────────────
+
+  describe('PUT /api/v1/posts/:id', () => {
+    it('should update a post successfully', async () => {
+      const res = await request(app)
+        .put(`/api/v1/posts/${testPostId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          title: 'Updated Post Title For Integration Test',
+          content: 'Updated content that is at least twenty characters long for validation.',
+          category_id: categoryId,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.title).toBe('Updated Post Title For Integration Test');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app)
+        .put(`/api/v1/posts/${testPostId}`)
+        .send({ title: 'No auth title here for test', content: 'Content long enough for the validation check.', category_id: categoryId });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent post', async () => {
+      const res = await request(app)
+        .put('/api/v1/posts/999999999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ title: 'Updating Non Existent Post', content: 'Content long enough for the validation check here.', category_id: categoryId });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ─── Delete Post ─────────────────────────────────────────────────────────────
+
+  describe('DELETE /api/v1/posts/:id', () => {
+    it('should delete a post successfully', async () => {
+      // Create a temporary post to delete
+      const createRes = await request(app)
+        .post('/api/v1/posts')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          title: 'Temporary Post To Be Deleted Now',
+          content: 'This post exists only to be deleted in the test suite.',
+          category_id: categoryId,
+        });
+      expect(createRes.status).toBe(201);
+      const tempId: number = createRes.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/v1/posts/${tempId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(204);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app).delete(`/api/v1/posts/${testPostId}`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent post', async () => {
+      const res = await request(app)
+        .delete('/api/v1/posts/999999999')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
 });

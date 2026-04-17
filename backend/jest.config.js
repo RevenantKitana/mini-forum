@@ -46,8 +46,10 @@ export default {
   testTimeout: 10000,
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  // Force Jest to exit after all tests complete even if async ops (DB connections) are still open
+  // Global teardown: disconnects Prisma connection pool once after all suites
+  globalTeardown: '<rootDir>/jest.globalTeardown.js',
+  // Report open handles so CI logs show actionable sources if any remain
+  detectOpenHandles: true,
+  // Keep forceExit as safety net; remove once detectOpenHandles reports clean
   forceExit: true,
-  // Detect and warn about open handles (useful for debugging, not failing tests)
-  detectOpenHandles: false,
 };

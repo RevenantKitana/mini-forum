@@ -19,6 +19,11 @@ interface SendOtpEmailOptions {
 export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> {
   const { to, otp, purpose, expiresInMinutes } = options;
 
+  // In test environment, skip actual email delivery to avoid noisy SDK errors in CI logs
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   if (!config.brevo.apiKey) {
     throw new Error(
       'Brevo API key not configured. Please set BREVO_API_KEY environment variable.'

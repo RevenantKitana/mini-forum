@@ -157,4 +157,87 @@ describe('Comments API', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
+
+  // ─── Update Comment ───────────────────────────────────────────────────────────
+
+  describe('PUT /api/v1/comments/:id', () => {
+    it('should update a comment successfully', async () => {
+      const res = await request(app)
+        .put(`/api/v1/comments/${testCommentId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ content: 'Updated comment content for integration test.' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.content).toBe('Updated comment content for integration test.');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app)
+        .put(`/api/v1/comments/${testCommentId}`)
+        .send({ content: 'Should fail without auth.' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 403 when updating another user\'s comment', async () => {
+      const ts2 = Date.now() + 1;
+      const otherEmail = `tco${ts2}@test.local`;
+      const otherUsername = `tco${ts2}`.slice(0, 20);
+
+      const regRes = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: otherEmail, username: otherUsername, password: 'Test@12345', display_name: 'Other' });
+      const otherUserId: number = regRes.body.data.user.id;
+
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: otherEmail, password: 'Test@12345' });
+      const otherToken: string = loginRes.body.data.tokens.accessToken;
+
+      const res = await request(app)
+        .put(`/api/v1/comments/${testCommentId}`)
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ content: 'Trying to hijack this comment.' });
+
+      // Cleanup other user
+      await prisma.refresh_tokens.deleteMany({ where: { user_id: otherUserId } });
+      await prisma.users.deleteMany({ where: { id: otherUserId } });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ─── Delete Comment ───────────────────────────────────────────────────────────
+
+  describe('DELETE /api/v1/comments/:id', () => {
+    it('should delete a comment successfully', async () => {
+      // Create a temporary comment to delete
+      const createRes = await request(app)
+        .post(`/api/v1/posts/${testPostId}/comments`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ content: 'Temporary comment to be deleted.' });
+      expect(createRes.status).toBe(201);
+      const tempId: number = createRes.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/v1/comments/${tempId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(204);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app).delete(`/api/v1/comments/${testCommentId}`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent comment', async () => {
+      const res = await request(app)
+        .delete('/api/v1/comments/999999999')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
 });
