@@ -6,6 +6,7 @@ import { ActionType } from '../types/index.js';
 // ---------------------------------------------------------------------------
 
 export type RetryErrorCategory =
+  | 'context_fetch'
   | 'timeout'
   | 'rate_limited'
   | 'server_error'
@@ -19,15 +20,21 @@ interface RetryPolicy {
 }
 
 const ERROR_POLICIES: Record<RetryErrorCategory, RetryPolicy> = {
-  timeout:      { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 60_000 },
-  rate_limited: { shouldRetry: true,  maxRetries: 2, baseBackoffMs: 10 * 60_000 },
-  server_error: { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 2 * 60_000 },
-  parse_fail:   { shouldRetry: false, maxRetries: 0, baseBackoffMs: 0 },
-  unknown:      { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 60_000 },
+  context_fetch: { shouldRetry: true,  maxRetries: 2, baseBackoffMs: 30_000 },
+  timeout:       { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 60_000 },
+  rate_limited:  { shouldRetry: true,  maxRetries: 2, baseBackoffMs: 10 * 60_000 },
+  server_error:  { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 2 * 60_000 },
+  parse_fail:    { shouldRetry: false, maxRetries: 0, baseBackoffMs: 0 },
+  unknown:       { shouldRetry: true,  maxRetries: 3, baseBackoffMs: 60_000 },
 };
 
 export function classifyError(error: string): RetryErrorCategory {
   const msg = error.toLowerCase();
+  // Context-fetch errors are tagged with [context_fetch] prefix — classify first
+  // so they get a dedicated retry policy separate from generic LLM errors.
+  if (msg.includes('[context_fetch]')) {
+    return 'context_fetch';
+  }
   if (msg.includes('timeout') || msg.includes('econnreset') || msg.includes('etimedout') || msg.includes('econnaborted')) {
     return 'timeout';
   }

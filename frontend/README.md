@@ -57,11 +57,11 @@ frontend/src/
 | `LoginPage` | `/login` | Đăng nhập |
 | `RegisterPage` | `/register` | Đăng ký (kèm OTP) |
 | `ForgotPasswordPage` | `/forgot-password` | Quên mật khẩu |
-| `ProfilePage` | `/users/:id` | Hồ sơ người dùng |
-| `EditProfilePage` | `/profile/edit` | Sửa hồ sơ |
+| `ProfilePage` | `/users/:username` | Hồ sơ người dùng |
+| `EditProfilePage` | `/settings/profile` | Sửa hồ sơ |
 | `NotificationsPage` | `/notifications` | Thông báo |
 | `BookmarksPage` | `/bookmarks` | Bài viết đã bookmark |
-| `BlockedUsersPage` | `/blocked` | Danh sách đã chặn |
+| `BlockedUsersPage` | `/settings/blocked` | Danh sách đã chặn |
 
 ## API Integration
 
@@ -104,7 +104,7 @@ frontend/src/
 
 Tất cả dữ liệu từ API được quản lý qua React Query — caching, refetch, invalidation, optimistic updates.
 
-## Custom Hooks (11 hooks)
+## Custom Hooks (13 hooks)
 
 | Hook | Chức năng |
 |---|---|
@@ -118,6 +118,9 @@ Tất cả dữ liệu từ API được quản lý qua React Query — caching,
 | `useUsers` | Query hồ sơ user |
 | `useNotifications` | Query thông báo |
 | `useSearch` | Query tìm kiếm |
+| `useConfig` | Query cấu hình công khai |
+| `usePageTracking` | Theo dõi trang hiện tại |
+| `useRealtimeNotifications` | Nhận thông báo real-time qua SSE |
 | `useResponsive` | Breakpoint detection |
 
 ## Biến môi trường

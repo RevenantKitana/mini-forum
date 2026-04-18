@@ -2,15 +2,155 @@ import { createRequire } from 'module';
 import config from '../config/index.js';
 import {
   BotUser, Category, Tag, GenerationContext,
-  CommentContext, VoteContext, PostTarget, CommentTarget, PersonalityInfo,
+  CommentContext, VoteContext, PostTarget, CommentTarget, PersonalityInfo, PostReadContext,
 } from '../types/index.js';
+import logger from '../utils/logger.js';
+import { withTimeout } from '../utils/withTimeout.js';
+import { ContextMetricsCollector } from '../tracking/ContextMetricsCollector.js';
 
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+const POST_CONTEXT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CONTEXT_FETCH_TIMEOUT_MS = 5_000;    // hard timeout for each PostReadContext fetch
+
+// Basic Vietnamese sentiment heuristic
+const POSITIVE_WORDS = ['hay', 'tốt', 'tuyệt', 'thú vị', 'đồng ý', 'cảm ơn', 'hữu ích', 'đúng', 'xuất sắc', 'chính xác'];
+const NEGATIVE_WORDS = ['tệ', 'kém', 'không đồng ý', 'sai', 'vô lý', 'thất vọng', 'dở', 'tệ hại', 'bực mình'];
+
+function detectSentiment(text: string): 'positive' | 'negative' | 'neutral' {
+  const lower = text.toLowerCase();
+  const pos = POSITIVE_WORDS.filter((w) => lower.includes(w)).length;
+  const neg = NEGATIVE_WORDS.filter((w) => lower.includes(w)).length;
+  return pos > neg ? 'positive' : neg > pos ? 'negative' : 'neutral';
+}
+
 export class ContextGathererService {
+  private postContextCache = new Map<number, { data: PostReadContext; expiresAt: number }>();
+  private metrics = new ContextMetricsCollector();
+
+  /** Expose aggregated context metrics for the /status endpoint. */
+  getMetricsSnapshot() {
+    return this.metrics.getSnapshot();
+  }
+
+  /**
+   * Record the rule-based relevance score for a comment that was just posted.
+   * Called by ContentGeneratorService after a successful comment API call.
+   */
+  recordCommentRelevance(
+    postId: number,
+    comment: string,
+    readContext: PostReadContext,
+  ): number {
+    const score = ContextMetricsCollector.computeRelevanceScore(
+      comment,
+      readContext.title,
+      readContext.tags,
+      readContext.body,
+    );
+    this.metrics.recordCommentRelevance(postId, comment, score);
+    return score;
+  }
+
+  async getPostReadContext(postId: number): Promise<PostReadContext> {
+    const cached = this.postContextCache.get(postId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
+    const fetchStart = Date.now();
+    let post: any;
+    let rawComments: any[];
+
+    try {
+      [post, rawComments] = await withTimeout(
+        Promise.all([
+          prisma.posts.findUniqueOrThrow({
+            where: { id: postId },
+            select: {
+              id: true,
+              title: true,
+              content: true,
+              excerpt: true,
+              post_tags: { select: { tags: { select: { name: true } } } },
+            },
+          }),
+          prisma.comments.findMany({
+            where: { post_id: postId, status: 'VISIBLE', parent_id: null },
+            orderBy: { created_at: 'desc' },
+            take: 5,
+            select: {
+              content: true,
+              users: { select: { display_name: true } },
+            },
+          }),
+        ]),
+        CONTEXT_FETCH_TIMEOUT_MS,
+        `getPostReadContext(${postId})`,
+      );
+    } catch (err: any) {
+      const latencyMs = Date.now() - fetchStart;
+      this.metrics.recordContextFetch({
+        postId,
+        success: false,
+        latencyMs,
+        tokenSize: 0,
+        fallback: true,
+        reason: err.message,
+        timestamp: Date.now(),
+      });
+      logger.warn(`[context_fetch] postId=${postId} failed in ${latencyMs}ms — ${err.message}`);
+      throw err; // re-throw tagged so RetryQueue classifies it correctly
+    }
+
+    const body = (post.content || post.excerpt || '').substring(0, 400);
+    const tags: string[] = (post.post_tags || []).slice(0, 5)
+      .map((pt: any) => pt.tags?.name).filter(Boolean);
+    const recentComments = rawComments.map((c: any) => ({
+      authorName: c.users?.display_name || 'Unknown',
+      content: (c.content as string).substring(0, 150),
+    }));
+
+    const allText = body + ' ' + recentComments.map((c: any) => c.content).join(' ');
+    const sentimentHint = detectSentiment(allText);
+
+    const data: PostReadContext = {
+      postId,
+      title: post.title.substring(0, 150),
+      body,
+      tags,
+      recentComments,
+      sentimentHint,
+    };
+
+    // Estimate token size (chars / 4 is a common approximation)
+    const totalChars = data.title.length + data.body.length
+      + data.tags.join(' ').length
+      + data.recentComments.reduce((s, c) => s + c.content.length, 0);
+    const tokenSize = Math.round(totalChars / 4);
+    const latencyMs = Date.now() - fetchStart;
+
+    this.metrics.recordContextFetch({
+      postId,
+      success: true,
+      latencyMs,
+      tokenSize,
+      fallback: false,
+      timestamp: Date.now(),
+    });
+
+    logger.info(
+      `[context_fetch] postId=${postId} ok — latency=${latencyMs}ms ` +
+      `tokens≈${tokenSize} comments=${recentComments.length} tags=${tags.length} sentiment=${sentimentHint}`,
+    );
+
+    this.postContextCache.set(postId, { data, expiresAt: Date.now() + POST_CONTEXT_TTL_MS });
+    return data;
+  }
+
   async getAllBotUsers(): Promise<BotUser[]> {
     const users = await prisma.users.findMany({
       where: { role: 'BOT', is_active: true },
@@ -161,7 +301,17 @@ export class ContextGathererService {
       }
     }
 
-    return { user: user as BotUser, targetPost, parentComment };
+    // Fetch post read context (degrade gracefully on error)
+    let postReadContext = null;
+    try {
+      postReadContext = await this.getPostReadContext(post.id);
+    } catch (err: any) {
+      logger.warn(
+        `[context_aware] fallback=true postId=${post.id} reason="${err.message}" — degrading to low_context_mode`,
+      );
+    }
+
+    return { user: user as BotUser, targetPost, parentComment, postReadContext };
   }
 
   async gatherVoteContext(userId: number): Promise<VoteContext | null> {
@@ -219,6 +369,15 @@ export class ContextGathererService {
 
       if (!selectedPost) return null;
 
+      let postReadContext = null;
+      try {
+        postReadContext = await this.getPostReadContext(selectedPost.id);
+      } catch (err: any) {
+        logger.warn(
+          `[context_aware] fallback=true postId=${selectedPost.id} reason="${err.message}" — degrading to low_context_mode`,
+        );
+      }
+
       return {
         user: user as BotUser,
         personality,
@@ -228,6 +387,7 @@ export class ContextGathererService {
         targetContent: (selectedPost.excerpt || selectedPost.content || '').substring(0, 300),
         targetAuthor: selectedPost.users?.display_name || 'Unknown',
         targetCategory: selectedPost.categories?.name || '',
+        postReadContext,
       };
     } else {
       // Find a recent comment this user hasn't voted on
@@ -273,6 +433,22 @@ export class ContextGathererService {
 
       if (!selectedComment) return null;
 
+      // For comment votes, we need the post id — fetch it via prisma
+      let commentPostReadContext = null;
+      try {
+        const commentPost = await prisma.comments.findUnique({
+          where: { id: selectedComment.id },
+          select: { post_id: true },
+        });
+        if (commentPost?.post_id) {
+          commentPostReadContext = await this.getPostReadContext(commentPost.post_id);
+        }
+      } catch (err: any) {
+        logger.warn(
+          `[context_aware] fallback=true commentId=${selectedComment.id} reason="${err.message}" — degrading to low_context_mode`,
+        );
+      }
+
       return {
         user: user as BotUser,
         personality,
@@ -282,6 +458,7 @@ export class ContextGathererService {
         targetContent: selectedComment.content.substring(0, 300),
         targetAuthor: selectedComment.users?.display_name || 'Unknown',
         targetCategory: selectedComment.posts?.categories?.name || '',
+        postReadContext: commentPostReadContext,
       };
     }
   }

@@ -18,7 +18,7 @@ Service tạo nội dung tự động bằng AI, mô phỏng hoạt động ngư
 | HTTP Client | Axios 1.7 |
 | Logging | Winston 3.19 |
 | Language | TypeScript 5.6 |
-| Testing | Jest |
+| Testing | Custom test runner (tsx) |
 
 ## Cấu trúc thư mục
 
@@ -47,6 +47,7 @@ vibe-content/
 │   │   ├── APIExecutorService.ts        # Gọi Backend API
 │   │   ├── PersonalityService.ts        # Cập nhật personality
 │   │   ├── StatusService.ts             # Health metrics
+│   │   ├── llmMetrics.ts                # LLM provider metrics
 │   │   └── llm/                         # 5 LLM provider implementations
 │   ├── scheduler/
 │   │   ├── cronScheduler.ts             # Cron job manager
@@ -153,7 +154,7 @@ vibe-content/
 
 ## Bot Users
 
-10+ profiles với personality riêng biệt, mỗi bot có:
+10+ profiles với personality riêng biệt (hiện tại 60 bot), mỗi bot có:
 - `username`, `email`, `display_name`, `bio`, `gender`
 - Avatar từ Dicebear API
 - Personality traits trong `user_content_context` (JSON): traits, tone, topics, writing_style
@@ -175,13 +176,14 @@ Cấu hình qua biến môi trường. Tách biệt với rate limit của Backe
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/health` | Health check |
+| GET | `/health` | Health check (bao gồm circuit breaker status) |
 | GET | `/status` | System status (metrics, uptime, state) |
-| POST | `/trigger` | Trigger thủ công — chạy tất cả action |
-| POST | `/trigger/post` | Trigger tạo bài viết |
-| POST | `/trigger/comment` | Trigger tạo bình luận |
-| POST | `/trigger/vote` | Trigger vote |
-| POST | `/trigger/{action}/{label}` | Trigger action cụ thể với provider label (1-10) |
+| GET | `/metrics` | LLM provider metrics |
+| GET/POST | `/trigger` | Trigger thủ công — chạy tất cả action |
+| GET/POST | `/trigger/post` | Trigger tạo bài viết |
+| GET/POST | `/trigger/comment` | Trigger tạo bình luận |
+| GET/POST | `/trigger/vote` | Trigger vote |
+| GET/POST | `/trigger/{action}/{label}` | Trigger action cụ thể với provider label (1-10) |
 
 ## Biến môi trường
 
@@ -233,7 +235,7 @@ npm run seed:tags         # Tạo tags
 npm run seed:all          # Tạo tất cả
 
 # Testing
-npm test                 # Chạy tests
+npm test                 # Chạy tests (custom tsx runner)
 ```
 
 ## Docker

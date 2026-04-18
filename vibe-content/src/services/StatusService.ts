@@ -18,6 +18,17 @@ export class StatusService {
       model: action.provider,
     }));
 
+    // Aggregate provider stack by type
+    const providerSummary: Record<string, { available: number; total: number }> = {};
+    for (const item of snapshot.modelStack) {
+      const type = item.providerType || 'unknown';
+      if (!providerSummary[type]) {
+        providerSummary[type] = { available: 0, total: 0 };
+      }
+      providerSummary[type].total++;
+      if (item.available) providerSummary[type].available++;
+    }
+
     return {
       status: 'ok',
       uptime: `${hours}h ${minutes}m`,
@@ -25,24 +36,29 @@ export class StatusService {
       env: config.nodeEnv,
       forumApi: config.forumApiUrl,
       cronSchedule: config.cron.schedule,
-      providers: snapshot.providers,
-      modelStack: snapshot.modelStack,
-      providerStatus: snapshot.providerStatus,
-      todayStats: snapshot.todayStats,
-      todayActions: snapshot.todayActions,
-      queue: snapshot.queue,
-      recentActions,
+      providerHealth: {
+        available: snapshot.providerStatus.available.length,
+        unavailable: snapshot.providerStatus.unavailable.length,
+        byType: providerSummary,
+      },
+      stats: {
+        today: snapshot.todayStats,
+        queue: {
+          pending: snapshot.queue.pending,
+          retrying: snapshot.queue.retrying,
+          dlqSize: snapshot.queue.dlqSize,
+        },
+        context: snapshot.contextMetrics,
+      },
       lastAction: lastAction
         ? {
             type: lastAction.actionType,
             userId: lastAction.userId,
             provider: lastAction.provider,
-            model: lastAction.provider,
             success: lastAction.success,
             latencyMs: lastAction.latencyMs,
             at: lastAction.completedAt,
             error: lastAction.error,
-            triggerSource: lastAction.triggerSource,
           }
         : null,
     };

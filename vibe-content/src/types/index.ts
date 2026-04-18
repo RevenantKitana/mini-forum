@@ -45,10 +45,23 @@ export interface GenerationContext {
   recentPosts?: { title: string; excerpt: string }[];
 }
 
+export interface PostReadContext {
+  postId: number;
+  title: string;
+  body: string;
+  tags: string[];
+  recentComments: Array<{
+    authorName: string;
+    content: string;
+  }>;
+  sentimentHint: 'positive' | 'negative' | 'neutral';
+}
+
 export interface CommentContext {
   user: BotUser;
   targetPost: PostTarget;
   parentComment?: CommentTarget;
+  postReadContext: PostReadContext | null;
 }
 
 export interface VoteContext {
@@ -60,6 +73,7 @@ export interface VoteContext {
   targetContent: string;
   targetAuthor: string;
   targetCategory: string;
+  postReadContext: PostReadContext | null;
 }
 
 export interface VotePatterns {
@@ -108,6 +122,7 @@ export interface ActionResult {
   actionId?: string;
   completedAt?: string;
   triggerSource?: ActionTriggerSource;
+  postId?: number;
 }
 
 export interface SelectedAction {
@@ -146,6 +161,7 @@ export interface ActionLevelHistoryItem {
   error?: string;
   triggerSource: ActionTriggerSource;
   completedAt: string;
+  postId?: number;
 }
 
 export interface ActionStatsSnapshot {
@@ -184,4 +200,5 @@ export interface GeneratorStatusSnapshot {
   todayActions: Record<string, unknown>;
   queue: Record<string, unknown>;
   jobLifecycle?: Record<string, unknown>;
+  contextMetrics: Record<string, unknown>;
 }

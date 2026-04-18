@@ -11,16 +11,26 @@ Nội dung (trích): {TARGET_CONTENT}
 Tác giả: {TARGET_AUTHOR}
 Category: {TARGET_CATEGORY}
 
+{POST_READ_SECTION}
+
 NHIỆM VỤ: Dựa vào tính cách + chủ đề quan tâm của bạn,
 bạn có muốn vote cho nội dung này không?
 
-Suy nghĩ theo hướng:
-- Nội dung có liên quan đến chủ đề bạn quan tâm không?
-- Bạn đồng ý hay không đồng ý với quan điểm trong bài?
-- Chất lượng nội dung có tốt không?
-- Nếu KHÔNG quan tâm → shouldVote: false (bỏ qua, không vote)
-- Nếu THÍCH/ĐỒNG Ý → shouldVote: true, voteType: "up"
-- Nếu KHÔNG THÍCH/KHÔNG ĐỒNG Ý → shouldVote: true, voteType: "down"
+Suy nghĩ theo các bước:
+1. Chủ đề có liên quan đến topics bạn quan tâm không? (ưu tiên cao nhất)
+2. Bạn đồng ý hay không đồng ý với quan điểm/nội dung?
+3. Chất lượng nội dung có đáng để vote không?
+4. Nếu bài/comment quá ngắn, không rõ ý, hoặc chủ đề hoàn toàn không liên quan → shouldVote: false
+
+Quyết định:
+- Chủ đề KHÔNG liên quan → shouldVote: false (bỏ qua)
+- Chủ đề liên quan + THÍCH/ĐỒNG Ý → shouldVote: true, voteType: "up"
+- Chủ đề liên quan + KHÔNG THÍCH/KHÔNG ĐỒNG Ý → shouldVote: true, voteType: "down"
+- Không có đủ thông tin để đánh giá → shouldVote: false
+
+Trong phần reason, nêu rõ:
+- Tại sao nội dung này liên quan (hoặc không liên quan) đến chủ đề bạn quan tâm
+- Điểm cụ thể nào trong nội dung khiến bạn quyết định up/down
 
 Output JSON (CHỈ JSON, không text thêm, không markdown):
 {

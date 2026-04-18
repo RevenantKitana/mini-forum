@@ -7,11 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
-    "lint": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -77,19 +73,13 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.6.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^4.1.4",
-    "@vitest/ui": "^4.0.18",
-    "jsdom": "^28.1.0",
     "tailwindcss": "4.1.12",
     "typescript": "^5.8.1",
-    "vite": "^6.4.1",
-    "vitest": "^4.0.18"
+    "vite": "^6.4.1"
   },
   "peerDependencies": {
     "react": "18.3.1",

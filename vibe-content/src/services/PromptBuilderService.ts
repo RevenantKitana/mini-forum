@@ -1,4 +1,4 @@
-import { GenerationContext, CommentContext, VoteContext, PersonalityInfo } from '../types/index.js';
+import { GenerationContext, CommentContext, VoteContext, PersonalityInfo, PostReadContext } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import fs from 'fs';
 import path from 'path';
@@ -24,6 +24,28 @@ export class PromptBuilderService {
    * Build a consistency preamble from personality data.
    * Phase 3.2: Stronger consistency instructions when we have rich personality data.
    */
+  private buildPostReadSection(ctx: PostReadContext | null): string {
+    if (!ctx) return '';
+
+    const lines: string[] = [];
+    lines.push('--- NỘI DUNG BÀI VIẾT ---');
+    lines.push(`Tiêu đề: "${ctx.title}"`);
+    if (ctx.tags.length > 0) {
+      lines.push(`Tags: ${ctx.tags.join(', ')}`);
+    }
+    if (ctx.body) {
+      lines.push(`Nội dung (trích):\n${ctx.body}`);
+    }
+    if (ctx.recentComments.length > 0) {
+      lines.push('\nCác bình luận gần đây:');
+      ctx.recentComments.forEach((c, i) => {
+        lines.push(`  ${i + 1}. [${c.authorName}]: ${c.content}`);
+      });
+    }
+    lines.push('---');
+    return lines.join('\n');
+  }
+
   private buildConsistencyPreamble(personality: PersonalityInfo | null, recentSnippets?: string): string {
     if (!personality) return '';
 
@@ -89,17 +111,30 @@ export class PromptBuilderService {
     return prompt;
   }
 
+  private maxCommentLength(tone: string): number {
+    const t = tone.toLowerCase();
+    // Blunt/sarcastic/direct personalities write shorter, snappier comments
+    if (/blunt|sarcastic|direct|cynical|brief/.test(t)) return 50;
+    // Analytical/thoughtful personalities can write slightly more
+    if (/analytical|thoughtful|curious|detailed/.test(t)) return 100;
+    return 80; // default casual
+  }
+
   async buildCommentPrompt(context: CommentContext): Promise<string> {
-    const { user, targetPost, parentComment } = context;
+    const { user, targetPost, parentComment, postReadContext } = context;
 
     const personality = await this.contextGatherer.getPersonality(user.id);
     const traits = personality?.traits?.join(', ') || 'bình thường';
     const tone = personality?.tone || 'casual';
+    const maxLen = this.maxCommentLength(tone);
 
     let parentSection = '';
     if (parentComment) {
       parentSection = `Bạn đang trả lời comment của ${parentComment.authorName}:\n"${parentComment.content}"`;
     }
+
+    // Use postReadContext body if available, otherwise fall back to excerpt
+    const postBody = postReadContext?.body || targetPost.excerpt || '(không có nội dung)';
 
     let prompt = this.commentTemplate;
     prompt = prompt.replace(/{DISPLAY_NAME}/g, user.display_name);
@@ -107,9 +142,18 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{TRAITS}/g, traits);
     prompt = prompt.replace(/{TONE}/g, tone);
     prompt = prompt.replace(/{POST_TITLE}/g, targetPost.title);
-    prompt = prompt.replace(/{POST_EXCERPT}/g, targetPost.excerpt || '(không có excerpt)');
+    prompt = prompt.replace(/{POST_EXCERPT}/g, postBody);
     prompt = prompt.replace(/{POST_AUTHOR}/g, targetPost.authorName);
     prompt = prompt.replace(/{PARENT_COMMENT_SECTION}/g, parentSection);
+    prompt = prompt.replace(/{MAX_COMMENT_LENGTH}/g, String(maxLen));
+
+    // Inject full post read section (body + thread context)
+    const postReadSection = this.buildPostReadSection(postReadContext);
+    if (postReadSection) {
+      prompt = prompt.replace(/{POST_READ_SECTION}/g, postReadSection);
+    } else {
+      prompt = prompt.replace(/{POST_READ_SECTION}/g, '');
+    }
 
     // Phase 3.2: Inject consistency preamble
     const preamble = this.buildConsistencyPreamble(personality);
@@ -121,7 +165,7 @@ export class PromptBuilderService {
   }
 
   buildVotePrompt(context: VoteContext): string {
-    const { user, personality, targetType, targetTitle, targetContent, targetAuthor, targetCategory } = context;
+    const { user, personality, targetType, targetTitle, targetContent, targetAuthor, targetCategory, postReadContext } = context;
 
     const traits = personality?.traits?.join(', ') || 'bình thường';
     const tone = personality?.tone || 'casual';
@@ -138,6 +182,14 @@ export class PromptBuilderService {
     prompt = prompt.replace(/{TARGET_CONTENT}/g, targetContent);
     prompt = prompt.replace(/{TARGET_AUTHOR}/g, targetAuthor);
     prompt = prompt.replace(/{TARGET_CATEGORY}/g, targetCategory);
+
+    // Inject post read section for richer context
+    const postReadSection = this.buildPostReadSection(postReadContext ?? null);
+    if (postReadSection) {
+      prompt = prompt.replace(/{POST_READ_SECTION}/g, postReadSection);
+    } else {
+      prompt = prompt.replace(/{POST_READ_SECTION}/g, '');
+    }
 
     // Phase 3.2: Inject consistency preamble (vote patterns)
     const preamble = this.buildConsistencyPreamble(personality);

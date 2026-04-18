@@ -60,6 +60,7 @@ admin-client/src/
 | `CategoriesPage` | `/categories` | CRUD danh mục |
 | `TagsPage` | `/tags` | CRUD thẻ |
 | `AuditLogsPage` | `/audit-logs` | Xem nhật ký hành động |
+| `OperationalDashboardPage` | `/ops` | Dashboard vận hành hệ thống |
 | `SettingsPage` | `/settings` | Cấu hình hệ thống |
 
 ## Tính năng chi tiết

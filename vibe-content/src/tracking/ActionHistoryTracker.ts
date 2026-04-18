@@ -29,6 +29,7 @@ export class ActionHistoryTracker {
       error: result.error,
       triggerSource: result.triggerSource || fallback.triggerSource,
       completedAt,
+      postId: result.postId,
     };
 
     this.history.push(action);
@@ -55,6 +56,41 @@ export class ActionHistoryTracker {
       }
     }
     return null;
+  }
+
+  /**
+   * Returns true if `userId` performed any action on `postId` within `windowMs` ms.
+   * Used to enforce per-user per-post cooldown.
+   */
+  hasRecentActionOnPost(userId: number, postId: number, windowMs: number): boolean {
+    const since = Date.now() - windowMs;
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const action = this.history[i];
+      if (action.postId === postId && action.userId === userId && action.success) {
+        if (new Date(action.completedAt).getTime() >= since) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns true if ANY bot performed a successful comment on `postId`
+   * within `windowMs` ms. Used to prevent back-to-back bot comments in the same thread.
+   */
+  hasRecentCommentOnPost(postId: number, windowMs: number): boolean {
+    const since = Date.now() - windowMs;
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const action = this.history[i];
+      if (
+        action.postId === postId &&
+        action.actionType === 'comment' &&
+        action.success &&
+        new Date(action.completedAt).getTime() >= since
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   getTodayStats(now = new Date()): ActionStatsSnapshot {

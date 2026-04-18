@@ -262,6 +262,7 @@ cd vibe-content && npm install && npm run dev
 | Backend | Jest + Supertest | `npm test`, `npm run test:coverage` |
 | Frontend | Vitest + React Testing Library | `npm test`, `npm run test:coverage` |
 | Admin-Client | Vitest + React Testing Library | `npm test`, `npm run test:coverage` |
+| Vibe-Content | Custom test runner (tsx) | `npm test` |
 | Root (E2E) | Playwright | `npx playwright test` |
 
 ### Versioning
@@ -295,7 +296,7 @@ cd vibe-content && npm install && npm run dev
 - **Shared database**: Một PostgreSQL duy nhất cho tất cả service — chưa có chiến lược sharding hoặc tách database.
 - **Vibe-Content concurrent execution**: Flag `isRunning` chống overlap chỉ hoạt động trong một instance duy nhất.
 - **File storage**: Hiện tại không có object storage (S3, etc.) — avatar sử dụng Dicebear API (external).
-- **Real-time**: Chưa có WebSocket/SSE — notification chỉ cập nhật khi user refresh hoặc polling.
+- **Real-time**: SSE (Server-Sent Events) cho notification real-time — Backend phát sự kiện, Frontend tự động nhận qua `EventSource`.
 - **Search**: Full-text search trực tiếp trên PostgreSQL — chưa có Elasticsearch/Meilisearch cho volume lớn.
 
 ---

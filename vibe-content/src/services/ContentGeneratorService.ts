@@ -12,6 +12,11 @@ import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
 import { JobLifecycleStore } from '../tracking/JobLifecycleStore.js';
 import logger, { logAction } from '../utils/logger.js';
 
+// Per-user per-post cooldown: same bot cannot comment/vote on the same post within this window
+const POST_USER_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
+// Anti-spam: no bot comment in the same thread within this window
+const POST_FRESH_COMMENT_MS = 10 * 60 * 1000; // 10 minutes
+
 export class ContentGeneratorService {
   private contextGatherer: ContextGathererService;
   private promptBuilder: PromptBuilderService;
@@ -301,6 +306,39 @@ export class ContentGeneratorService {
     const context = await this.contextGatherer.gatherCommentContext(userId);
     const isReply = !!context.parentComment;
     logger.info(`[context_gather] Target post: "${context.targetPost.title}" (${isReply ? 'reply' : 'top-level'})`);
+    logger.info(`[context_aware] status: ${context.postReadContext ? 'full' : 'degraded'}, postId: ${context.targetPost.id}`);
+
+    const postId = context.targetPost.id;
+
+    // 1b. Per-user per-post cooldown check
+    if (this.actionHistory.hasRecentActionOnPost(userId, postId, POST_USER_COOLDOWN_MS)) {
+      const msg = `Cooldown: user #${userId} already acted on post #${postId} recently`;
+      logger.info(`[anti_spam] ${msg}`);
+      return {
+        success: false, actionType: 'comment', userId, provider: 'none',
+        latencyMs: Date.now() - startTime, error: msg, postId,
+      };
+    }
+
+    // 1c. Anti-spam: skip if any bot commented on this thread too recently
+    if (this.actionHistory.hasRecentCommentOnPost(postId, POST_FRESH_COMMENT_MS)) {
+      const msg = `Fresh comment exists on post #${postId}, skipping to avoid spam`;
+      logger.info(`[anti_spam] ${msg}`);
+      return {
+        success: false, actionType: 'comment', userId, provider: 'none',
+        latencyMs: Date.now() - startTime, error: msg, postId,
+      };
+    }
+
+    // 1d. Context quality check
+    if (!ActionSelectorService.isContextQualityOk(context.postReadContext)) {
+      const msg = `Context quality too low for post #${postId} (body too short, no comments, no tags)`;
+      logger.info(`[context_quality] ${msg}`);
+      return {
+        success: false, actionType: 'comment', userId, provider: 'none',
+        latencyMs: Date.now() - startTime, error: msg, postId,
+      };
+    }
 
     // 2. Build prompt
     logAction({ actionId, userId, actionType: 'comment', stage: 'prompt_build', status: 'info' });
@@ -367,7 +405,7 @@ export class ContentGeneratorService {
       details: { commentId: apiResult.commentId, isReply, contentPreview: validation.data!.content.substring(0, 80) },
     });
 
-    return { success: true, actionType: 'comment', userId, provider, latencyMs };
+    return { success: true, actionType: 'comment', userId, provider, latencyMs, postId };
   }
 
   private async executeVote(
@@ -387,9 +425,21 @@ export class ContentGeneratorService {
       };
     }
     logger.info(`[context_gather] Target: ${context.targetType} #${context.targetId} — "${context.targetTitle}"`);
+    logger.info(`[context_aware] status: ${context.postReadContext ? 'full' : 'degraded'}, targetType: ${context.targetType}, targetId: ${context.targetId}`);
+
+    // 1b. Per-user per-post cooldown (use postReadContext postId, or derive from targetId when voting on post)
+    const votePostId = context.postReadContext?.postId ?? (context.targetType === 'post' ? context.targetId : undefined);
+    if (votePostId && this.actionHistory.hasRecentActionOnPost(userId, votePostId, POST_USER_COOLDOWN_MS)) {
+      const msg = `Cooldown: user #${userId} already acted on post #${votePostId} recently`;
+      logger.info(`[anti_spam] ${msg}`);
+      return {
+        success: false, actionType: 'vote', userId, provider: 'none',
+        latencyMs: Date.now() - startTime, error: msg, postId: votePostId,
+      };
+    }
 
     // 2. Decide strategy: random voting rate vs. LLM-based (personality-driven)
-    const isRandomVoter = !forcedProviderId && Math.random() < 0.7; // Force LLM path when specific model is requested
+    const isRandomVoter = !forcedProviderId && Math.random() < 0.7;
     let voteType: 'up' | 'down';
     let reason: string;
     let provider: string;
@@ -465,7 +515,7 @@ export class ContentGeneratorService {
       details: { voteType, strategy: strategyLabel, reason, targetType: context.targetType, targetId: context.targetId },
     });
 
-    return { success: true, actionType: 'vote', userId, provider, latencyMs };
+    return { success: true, actionType: 'vote', userId, provider, latencyMs, postId: votePostId };
   }
 
   getRateLimiterStats() {
@@ -505,6 +555,7 @@ export class ContentGeneratorService {
       },
       queue: this.getRetryQueueStats() as Record<string, unknown>,
       jobLifecycle: this.jobLifecycle.getSnapshot() as Record<string, unknown>,
+      contextMetrics: this.contextGatherer.getMetricsSnapshot() as unknown as Record<string, unknown>,
     };
   }
 

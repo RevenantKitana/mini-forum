@@ -36,7 +36,7 @@ backend/
 │   ├── constants/
 │   │   └── roles.ts           # Role hierarchy (MEMBER=1, MODERATOR=2, ADMIN=3, BOT=1)
 │   ├── controllers/           # Request handlers (13 files)
-│   ├── services/              # Business logic (16 files)
+│   ├── services/              # Business logic (18 files)
 │   ├── middlewares/            # Auth, validation, error handling
 │   ├── routes/                # Route definitions (14 files)
 │   ├── types/                 # TypeScript type definitions
@@ -70,7 +70,7 @@ Tất cả endpoint đặt dưới prefix `/api/v1`.
 | `adminRoutes` | `/admin` | Thao tác quản trị (bulk operations) |
 | `configRoutes` | `/config` | Lấy cấu hình công khai (categories, tags) |
 
-**Health check:** `GET /ping`, `GET /health`
+**Health check:** `GET /ping` (root), `GET /api/v1/health` (API)
 
 ## Database Schema
 
@@ -125,21 +125,20 @@ Hàm `hasPermission(userRole, requiredRole)` so sánh numeric level.
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
 | `DATABASE_URL` | Có | PostgreSQL connection string |
-| `DIRECT_URL` | Có | Direct database URL (cho Prisma migrate) |
 | `JWT_ACCESS_SECRET` | Có | Secret key cho access token |
 | `JWT_REFRESH_SECRET` | Có | Secret key cho refresh token |
-| `JWT_ACCESS_EXPIRES_IN` | Không | Thời hạn access token (mặc định: 15m) |
-| `JWT_REFRESH_EXPIRES_IN` | Không | Thời hạn refresh token (mặc định: 7d) |
+| `JWT_ACCESS_EXPIRES_IN` | Có | Thời hạn access token (ví dụ: 15m) |
+| `JWT_REFRESH_EXPIRES_IN` | Có | Thời hạn refresh token (ví dụ: 7d) |
 | `FRONTEND_URL` | Có | URL frontend, phân cách bằng dấu phẩy (CORS) |
 | `BREVO_API_KEY` | Có | API key dịch vụ email Brevo |
 | `BREVO_FROM_EMAIL` | Có | Email gửi OTP |
 | `BREVO_FROM_NAME` | Có | Tên hiển thị email |
+| `COMMENT_EDIT_TIME_LIMIT` | Có | Giới hạn thời gian sửa bình luận (phút) |
+| `OTP_LENGTH` | Có | Độ dài mã OTP |
+| `OTP_EXPIRATION_MINUTES` | Có | Thời hạn OTP (phút) |
+| `OTP_MAX_ATTEMPTS` | Có | Số lần thử OTP tối đa |
+| `OTP_RESEND_DELAY_SECONDS` | Có | Delay giữa các lần gửi OTP (giây) |
 | `PORT` | Không | Port server (mặc định: 5000) |
-| `COMMENT_EDIT_TIME_LIMIT` | Không | Giới hạn thời gian sửa bình luận (mặc định: 30 phút) |
-| `OTP_LENGTH` | Không | Độ dài mã OTP (mặc định: 6) |
-| `OTP_EXPIRATION_MINUTES` | Không | Thời hạn OTP (mặc định: 10 phút) |
-| `OTP_MAX_ATTEMPTS` | Không | Số lần thử OTP tối đa (mặc định: 5) |
-| `OTP_RESEND_DELAY_SECONDS` | Không | Delay giữa các lần gửi OTP (mặc định: 60s) |
 
 ## Scripts
 

@@ -1,4 +1,4 @@
-import { ActionType, BotUser, SelectedAction } from '../types/index.js';
+import { ActionType, BotUser, SelectedAction, PostReadContext } from '../types/index.js';
 import { ContextGathererService } from './ContextGathererService.js';
 import { RateLimiter } from '../tracking/RateLimiter.js';
 import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
@@ -80,5 +80,22 @@ export class ActionSelectorService {
     }
 
     return { userId: user.id, actionType: selected };
+  }
+
+  /**
+   * Returns false when PostReadContext doesn't have enough content to anchor
+   * a meaningful comment or vote. Caller should skip/degrade the action.
+   *
+   * Rules:
+   *  - null context → degrade mode (don't skip hard, just log)
+   *  - body < 30 chars AND no recent comments AND no tags → quality too low → skip
+   */
+  static isContextQualityOk(postReadContext: PostReadContext | null): boolean {
+    if (!postReadContext) return true; // degraded is handled elsewhere
+    const hasBody = postReadContext.body.trim().length >= 30;
+    const hasComments = postReadContext.recentComments.length > 0;
+    const hasTags = postReadContext.tags.length > 0;
+    if (!hasBody && !hasComments && !hasTags) return false;
+    return true;
   }
 }
