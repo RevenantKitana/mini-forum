@@ -93,13 +93,13 @@ export function NotificationBell() {
     }
     
     // Fallback to relatedId
-    if (!notification.relatedType || !notification.relatedId) {
+    if (!notification.related_type || !notification.related_id) {
       return '#';
     }
 
-    switch (notification.relatedType) {
+    switch (notification.related_type) {
       case 'POST':
-        return `/posts/${notification.relatedId}`;
+        return `/posts/${notification.related_id}`;
       case 'COMMENT':
         // For comments, relatedId is commentId, need postId
         return '#';
@@ -179,10 +179,10 @@ export function NotificationBell() {
                 key={notification.id}
                 className={cn(
                   'flex items-start gap-3 p-3 cursor-pointer',
-                  !notification.isRead && 'bg-muted/50'
+                  !notification.is_read && 'bg-muted/50'
                 )}
                 onClick={() => {
-                  if (!notification.isRead) {
+                  if (!notification.is_read) {
                     handleMarkAsRead(notification.id);
                   }
                 }}
@@ -195,13 +195,13 @@ export function NotificationBell() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm line-clamp-2">{notification.content}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(notification.createdAt), {
+                      {formatDistanceToNow(new Date(notification.created_at), {
                         addSuffix: true,
                         locale: vi,
                       })}
                     </p>
                   </div>
-                  {!notification.isRead && (
+                  {!notification.is_read && (
                     <div className="flex-shrink-0">
                       <div className="h-2 w-2 rounded-full bg-blue-500" />
                     </div>

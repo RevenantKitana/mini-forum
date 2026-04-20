@@ -4,7 +4,7 @@ interface Category {
   id: number;
   name: string;
   slug: string;
-  postCount: number;
+  post_count: number;
 }
 
 interface MobileCategoryBarProps {
@@ -49,8 +49,8 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
           )}
         >
           {cat.name}
-          {cat.postCount > 0 && (
-            <span className="ml-1 text-[10px] opacity-60">({cat.postCount})</span>
+          {cat.post_count > 0 && (
+            <span className="ml-1 text-[10px] opacity-60">({cat.post_count})</span>
           )}
         </button>
       ))}

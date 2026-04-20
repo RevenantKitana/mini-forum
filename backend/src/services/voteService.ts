@@ -10,10 +10,10 @@ type VoteTarget = 'POST' | 'COMMENT';
 export async function getUserVote(userId: number, targetType: VoteTarget, targetId: number) {
   return prisma.votes.findUnique({
     where: {
-      userId_targetType_targetId: {
-        userId,
-        targetType,
-        targetId,
+      user_id_target_type_target_id: {
+        user_id: userId,
+        target_type: targetType,
+        target_id: targetId,
       },
     },
   });
@@ -110,11 +110,11 @@ export async function votePost(postId: number, userId: number, voteType: 'up' | 
     await prisma.$transaction([
       prisma.votes.create({
         data: {
-          userId,
-          targetType: 'POST',
-          targetId: postId,
+          user_id: userId,
+          target_type: 'POST',
+          target_id: postId,
           value: voteValue,
-          updatedAt: new Date(),
+          updated_at: new Date(),
         },
       }),
       prisma.posts.update({
@@ -276,11 +276,11 @@ export async function voteComment(commentId: number, userId: number, voteType: '
     await prisma.$transaction([
       prisma.votes.create({
         data: {
-          userId,
-          targetType: 'COMMENT',
-          targetId: commentId,
+          user_id: userId,
+          target_type: 'COMMENT',
+          target_id: commentId,
           value: voteValue,
-          updatedAt: new Date(),
+          updated_at: new Date(),
         },
       }),
       prisma.comments.update({
@@ -357,18 +357,18 @@ export async function removeCommentVote(commentId: number, userId: number) {
 export async function getUserVotesForPosts(userId: number, post_ids: number[]) {
   const votes = await prisma.votes.findMany({
     where: {
-      userId,
-      targetType: 'POST',
-      targetId: { in: post_ids },
+      user_id: userId,
+      target_type: 'POST',
+      target_id: { in: post_ids },
     },
     select: {
-      targetId: true,
+      target_id: true,
       value: true,
     },
   });
 
   return votes.reduce((acc, vote) => {
-    acc[vote.targetId] = vote.value;
+    acc[vote.target_id] = vote.value;
     return acc;
   }, {} as Record<number, number>);
 }
@@ -379,18 +379,18 @@ export async function getUserVotesForPosts(userId: number, post_ids: number[]) {
 export async function getUserVotesForComments(userId: number, commentIds: number[]) {
   const votes = await prisma.votes.findMany({
     where: {
-      userId,
-      targetType: 'COMMENT',
-      targetId: { in: commentIds },
+      user_id: userId,
+      target_type: 'COMMENT',
+      target_id: { in: commentIds },
     },
     select: {
-      targetId: true,
+      target_id: true,
       value: true,
     },
   });
 
   return votes.reduce((acc, vote) => {
-    acc[vote.targetId] = vote.value;
+    acc[vote.target_id] = vote.value;
     return acc;
   }, {} as Record<number, number>);
 }
@@ -410,9 +410,9 @@ export async function getUserVoteHistory(
   const { page = 1, limit = 10, targetType, voteType } = options;
   const skip = (page - 1) * limit;
 
-  const where: any = { userId };
+  const where: any = { user_id: userId };
   if (targetType) {
-    where.targetType = targetType;
+    where.target_type = targetType;
   }
   if (voteType) {
     where.value = voteType === 'up' ? 1 : -1;
@@ -421,7 +421,7 @@ export async function getUserVoteHistory(
   const [votes, total] = await Promise.all([
     prisma.votes.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
     }),
@@ -429,8 +429,8 @@ export async function getUserVoteHistory(
   ]);
 
   // Separate post and comment IDs
-  const post_ids = votes.filter(v => v.targetType === 'POST').map(v => v.targetId);
-  const commentIds = votes.filter(v => v.targetType === 'COMMENT').map(v => v.targetId);
+  const post_ids = votes.filter(v => v.target_type === 'POST').map(v => v.target_id);
+  const commentIds = votes.filter(v => v.target_type === 'COMMENT').map(v => v.target_id);
 
   // Fetch post details
   const posts = post_ids.length > 0 ? await prisma.posts.findMany({
@@ -483,27 +483,27 @@ export async function getUserVoteHistory(
   const enrichedVotes = votes.map(vote => {
     const voteTypeLabel = vote.value === 1 ? 'upvote' : 'downvote';
     
-    if (vote.targetType === 'POST') {
-      const post = postMap.get(vote.targetId);
+    if (vote.target_type === 'POST') {
+      const post = postMap.get(vote.target_id);
       return {
         id: vote.id,
-        targetType: vote.targetType,
-        targetId: vote.targetId,
+        target_type: vote.target_type,
+        target_id: vote.target_id,
         voteTypeLabel,
-        createdAt: vote.createdAt,
+        created_at: vote.created_at,
         target: post ? {
           title: post.title,
           author: post.users,
         } : null,
       };
     } else {
-      const comment = commentMap.get(vote.targetId);
+      const comment = commentMap.get(vote.target_id);
       return {
         id: vote.id,
-        targetType: vote.targetType,
-        targetId: vote.targetId,
+        target_type: vote.target_type,
+        target_id: vote.target_id,
         voteTypeLabel,
-        createdAt: vote.createdAt,
+        created_at: vote.created_at,
         target: comment ? {
           content: comment.content ? (comment.content.length > 100 ? comment.content.substring(0, 100) + '...' : comment.content) : '',
           author: comment.users,

@@ -23,7 +23,7 @@ export async function blockUser(blockerId: number, blockedId: number) {
   // Check if already blocked
   const existingBlock = await prisma.user_blocks.findUnique({
     where: {
-      blockerId_blockedId: { blockerId, blockedId },
+      blocker_id_blocked_id: { blocker_id: blockerId, blocked_id: blockedId },
     },
   });
 
@@ -32,7 +32,7 @@ export async function blockUser(blockerId: number, blockedId: number) {
   }
 
   await prisma.user_blocks.create({
-    data: { blockerId, blockedId },
+    data: { blocker_id: blockerId, blocked_id: blockedId },
   });
 
   return { blocked: true, username: blockedUser.username };
@@ -44,7 +44,7 @@ export async function blockUser(blockerId: number, blockedId: number) {
 export async function unblockUser(blockerId: number, blockedId: number) {
   const existingBlock = await prisma.user_blocks.findUnique({
     where: {
-      blockerId_blockedId: { blockerId, blockedId },
+      blocker_id_blocked_id: { blocker_id: blockerId, blocked_id: blockedId },
     },
   });
 
@@ -54,7 +54,7 @@ export async function unblockUser(blockerId: number, blockedId: number) {
 
   await prisma.user_blocks.delete({
     where: {
-      blockerId_blockedId: { blockerId, blockedId },
+      blocker_id_blocked_id: { blocker_id: blockerId, blocked_id: blockedId },
     },
   });
 
@@ -67,7 +67,7 @@ export async function unblockUser(blockerId: number, blockedId: number) {
 export async function isUserBlocked(blockerId: number, blockedId: number): Promise<boolean> {
   const block = await prisma.user_blocks.findUnique({
     where: {
-      blockerId_blockedId: { blockerId, blockedId },
+      blocker_id_blocked_id: { blocker_id: blockerId, blocked_id: blockedId },
     },
   });
   return !!block;
@@ -81,9 +81,9 @@ export async function getBlockedUsers(userId: number, page = 1, limit = 20) {
 
   const [blocks, total] = await Promise.all([
     prisma.user_blocks.findMany({
-      where: { blockerId: userId },
+      where: { blocker_id: userId },
       include: {
-        users_user_blocks_blockedIdTousers: {
+        users_user_blocks_blocked_idTousers: {
           select: {
             id: true,
             username: true,
@@ -92,16 +92,16 @@ export async function getBlockedUsers(userId: number, page = 1, limit = 20) {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
     }),
-      prisma.user_blocks.count({ where: { blockerId: userId } }),
+      prisma.user_blocks.count({ where: { blocker_id: userId } }),
   ]);
 
   const data = blocks.map((block) => ({
-    ...block.users_user_blocks_blockedIdTousers,
-    blockedAt: block.createdAt,
+    ...block.users_user_blocks_blocked_idTousers,
+    blockedAt: block.created_at,
   }));
 
   return {
@@ -120,10 +120,10 @@ export async function getBlockedUsers(userId: number, page = 1, limit = 20) {
  */
 export async function getBlockedUserIds(userId: number): Promise<number[]> {
   const blocks = await prisma.user_blocks.findMany({
-    where: { blockerId: userId },
-    select: { blockedId: true },
+    where: { blocker_id: userId },
+    select: { blocked_id: true },
   });
-  return blocks.map((b) => b.blockedId);
+  return blocks.map((b) => b.blocked_id);
 }
 
 

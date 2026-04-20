@@ -40,10 +40,13 @@ async function clearDatabase() {
     console.log("Delete Others... ")
     await prisma.post_tags.deleteMany();
     await prisma.refresh_tokens.deleteMany();
+    await prisma.user_blocks.deleteMany();
 
+    console.log('Deleting users...');
+    await prisma.users.deleteMany();
 
     console.log('Database cleanup completed successfully!');
-    console.log('All data except users has been deleted.');
+    console.log('All data has been deleted.');
   } catch (error) {
     console.error('Error during database cleanup:', error);
   } finally {

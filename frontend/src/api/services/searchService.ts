@@ -7,19 +7,19 @@ export interface SearchResult {
   title: string;
   slug: string;
   excerpt: string | null;
-  viewCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  commentCount: number;
+  view_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
   status: string;
-  isPinned: boolean;
-  isLocked: boolean;
-  createdAt: string;
+  is_pinned: boolean;
+  is_locked: boolean;
+  created_at: string;
   author: {
     id: number;
     username: string;
-    displayName: string | null;
-    avatarUrl: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
     role: string;
     reputation: number;
   };
@@ -39,11 +39,11 @@ export interface SearchResult {
 export interface SearchUser {
   id: number;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: string;
   reputation: number;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface SearchSuggestions {
@@ -56,7 +56,7 @@ export interface SearchSuggestions {
     id: number;
     name: string;
     slug: string;
-    usageCount: number;
+    usage_count: number;
   }[];
 }
 

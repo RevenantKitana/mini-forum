@@ -85,7 +85,7 @@ export function UsersPage() {
 
   const handleToggleBan = async (user: AdminUser) => {
     try {
-      if (user.isActive) {
+      if (user.is_active) {
         await adminService.banUser(user.id.toString());
         toast.success('Đã cấm người dùng');
       } else {
@@ -147,7 +147,7 @@ export function UsersPage() {
     (user) =>
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.displayName || '').toLowerCase().includes(searchQuery.toLowerCase())
+      (user.display_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading && users.length === 0) {
@@ -236,18 +236,18 @@ export function UsersPage() {
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <TableRow key={user.id} className={!user.isActive ? 'opacity-60' : ''}>
+                <TableRow key={user.id} className={!user.is_active ? 'opacity-60' : ''}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatarUrl || undefined} />
+                        <AvatarImage src={user.avatar_url || undefined} />
                         <AvatarFallback>
                           {user.username[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {user.displayName || user.username}
+                          {user.display_name || user.username}
                         </div>
                         <div className="text-sm text-muted-foreground">@{user.username}</div>
                       </div>
@@ -255,11 +255,11 @@ export function UsersPage() {
                   </TableCell>
                   <TableCell className="text-sm hidden sm:table-cell">{user.email}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>{getStatusBadge(user.isActive, user.isVerified)}</TableCell>
+                  <TableCell>{getStatusBadge(user.is_active, user.is_verified)}</TableCell>
                   <TableCell className="text-right hidden md:table-cell">{user._count?.posts || 0}</TableCell>
                   <TableCell className="text-right hidden md:table-cell">{user._count?.comments || 0}</TableCell>
                   <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
-                    {formatDate(user.createdAt)}
+                    {formatDate(user.created_at)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -315,7 +315,7 @@ export function UsersPage() {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                         <DropdownMenuItem onClick={() => handleToggleBan(user)}>
-                          {user.isActive ? (
+                          {user.is_active ? (
                             <>
                               <UserX className="mr-2 h-4 w-4" />
                               Cấm người dùng

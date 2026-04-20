@@ -38,7 +38,7 @@ export const reportQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(50).default(20),
   status: ReportStatusEnum.optional(),
-  targetType: ReportTargetEnum.optional(),
+  target_type: ReportTargetEnum.optional(),
 });
 
 export type ReportQuery = z.infer<typeof reportQuerySchema>;

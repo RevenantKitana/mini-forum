@@ -170,7 +170,7 @@ export function ProfilePage() {
   }
 
   // Show blocked profile view
-  if (profile.isBlockedByMe) {
+  if (profile.is_blocked_by_me) {
     return (
       <div className="flex flex-col items-center py-16 gap-4 text-center animate-fade-in-up">
         <UserX className="h-16 w-16 text-muted-foreground" />
@@ -195,16 +195,16 @@ export function ProfilePage() {
           <div className="flex flex-col md:flex-row items-start gap-6">
             {/* Avatar */}
             <Avatar className="h-24 w-24">
-              <AvatarImage src={profile.avatarUrl || undefined} alt={profile.displayName} />
+              <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} />
               <AvatarFallback className="text-2xl">
-                {profile.displayName?.[0]?.toUpperCase() || profile.username[0].toUpperCase()}
+                {profile.display_name?.[0]?.toUpperCase() || profile.username[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-bold">{profile.displayName || profile.username}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold">{profile.display_name || profile.username}</h1>
                 {getRoleBadge(profile.role)}
               </div>
               
@@ -217,17 +217,17 @@ export function ProfilePage() {
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Tham gia {format(new Date(profile.createdAt), 'MMM yyyy', { locale: vi })}</span>
+                  <span>Tham gia {format(new Date(profile.created_at), 'MMM yyyy', { locale: vi })}</span>
                 </div>
-                {profile.lastActiveAt && (
+                {profile.last_active_at && (
                   <div className="flex items-center gap-1">
-                    <span>Hoạt động {formatDistanceToNow(new Date(profile.lastActiveAt), { addSuffix: true, locale: vi })}</span>
+                    <span>Hoạt động {formatDistanceToNow(new Date(profile.last_active_at), { addSuffix: true, locale: vi })}</span>
                   </div>
                 )}
-                {isOwnProfile && profile.dateOfBirth && (
+                {isOwnProfile && profile.date_of_birth && (
                   <div className="flex items-center gap-1">
                     <Cake className="h-4 w-4" />
-                    <span>{format(new Date(profile.dateOfBirth), 'dd/MM/yyyy', { locale: vi })}</span>
+                    <span>{format(new Date(profile.date_of_birth), 'dd/MM/yyyy', { locale: vi })}</span>
                   </div>
                 )}
                 {isOwnProfile && profile.gender && (
@@ -290,14 +290,14 @@ export function ProfilePage() {
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
                 <FileText className="h-5 w-5 text-blue-500" />
-                {profile.postCount || postsData?.pagination?.total || 0}
+                {profile.post_count || postsData?.pagination?.total || 0}
               </div>
               <p className="text-sm text-muted-foreground">Bài viết</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
                 <MessageSquare className="h-5 w-5 text-green-500" />
-                {profile.commentCount || commentsData?.pagination?.total || 0}
+                {profile.comment_count || commentsData?.pagination?.total || 0}
               </div>
               <p className="text-sm text-muted-foreground">Bình luận</p>
             </div>
@@ -358,13 +358,13 @@ export function ProfilePage() {
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                         <span>Trên bài viết</span>
                         <Link
-                          to={`/posts/${comment.postId}`}
+                          to={`/posts/${comment.post_id}`}
                           className="text-primary hover:underline font-medium"
                         >
-                          {comment.post?.title || `#${comment.postId}`}
+                          {comment.post?.title || `#${comment.post_id}`}
                         </Link>
                         <span>•</span>
-                        <span>{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}</span>
+                        <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}</span>
                       </div>
                     </div>
                   </div>
@@ -460,18 +460,18 @@ export function ProfilePage() {
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge variant={vote.targetType === 'POST' ? 'default' : 'secondary'} size="xs">
-                            {vote.targetType === 'POST' ? 'Bài viết' : 'Bình luận'}
+                          <Badge variant={vote.target_type === 'POST' ? 'default' : 'secondary'} size="xs">
+                            {vote.target_type === 'POST' ? 'Bài viết' : 'Bình luận'}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(vote.createdAt), { addSuffix: true, locale: vi })}
+                            {formatDistanceToNow(new Date(vote.created_at), { addSuffix: true, locale: vi })}
                           </span>
                         </div>
                         
                         {vote.target ? (
-                          vote.targetType === 'POST' ? (
+                          vote.target_type === 'POST' ? (
                             <Link
-                              to={`/posts/${vote.targetId}`}
+                              to={`/posts/${vote.target_id}`}
                               className="text-primary hover:underline font-medium"
                             >
                               {vote.target.title}
@@ -544,7 +544,7 @@ export function ProfilePage() {
           onOpenChange={setShowReportModal}
           targetType="user"
           targetId={profile.id}
-          targetName={profile.displayName || profile.username}
+          targetName={profile.display_name || profile.username}
         />
       )}
     </div>

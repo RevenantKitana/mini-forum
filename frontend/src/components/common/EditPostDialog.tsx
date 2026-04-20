@@ -68,7 +68,7 @@ export function EditPostDialog({ postId, open, onOpenChange, onSuccess }: EditPo
         setSelectedTags(tagNames);
       }
       // Set category name
-      const category = categories.find((c: any) => c.id === post.categoryId);
+      const category = categories.find((c: any) => c.id === post.category_id);
       setCategoryName(category?.name || 'Không xác định');
     }
   }, [open, post, reset, categories]);
@@ -76,7 +76,7 @@ export function EditPostDialog({ postId, open, onOpenChange, onSuccess }: EditPo
   // Check authorization
   useEffect(() => {
     if (open && post && user) {
-      const isOwner = post.authorId === user.id || post.author?.id === user.id;
+      const isOwner = post.author_id === user.id || post.author?.id === user.id;
       const isAdmin = user.role === 'ADMIN';
       const isModerator = user.role === 'MODERATOR';
 

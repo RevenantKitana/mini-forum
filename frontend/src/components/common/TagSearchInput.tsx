@@ -9,9 +9,9 @@ interface Tag {
   id: number;
   name: string;
   slug: string;
-  usageCount?: number;
-  usePermission?: string;
-  isActive?: boolean;
+  usage_count?: number;
+  use_permission?: string;
+  is_active?: boolean;
 }
 
 interface TagSearchInputProps {
@@ -78,8 +78,8 @@ export function TagSearchInput({
       <div className={cn('flex flex-wrap', compact ? 'gap-1' : 'gap-1.5')}>
         {filteredTags.map((tag) => {
           const isActive = activeTags.includes(tag.slug);
-          const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
-          const isInactive = tag.isActive === false;
+          const isRestricted = tag.use_permission && tag.use_permission !== 'ALL';
+          const isInactive = tag.is_active === false;
 
           const tagBadge = (
             <Badge
@@ -97,8 +97,8 @@ export function TagSearchInput({
                 <Lock className="h-2.5 w-2.5 mr-1 text-amber-600 dark:text-amber-400" />
               )}
               {tag.name}
-              {showCount && tag.usageCount !== undefined && (
-                <span className="ml-1 opacity-70">({tag.usageCount})</span>
+              {showCount && tag.usage_count !== undefined && (
+                <span className="ml-1 opacity-70">({tag.usage_count})</span>
               )}
               {isActive && <X className="ml-1 h-3 w-3" />}
             </Badge>
@@ -113,7 +113,7 @@ export function TagSearchInput({
                 <TooltipContent side="top" className="text-xs">
                   {isInactive
                     ? 'Tag này đã bị vô hiệu hóa'
-                    : `Yêu cầu quyền ${tag.usePermission} để sử dụng`}
+                    : `Yêu cầu quyền ${tag.use_permission} để sử dụng`}
                 </TooltipContent>
               </Tooltip>
             );

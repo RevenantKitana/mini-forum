@@ -38,7 +38,7 @@ export function MobileNav({ className }: MobileNavProps) {
   const currentTags = searchParams.get('tags')?.split(',').filter(Boolean) || [];
   const legacyTag = searchParams.get('tag');
   const activeTags = legacyTag ? [legacyTag] : currentTags;
-  const totalPosts = categories?.reduce((sum, cat) => sum + cat.postCount, 0) || 0;
+  const totalPosts = categories?.reduce((sum, cat) => sum + cat.post_count, 0) || 0;
 
   const filteredPopularTags = useMemo(
     () => popularTags?.filter((t) => t.name.toLowerCase().includes(tagFilter.toLowerCase())) ?? [],
@@ -188,7 +188,7 @@ export function MobileNav({ className }: MobileNavProps) {
                       <Badge variant="secondary" size="sm" className="ml-2">{totalPosts}</Badge>
                     </button>
                     {categories?.map((category) => {
-                      const isRestricted = category.viewPermission && category.viewPermission !== 'ALL';
+                      const isRestricted = category.view_permission && category.view_permission !== 'ALL';
                       return (
                         <button
                           key={category.id}
@@ -210,7 +210,7 @@ export function MobileNav({ className }: MobileNavProps) {
                           {!isRestricted && (
                             <Globe className="h-3 w-3 text-green-500 flex-shrink-0" />
                           )}
-                          <Badge variant="secondary" size="sm" className="flex-shrink-0">{category.postCount}</Badge>
+                          <Badge variant="secondary" size="sm" className="flex-shrink-0">{category.post_count}</Badge>
                         </button>
                       );
                     })}
@@ -261,7 +261,7 @@ export function MobileNav({ className }: MobileNavProps) {
                   <div className="flex flex-wrap gap-2 px-2 mb-2">
                     {filteredPopularTags.map((tag) => {
                       const isActive = activeTags.includes(tag.slug);
-                      const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
+                      const isRestricted = tag.use_permission && tag.use_permission !== 'ALL';
                       return (
                         <Badge
                           key={tag.id}
@@ -289,7 +289,7 @@ export function MobileNav({ className }: MobileNavProps) {
             {isAuthenticated ? (
               <div className="space-y-0.5">
                 <p className="px-2 text-xs font-medium text-muted-foreground mb-1">
-                  Xin chào, {user?.displayName || user?.username}
+                  Xin chào, {user?.display_name || user?.username}
                 </p>
                 <PostFormDialog
                   mode="create"

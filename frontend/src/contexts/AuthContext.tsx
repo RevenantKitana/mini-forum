@@ -8,18 +8,18 @@ import { trackConversion } from '@/utils/analytics';
 export interface User {
   id: number;
   username: string;
-  displayName: string | null;
+  display_name: string | null;
   email: string;
   avatar?: string;
-  avatarUrl?: string | null;
+  avatar_url?: string | null;
   role: string;
   bio?: string | null;
-  dateOfBirth?: string | null;
+  date_of_birth?: string | null;
   gender?: 'male' | 'female' | 'other' | null;
   reputation: number;
-  isVerified?: boolean;
-  isActive?: boolean;
-  createdAt: string;
+  is_verified?: boolean;
+  is_active?: boolean;
+  created_at: string;
 }
 
 interface AuthContextType {
@@ -45,17 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const transformUser = (apiUser: authApi.AuthUser): User => ({
     id: apiUser.id,
     username: apiUser.username,
-    displayName: apiUser.displayName,
+    display_name: apiUser.display_name,
     email: apiUser.email,
-    avatarUrl: apiUser.avatarUrl,
+    avatar_url: apiUser.avatar_url,
     bio: apiUser.bio,
-    dateOfBirth: apiUser.dateOfBirth,
+    date_of_birth: apiUser.date_of_birth,
     gender: apiUser.gender,
     role: apiUser.role,
     reputation: apiUser.reputation,
-    isVerified: apiUser.isVerified,
-    isActive: apiUser.isActive,
-    createdAt: apiUser.createdAt,
+    is_verified: apiUser.is_verified,
+    is_active: apiUser.is_active,
+    created_at: apiUser.created_at,
   });
 
   // Load user on mount
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (username: string, email: string, password: string, displayName?: string, registrationToken?: string) => {
-    const apiUser = await authApi.register({ email, username, password, displayName, registrationToken });
+    const apiUser = await authApi.register({ email, username, password, display_name: displayName, registrationToken });
     const userData = transformUser(apiUser);
     setUser(userData);
     trackConversion('register');
@@ -137,9 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const updateData: userService.UpdateProfileData = {
-      display_name: data.displayName ?? undefined,
+      display_name: data.display_name ?? undefined,
       bio: data.bio ?? undefined,
-      date_of_birth: data.dateOfBirth ?? undefined,
+      date_of_birth: data.date_of_birth ?? undefined,
       gender: data.gender ?? undefined,
     };
     await userService.updateProfile(user.id as number, updateData);

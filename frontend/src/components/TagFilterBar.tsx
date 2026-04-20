@@ -112,7 +112,7 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
                   >
                     <Hash className="h-3 w-3 mr-0.5" />
                     {tag.name}
-                    <span className="ml-1 opacity-70 text-xs">({tag.usageCount})</span>
+                    <span className="ml-1 opacity-70 text-xs">({tag.usage_count})</span>
                     {isSelected && <Check className="ml-1 h-3 w-3" />}
                   </Badge>
                 );

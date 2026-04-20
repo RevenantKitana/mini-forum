@@ -47,15 +47,15 @@ import { Switch } from '@/components/ui/switch';
 interface TagFormData {
   name: string;
   description: string;
-  usePermission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  isActive: boolean;
+  use_permission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  is_active: boolean;
 }
 
 const defaultFormData: TagFormData = {
   name: '',
   description: '',
-  usePermission: 'MEMBER',
-  isActive: true,
+  use_permission: 'MEMBER',
+  is_active: true,
 };
 
 export function TagsPage() {
@@ -78,7 +78,7 @@ export function TagsPage() {
       const response = await adminService.getTags();
       const tagsData = response.data.map((tag: AdminTag) => ({
         ...tag,
-        postCount: tag._count?.posts ?? tag.usageCount ?? 0,
+        post_count: tag._count?.posts ?? tag.usage_count ?? 0,
       }));
       setTags(tagsData);
       setFilteredTags(tagsData);
@@ -120,12 +120,12 @@ export function TagsPage() {
     setDialogMode('edit');
     setEditingTag(tag);
     // Ensure usePermission has valid value (not 'ALL' for this field)
-    const validUsePerm = (tag.usePermission === 'ALL') ? 'MEMBER' : tag.usePermission;
+    const validUsePerm = (tag.use_permission === 'ALL') ? 'MEMBER' : tag.use_permission;
     setFormData({
       name: tag.name,
       description: tag.description || '',
-      usePermission: validUsePerm || 'MEMBER',
-      isActive: tag.isActive ?? true,
+      use_permission: validUsePerm || 'MEMBER',
+      is_active: tag.is_active ?? true,
     });
     setDialogOpen(true);
   };
@@ -144,16 +144,16 @@ export function TagsPage() {
         await adminService.createTag({
           name: formData.name,
           description: formData.description || undefined,
-          usePermission: formData.usePermission,
-          isActive: formData.isActive,
+          usePermission: formData.use_permission,
+          isActive: formData.is_active,
         });
         toast.success('Đã tạo thẻ mới');
       } else if (editingTag) {
         await adminService.updateTag(editingTag.id.toString(), {
           name: formData.name,
           description: formData.description,
-          usePermission: formData.usePermission,
-          isActive: formData.isActive,
+          usePermission: formData.use_permission,
+          isActive: formData.is_active,
         });
         toast.success('Đã cập nhật thẻ');
       }
@@ -167,9 +167,9 @@ export function TagsPage() {
   };
 
   const handleDelete = async (tag: AdminTag) => {
-    if (tag.postCount > 0) {
+    if (tag.post_count > 0) {
       const confirm1 = confirm(
-        `Thẻ "${tag.name}" đang được sử dụng trong ${tag.postCount} bài viết. ` +
+        `Thẻ "${tag.name}" đang được sử dụng trong ${tag.post_count} bài viết. ` +
         `Xóa thẻ sẽ gỡ bỏ thẻ khỏi tất cả bài viết. Bạn có chắc chắn?`
       );
       if (!confirm1) return;
@@ -276,12 +276,12 @@ export function TagsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={tag.postCount > 0 ? 'default' : 'outline'}>
-                        {tag.postCount} bài
+                      <Badge variant={tag.post_count > 0 ? 'default' : 'outline'}>
+                        {tag.post_count} bài
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(tag.createdAt)}
+                      {formatDate(tag.created_at)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -336,7 +336,7 @@ export function TagsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {tags.filter(t => t.postCount > 0).length}
+              {tags.filter(t => t.post_count > 0).length}
             </div>
           </CardContent>
         </Card>
@@ -348,7 +348,7 @@ export function TagsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {tags.filter(t => t.postCount === 0).length}
+              {tags.filter(t => t.post_count === 0).length}
             </div>
           </CardContent>
         </Card>
@@ -404,9 +404,9 @@ export function TagsPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="usePermission">Ai được sử dụng thẻ này?</Label>
                   <Select
-                    value={formData.usePermission}
+                    value={formData.use_permission}
                     onValueChange={(value: 'MEMBER' | 'MODERATOR' | 'ADMIN') => 
-                      setFormData({ ...formData, usePermission: value })
+                      setFormData({ ...formData, use_permission: value })
                     }
                   >
                     <SelectTrigger>
@@ -428,8 +428,8 @@ export function TagsPage() {
                     </p>
                   </div>
                   <Switch
-                    checked={formData.isActive}
-                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
+                    checked={formData.is_active}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
                   />
                 </div>
               </div>

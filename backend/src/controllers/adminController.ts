@@ -609,14 +609,14 @@ export async function getReports(req: Request, res: Response, next: NextFunction
     }
 
     if (targetType) {
-      where.targetType = targetType.toUpperCase();
+      where.target_type = targetType.toUpperCase();
     }
 
     const [reports, total] = await Promise.all([
       prisma.reports.findMany({
         where,
         include: {
-          users_reports_reporterIdTousers: {
+          users_reports_reporter_idTousers: {
             select: {
               id: true,
               username: true,
@@ -625,7 +625,7 @@ export async function getReports(req: Request, res: Response, next: NextFunction
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
         skip,
         take: limit,
       }),
@@ -637,10 +637,10 @@ export async function getReports(req: Request, res: Response, next: NextFunction
       reports.map(async (report) => {
         let target = null;
 
-        switch (report.targetType) {
+        switch (report.target_type) {
           case 'USER':
             target = await prisma.users.findUnique({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               select: {
                 id: true,
                 username: true,
@@ -651,7 +651,7 @@ export async function getReports(req: Request, res: Response, next: NextFunction
             break;
           case 'POST': {
             const postTarget = await prisma.posts.findUnique({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               select: {
                 id: true,
                 title: true,
@@ -673,7 +673,7 @@ export async function getReports(req: Request, res: Response, next: NextFunction
           }
           case 'COMMENT': {
             const commentTarget = await prisma.comments.findUnique({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               select: {
                 id: true,
                 content: true,
@@ -696,10 +696,10 @@ export async function getReports(req: Request, res: Response, next: NextFunction
           }
         }
 
-        const { users_reports_reporterIdTousers, ...reportRest } = report;
+        const { users_reports_reporter_idTousers, ...reportRest } = report;
         return {
           ...reportRest,
-          reporter: users_reports_reporterIdTousers,
+          reporter: users_reports_reporter_idTousers,
           target,
         };
       })
@@ -722,7 +722,7 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
     const report = await prisma.reports.findUnique({
       where: { id },
       include: {
-        users_reports_reporterIdTousers: {
+        users_reports_reporter_idTousers: {
           select: {
             id: true,
             username: true,
@@ -740,10 +740,10 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
     // Get target info
     let target = null;
 
-    switch (report.targetType) {
+    switch (report.target_type) {
       case 'USER':
         target = await prisma.users.findUnique({
-          where: { id: report.targetId },
+          where: { id: report.target_id },
           select: {
             id: true,
             username: true,
@@ -757,7 +757,7 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
         break;
       case 'POST': {
         const postTarget = await prisma.posts.findUnique({
-          where: { id: report.targetId },
+          where: { id: report.target_id },
           select: {
             id: true,
             title: true,
@@ -781,7 +781,7 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
       }
       case 'COMMENT': {
         const commentTarget = await prisma.comments.findUnique({
-          where: { id: report.targetId },
+          where: { id: report.target_id },
           select: {
             id: true,
             content: true,
@@ -814,9 +814,9 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
 
     // Get reviewer info if reviewed
     let reviewer = null;
-    if (report.reviewedBy) {
+    if (report.reviewed_by) {
       reviewer = await prisma.users.findUnique({
-        where: { id: report.reviewedBy },
+        where: { id: report.reviewed_by },
         select: {
           id: true,
           username: true,
@@ -825,10 +825,10 @@ export async function getReportDetail(req: Request, res: Response, next: NextFun
       });
     }
 
-    const { users_reports_reporterIdTousers, ...reportRest } = report as any;
+    const { users_reports_reporter_idTousers, ...reportRest } = report as any;
     return sendSuccess(
       res,
-      { ...reportRest, reporter: users_reports_reporterIdTousers, target, reviewer },
+      { ...reportRest, reporter: users_reports_reporter_idTousers, target, reviewer },
       'Report detail retrieved'
     );
   } catch (error) {
@@ -863,9 +863,9 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
       where: { id },
       data: {
         status,
-        reviewedBy: req.user!.userId,
-        reviewedAt: new Date(),
-        ...(review_note !== undefined && { reviewNote: review_note }),
+        reviewed_by: req.user!.userId,
+        reviewed_at: new Date(),
+        ...(review_note !== undefined && { review_note: review_note }),
       },
     });
 
@@ -873,35 +873,35 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
     if (action && status === 'RESOLVED') {
       switch (action) {
         case 'hide_content':
-          if (report.targetType === 'POST') {
+          if (report.target_type === 'POST') {
             await prisma.posts.update({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               data: { status: 'HIDDEN' },
             });
-          } else if (report.targetType === 'COMMENT') {
+          } else if (report.target_type === 'COMMENT') {
             await prisma.comments.update({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               data: { status: 'HIDDEN' },
             });
           }
           break;
         case 'delete_content':
-          if (report.targetType === 'POST') {
+          if (report.target_type === 'POST') {
             await prisma.posts.update({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               data: { status: 'DELETED' },
             });
-          } else if (report.targetType === 'COMMENT') {
+          } else if (report.target_type === 'COMMENT') {
             await prisma.comments.update({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               data: { status: 'DELETED' },
             });
           }
           break;
         case 'ban_user':
-          if (report.targetType === 'USER') {
+          if (report.target_type === 'USER') {
             await prisma.users.update({
-              where: { id: report.targetId },
+              where: { id: report.target_id },
               data: { is_active: false },
             });
           }
@@ -914,8 +914,8 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
       reportId: id,
       status,
       action: action ?? null,
-      targetType: report.targetType,
-      targetId: report.targetId,
+      targetType: report.target_type,
+      targetId: report.target_id,
       actorUserId: req.user!.userId,
       requestId: (req as any).requestId,
     });
@@ -925,7 +925,7 @@ export async function updateReportStatus(req: AuthRequest, res: Response, next: 
       action: 'UPDATE',
       targetType: 'REPORT',
       targetId: id,
-      targetName: `Report #${id} (${report.targetType})`,
+      targetName: `Report #${id} (${report.target_type})`,
       oldValue: { status: report.status },
       newValue: { status, action: action ?? null },
       ipAddress: auditLogService.getClientIp(req),

@@ -137,8 +137,8 @@ export function AdminLayout() {
     setMobileMenuOpen(false);
   }, [navigate]);
 
-  const displayName = user?.displayName || user?.username || 'Admin';
-  const avatarUrl = user?.avatarUrl;
+  const displayName = user?.display_name || user?.username || 'Admin';
+  const avatarUrl = user?.avatar_url;
   const roleLabel = isAdmin ? 'Administrator' : 'Moderator';
 
   // Shared navigation renderer

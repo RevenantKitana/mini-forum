@@ -85,13 +85,13 @@ export function ReportsPage() {
 
   // Get the management page URL with search parameter based on report type
   const getManagementPageLink = (report: AdminReport): string => {
-    switch (report.targetType) {
+    switch (report.target_type) {
       case 'POST':
-        return `/posts?search=${report.targetId}`;
+        return `/posts?search=${report.target_id}`;
       case 'COMMENT':
-        return `/comments?search=${report.targetId}`;
+        return `/comments?search=${report.target_id}`;
       case 'USER':
-        return `/users?search=${report.targetId}`;
+        return `/users?search=${report.target_id}`;
       default:
         return '/';
     }
@@ -100,14 +100,14 @@ export function ReportsPage() {
   // Get external link to view the content on the forum
   const getExternalLink = (report: AdminReport): string => {
     const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
-    switch (report.targetType) {
+    switch (report.target_type) {
       case 'POST':
-        return `${frontendUrl}/posts/${report.target?.id || report.targetId}`;
+        return `${frontendUrl}/posts/${report.target?.id || report.target_id}`;
       case 'COMMENT':
         // Comments are viewed within their parent post
-        return `${frontendUrl}/posts/${report.target?.postId || ''}#comment-${report.targetId}`;
+        return `${frontendUrl}/posts/${report.target?.post_id || ''}#comment-${report.target_id}`;
       case 'USER':
-        return `${frontendUrl}/users/${report.target?.username || report.targetId}`;
+        return `${frontendUrl}/users/${report.target?.username || report.target_id}`;
       default:
         return frontendUrl;
     }
@@ -162,7 +162,7 @@ export function ReportsPage() {
             ) : (
               reports.map((report) => (
                 <TableRow key={report.id}>
-                  <TableCell>{getTypeBadge(report.targetType)}</TableCell>
+                  <TableCell>{getTypeBadge(report.target_type)}</TableCell>
                   <TableCell>
                     <div className="max-w-xs">
                       <div className="text-sm font-medium">{report.reason}</div>
@@ -179,7 +179,7 @@ export function ReportsPage() {
                     <div className="text-sm">@{report.reporter.username}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(report.status)}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{formatDate(report.createdAt)}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{formatDate(report.created_at)}</TableCell>
                   <TableCell>
                     {report.status === 'PENDING' && (
                       <DropdownMenu>
@@ -201,7 +201,7 @@ export function ReportsPage() {
                             </Link>
                           </DropdownMenuItem>
                           {/* View on frontend */}
-                          {report.target && report.targetType !== 'USER' && (
+                          {report.target && report.target_type !== 'USER' && (
                             <DropdownMenuItem asChild>
                               <a
                                 href={getExternalLink(report)}

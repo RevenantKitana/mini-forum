@@ -5,14 +5,14 @@ import { getAccessToken, clearTokens } from '@/api/axios';
 export interface User {
   id: number;
   username: string;
-  displayName: string | null;
+  display_name: string | null;
   email: string;
-  avatarUrl?: string | null;
+  avatar_url?: string | null;
   role: string;
   reputation: number;
-  isVerified?: boolean;
-  isActive?: boolean;
-  createdAt: string;
+  is_verified?: boolean;
+  is_active?: boolean;
+  created_at: string;
 }
 
 interface AuthContextType {

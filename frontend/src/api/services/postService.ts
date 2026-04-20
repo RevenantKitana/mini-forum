@@ -5,8 +5,8 @@ import { API_ENDPOINTS } from '../endpoints';
 export interface PostAuthor {
   id: number;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: string;
   reputation: number;
 }
@@ -16,9 +16,9 @@ export interface PostCategory {
   name: string;
   slug: string;
   color: string | null;
-  viewPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  postPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  commentPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  view_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  post_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  comment_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
 }
 
 export interface PostTag {
@@ -33,18 +33,18 @@ export interface Post {
   slug: string;
   content?: string;
   excerpt: string | null;
-  authorId: number;
-  categoryId: number;
-  viewCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  commentCount: number;
+  author_id: number;
+  category_id: number;
+  view_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
   status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED';
-  isPinned: boolean;
-  pinType?: 'GLOBAL' | 'CATEGORY' | null;
-  isLocked: boolean;
-  createdAt: string;
-  updatedAt: string;
+  is_pinned: boolean;
+  pin_type?: 'GLOBAL' | 'CATEGORY' | null;
+  is_locked: boolean;
+  created_at: string;
+  updated_at: string;
   author: PostAuthor;
   category: PostCategory;
   tags: PostTag[];
@@ -53,7 +53,7 @@ export interface Post {
 export interface CreatePostData {
   title: string;
   content: string;
-  categoryId: number;
+  category_id: number;
   tags?: string[];
   status?: 'DRAFT' | 'PUBLISHED';
 }
@@ -61,7 +61,7 @@ export interface CreatePostData {
 export interface UpdatePostData {
   title?: string;
   content?: string;
-  categoryId?: number;
+  category_id?: number;
   tags?: string[];
 }
 
@@ -181,7 +181,7 @@ export const postService = {
       {
         title: data.title,
         content: data.content,
-        category_id: data.categoryId,
+        category_id: data.category_id,
         tags: data.tags,
         status: data.status,
       }
@@ -196,7 +196,7 @@ export const postService = {
     const transformedData: Record<string, any> = {};
     if (data.title !== undefined) transformedData.title = data.title;
     if (data.content !== undefined) transformedData.content = data.content;
-    if (data.categoryId !== undefined) transformedData.category_id = data.categoryId;
+    if (data.category_id !== undefined) transformedData.category_id = data.category_id;
     if (data.tags !== undefined) transformedData.tags = data.tags;
 
     const response = await apiClient.put<ApiResponse<Post>>(

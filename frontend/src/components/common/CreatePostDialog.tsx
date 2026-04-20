@@ -106,11 +106,11 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
   };
 
   // Filter tags that user has permission to use
-  const userAccessibleTags = availableTags.filter((tag: Tag) => hasPermission(tag.usePermission));
+  const userAccessibleTags = availableTags.filter((tag: Tag) => hasPermission(tag.use_permission));
 
   // Filter categories that user has permission to post
   const userAccessibleCategories = categories.filter((category: Category) => 
-    hasPermission(category.postPermission)
+    hasPermission(category.post_permission)
   );
 
   const {
@@ -155,7 +155,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
   );
 
   // Filter recommended tags that user has permission to use
-  const accessibleRecommendedTags = recommendedTags.filter((tag: Tag) => hasPermission(tag.usePermission));
+  const accessibleRecommendedTags = recommendedTags.filter((tag: Tag) => hasPermission(tag.use_permission));
 
   // Save draft function
   const saveDraft = useCallback((showToast = true) => {
@@ -282,7 +282,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
       {
         title: data.title,
         content: data.content,
-        categoryId: parseInt(data.categoryId),
+        category_id: parseInt(data.categoryId),
         tags: allTagNames,
         status: 'PUBLISHED',
       },
@@ -328,7 +328,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
     
     if (existingTag) {
       // Tag exists - check permissions
-      if (!existingTag.isActive) {
+      if (!existingTag.is_active) {
         // Tag is inactive
         const warning = `Tag "${existingTag.name}" đã bị vô hiệu hóa và không thể sử dụng.`;
         if (!restrictedTagWarnings.includes(warning)) {
@@ -338,9 +338,9 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
         return;
       }
       
-      if (!hasPermission(existingTag.usePermission)) {
+      if (!hasPermission(existingTag.use_permission)) {
         // User doesn't have permission to use this tag
-        const requiredRole = permissionLabels[existingTag.usePermission] || existingTag.usePermission;
+        const requiredRole = permissionLabels[existingTag.use_permission] || existingTag.use_permission;
         const warning = `Tag "${existingTag.name}" yêu cầu quyền ${requiredRole} trở lên để sử dụng.`;
         if (!restrictedTagWarnings.includes(warning)) {
           setRestrictedTagWarnings(prev => [...prev, warning]);

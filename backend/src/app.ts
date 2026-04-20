@@ -10,7 +10,6 @@ import {
   authLimiter,
   additionalSecurityHeaders,
 } from './middlewares/securityMiddleware.js';
-import { snakeToCamelObject } from './utils/snakeToCamel.js';
 import { requestIdMiddleware } from './middlewares/requestIdMiddleware.js';
 import { httpLoggerMiddleware } from './middlewares/httpLoggerMiddleware.js';
 import { metricsMiddleware } from './middlewares/metricsMiddleware.js';
@@ -50,17 +49,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parser (for HttpOnly refresh token cookie support)
 app.use(cookieParser());
-
-// Global response transform middleware
-// Converts all snake_case keys in JSON responses to camelCase
-// This ensures frontend always receives camelCase field names
-app.use((_req: Request, res: Response, next: NextFunction) => {
-  const originalJson = res.json.bind(res);
-  res.json = function (body: any) {
-    return originalJson(snakeToCamelObject(body));
-  } as any;
-  next();
-});
 
 // Request ID (must be first so all subsequent middleware / logs have access to requestId)
 app.use(requestIdMiddleware);

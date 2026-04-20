@@ -7,13 +7,13 @@ type NotificationType = 'COMMENT' | 'REPLY' | 'MENTION' | 'UPVOTE' | 'SYSTEM';
 
 interface EnrichedNotification {
   id: number;
-  userId: number;
+  user_id: number;
   type: NotificationType;
   title: string;
   content: string;
-  relatedId: number | null;
-  relatedType: string | null;
-  isRead: boolean;
+  related_id: number | null;
+  related_type: string | null;
+  is_read: boolean;
   deleted_at: Date | null;
   created_at: Date;
   // Additional navigation info
@@ -27,13 +27,13 @@ interface EnrichedNotification {
 async function enrichNotificationsWithNavInfo(notifications: any[]): Promise<EnrichedNotification[]> {
   // Collect comment IDs that need post info
   const commentIds = notifications
-    .filter(n => n.relatedType === 'COMMENT' && n.relatedId)
-    .map(n => n.relatedId);
+    .filter(n => n.related_type === 'COMMENT' && n.related_id)
+    .map(n => n.related_id);
 
   // Collect post IDs
   const post_ids = notifications
-    .filter(n => n.relatedType === 'POST' && n.relatedId)
-    .map(n => n.relatedId);
+    .filter(n => n.related_type === 'POST' && n.related_id)
+    .map(n => n.related_id);
 
   // Fetch comment -> post mappings
   const comments = commentIds.length > 0 
@@ -57,14 +57,14 @@ async function enrichNotificationsWithNavInfo(notifications: any[]): Promise<Enr
   return notifications.map(n => {
     const enriched: EnrichedNotification = { ...n };
     
-    if (n.relatedType === 'COMMENT' && n.relatedId) {
-      const comment = commentMap.get(n.relatedId);
+    if (n.related_type === 'COMMENT' && n.related_id) {
+      const comment = commentMap.get(n.related_id);
       if (comment) {
         enriched.postId = comment.posts.id;
         enriched.commentId = comment.id;
       }
-    } else if (n.relatedType === 'POST' && n.relatedId) {
-      const post = postMap.get(n.relatedId);
+    } else if (n.related_type === 'POST' && n.related_id) {
+      const post = postMap.get(n.related_id);
       if (post) {
         enriched.postId = post.id;
       }
@@ -82,12 +82,12 @@ export async function getNotifications(userId: number, query: NotificationQuery)
   const skip = (page - 1) * limit;
 
   const where: {
-    userId: number;
-    isRead?: boolean;
+    user_id: number;
+    is_read?: boolean;
     deleted_at?: null | { not: null };
   } = {
-    userId,
-    ...(unreadOnly ? { isRead: false } : {}),
+    user_id: userId,
+    ...(unreadOnly ? { is_read: false } : {}),
     // By default, exclude soft-deleted notifications
     ...(includeDeleted ? {} : { deleted_at: null }),
   };
@@ -95,7 +95,7 @@ export async function getNotifications(userId: number, query: NotificationQuery)
   const [notifications, total] = await Promise.all([
     prisma.notifications.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
     }),
@@ -122,8 +122,8 @@ export async function getNotifications(userId: number, query: NotificationQuery)
 export async function getUnreadCount(userId: number): Promise<number> {
   return prisma.notifications.count({
     where: {
-      userId,
-      isRead: false,
+      user_id: userId,
+      is_read: false,
       deleted_at: null,
     },
   });
@@ -136,7 +136,7 @@ export async function markAsRead(notificationId: number, userId: number) {
   const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
-      userId,
+      user_id: userId,
     },
   });
 
@@ -146,7 +146,7 @@ export async function markAsRead(notificationId: number, userId: number) {
 
   return prisma.notifications.update({
     where: { id: notificationId },
-    data: { isRead: true },
+    data: { is_read: true },
   });
 }
 
@@ -156,11 +156,11 @@ export async function markAsRead(notificationId: number, userId: number) {
 export async function markAllAsRead(userId: number) {
   const result = await prisma.notifications.updateMany({
     where: {
-      userId,
-      isRead: false,
+      user_id: userId,
+      is_read: false,
       deleted_at: null,
     },
-    data: { isRead: true },
+    data: { is_read: true },
   });
 
   return { count: result.count };
@@ -173,7 +173,7 @@ export async function deleteNotification(notificationId: number, userId: number)
   const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
-      userId,
+      user_id: userId,
       deleted_at: null,
     },
   });
@@ -194,7 +194,7 @@ export async function deleteNotification(notificationId: number, userId: number)
 export async function deleteAllNotifications(userId: number) {
   const result = await prisma.notifications.updateMany({
     where: { 
-      userId,
+      user_id: userId,
       deleted_at: null,
     },
     data: { deleted_at: new Date() },
@@ -210,7 +210,7 @@ export async function permanentlyDeleteNotification(notificationId: number, user
   const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
-      userId,
+      user_id: userId,
     },
   });
 
@@ -230,7 +230,7 @@ export async function restoreNotification(notificationId: number, userId: number
   const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
-      userId,
+      user_id: userId,
       deleted_at: { not: null },
     },
   });
@@ -251,12 +251,12 @@ export async function restoreNotification(notificationId: number, userId: number
 export async function createNotification(data: CreateNotificationInput & { title?: string }) {
   const notification = await prisma.notifications.create({
     data: {
-      userId: data.userId,
+      user_id: data.userId,
       type: data.type as NotificationType,
       title: data.title || 'Thông báo',
       content: data.content,
-      relatedType: data.referenceType,
-      relatedId: data.referenceId,
+      related_type: data.referenceType,
+      related_id: data.referenceId,
     },
   });
 

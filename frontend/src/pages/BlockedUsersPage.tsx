@@ -13,8 +13,8 @@ import { vi } from 'date-fns/locale';
 interface BlockedUser {
   id: number;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   blockedAt: string;
 }
 
@@ -24,10 +24,10 @@ interface BlockedUserLegacy {
   blocked: {
     id: number;
     username: string;
-    displayName: string | null;
-    avatarUrl: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
   };
-  createdAt: string;
+  created_at: string;
 }
 
 export function BlockedUsersPage() {
@@ -65,17 +65,17 @@ export function BlockedUsersPage() {
         return {
           id: item.blocked.id,
           username: item.blocked.username,
-          displayName: item.blocked.displayName,
-          avatarUrl: item.blocked.avatarUrl,
-          blockedAt: item.createdAt,
+          display_name: item.blocked.display_name,
+          avatar_url: item.blocked.avatar_url,
+          blockedAt: item.created_at,
         };
       } else {
         // New format with direct properties
         return {
           id: item.id,
           username: item.username,
-          displayName: item.displayName,
-          avatarUrl: item.avatarUrl,
+          display_name: item.display_name,
+          avatar_url: item.avatar_url,
           blockedAt: item.blockedAt,
         };
       }
@@ -140,11 +140,11 @@ export function BlockedUsersPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage
-                        src={user.avatarUrl || undefined}
-                        alt={user.displayName || user.username}
+                        src={user.avatar_url || undefined}
+                        alt={user.display_name || user.username}
                       />
                       <AvatarFallback>
-                        {(user.displayName || user.username)[0]?.toUpperCase()}
+                        {(user.display_name || user.username)[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
@@ -152,7 +152,7 @@ export function BlockedUsersPage() {
                         to={`/users/${user.username}`}
                         className="font-medium hover:underline truncate block"
                       >
-                        {user.displayName || user.username}
+                        {user.display_name || user.username}
                       </Link>
                       <p className="text-sm text-muted-foreground truncate">
                         @{user.username} • Đã chặn{' '}

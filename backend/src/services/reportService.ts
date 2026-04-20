@@ -14,14 +14,14 @@ type ReportStatus = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
 function transformReport(report: any): any {
   if (!report) return report;
   const {
-    users_reports_reporterIdTousers,
-    users_reports_reviewedByTousers,
+    users_reports_reporter_idTousers,
+    users_reports_reviewed_byTousers,
     ...rest
   } = report;
   return {
     ...rest,
-    reporter: users_reports_reporterIdTousers || undefined,
-    reviewer: users_reports_reviewedByTousers || undefined,
+    reporter: users_reports_reporter_idTousers || undefined,
+    reviewer: users_reports_reviewed_byTousers || undefined,
   };
 }
 
@@ -55,9 +55,9 @@ async function createReport(
   // Check for duplicate report
   const existingReport = await prisma.reports.findFirst({
     where: {
-      reporterId,
-      targetType,
-      targetId,
+      reporter_id: reporterId,
+      target_type: targetType,
+      target_id: targetId,
       status: 'PENDING',
     },
   });
@@ -68,12 +68,12 @@ async function createReport(
 
   return prisma.reports.create({
     data: {
-      reporterId,
-      targetType,
-      targetId,
+      reporter_id: reporterId,
+      target_type: targetType,
+      target_id: targetId,
       reason: data.reason,
       description: data.description,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     },
   });
 }
@@ -107,18 +107,18 @@ export async function reportUser(reporterId: number, userId: number, data: Creat
  * Get reports (Admin/Moderator only)
  */
 export async function getReports(query: ReportQuery) {
-  const { page, limit, status, targetType } = query;
+  const { page, limit, status, target_type } = query;
   const skip = (page - 1) * limit;
 
   const where: Record<string, any> = {};
   if (status) where.status = status;
-  if (targetType) where.targetType = targetType;
+  if (target_type) where.target_type = target_type;
 
   const [reports, total] = await Promise.all([
     prisma.reports.findMany({
       where,
       include: {
-        users_reports_reporterIdTousers: {
+        users_reports_reporter_idTousers: {
           select: {
             id: true,
             username: true,
@@ -127,7 +127,7 @@ export async function getReports(query: ReportQuery) {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
     }),
@@ -152,7 +152,7 @@ export async function getReportById(id: number) {
   const report = await prisma.reports.findUnique({
     where: { id },
     include: {
-      users_reports_reporterIdTousers: {
+      users_reports_reporter_idTousers: {
         select: {
           id: true,
           username: true,
@@ -190,8 +190,8 @@ export async function updateReportStatus(
     where: { id: reportId },
     data: {
       status: data.status as any,
-      reviewedBy: reviewerId,
-      reviewedAt: new Date(),
+      reviewed_by: reviewerId,
+      reviewed_at: new Date(),
     },
   });
 }

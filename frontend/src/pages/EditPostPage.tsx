@@ -58,7 +58,7 @@ export function EditPostPage() {
       form.reset({
         title: post.title,
         content: post.content,
-        categoryId: String(post.categoryId),
+        categoryId: String(post.category_id),
       });
       // Set tags
       if (post.tags) {
@@ -70,7 +70,7 @@ export function EditPostPage() {
   // Check authorization
   useEffect(() => {
     if (post && user) {
-      const isOwner = post.authorId === user.id || post.author?.id === user.id;
+      const isOwner = post.author_id === user.id || post.author?.id === user.id;
       const isAdmin = user.role === 'ADMIN';
       const isModerator = user.role === 'MODERATOR';
 

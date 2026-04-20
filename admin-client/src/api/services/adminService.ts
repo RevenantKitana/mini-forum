@@ -32,13 +32,13 @@ export interface DashboardStats {
     id: number;
     name: string;
     slug: string;
-    postCount: number;
+    post_count: number;
     color: string | null;
   }>;
   recentActivities: Array<{
     type: 'USER_REGISTERED' | 'POST_CREATED' | 'COMMENT_CREATED';
     data: any;
-    createdAt: string;
+    created_at: string;
   }>;
 }
 
@@ -46,15 +46,15 @@ export interface User {
   id: number;
   email: string;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: string;
   reputation: number;
-  isVerified: boolean;
-  isActive: boolean;
-  lastActiveAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  is_verified: boolean;
+  is_active: boolean;
+  last_active_at: string | null;
+  created_at: string;
+  updated_at: string;
   _count?: {
     posts: number;
     comments: number;
@@ -67,20 +67,20 @@ export interface Post {
   slug: string;
   content?: string;
   status: string;
-  isPinned: boolean;
-  pinType?: 'GLOBAL' | 'CATEGORY' | null;
-  isLocked: boolean;
-  viewCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  commentCount: number;
-  createdAt: string;
-  updatedAt: string;
+  is_pinned: boolean;
+  pin_type?: 'GLOBAL' | 'CATEGORY' | null;
+  is_locked: boolean;
+  view_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
   author: {
     id: number;
     username: string;
-    displayName: string | null;
-    avatarUrl?: string | null;
+    display_name: string | null;
+    avatar_url?: string | null;
   };
   category: {
     id: number;
@@ -93,15 +93,15 @@ export interface Comment {
   id: number;
   content: string;
   status: string;
-  isContentMasked?: boolean;
-  upvoteCount: number;
-  downvoteCount: number;
-  createdAt: string;
-  updatedAt: string;
+  is_content_masked?: boolean;
+  upvote_count: number;
+  downvote_count: number;
+  created_at: string;
+  updated_at: string;
   author: {
     id: number;
     username: string;
-    displayName: string | null;
+    display_name: string | null;
   };
   post: {
     id: number;
@@ -112,25 +112,25 @@ export interface Comment {
 
 export interface Report {
   id: number;
-  targetType: string;
-  targetId: number;
+  target_type: string;
+  target_id: number;
   reason: string;
   description: string | null;
   status: string;
-  createdAt: string;
+  created_at: string;
   reporter: {
     id: number;
     username: string;
-    displayName?: string | null;
-    avatarUrl?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
   };
   target?: any;
   reviewer?: {
     id: number;
     username: string;
   } | null;
-  reviewedAt?: string | null;
-  reviewNote?: string | null;
+  reviewed_at?: string | null;
+  review_note?: string | null;
 }
 
 export interface Category {
@@ -139,15 +139,15 @@ export interface Category {
   slug: string;
   description: string | null;
   color: string | null;
-  sortOrder: number;
-  postCount: number;
-  actualPostCount?: number;
-  isActive: boolean;
-  viewPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  postPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  commentPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  createdAt: string;
-  updatedAt: string;
+  sort_order: number;
+  post_count: number;
+  actual_post_count?: number;
+  is_active: boolean;
+  view_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  post_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  comment_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Tag {
@@ -155,35 +155,35 @@ export interface Tag {
   name: string;
   slug: string;
   description: string | null;
-  usageCount: number;
-  actualUsageCount?: number;
-  postCount: number;
-  usePermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  isActive?: boolean;
+  usage_count: number;
+  actual_usage_count?: number;
+  post_count: number;
+  use_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  is_active?: boolean;
   _count?: {
     posts: number;
   };
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuditLog {
   id: number;
-  userId: number;
+  user_id: number;
   action: string;
-  targetType: string;
-  targetId: number | null;
+  target_type: string;
+  target_id: number | null;
   targetName: string | null;
   oldValue: any;
   newValue: any;
   ipAddress: string | null;
   userAgent: string | null;
-  createdAt: string;
+  created_at: string;
   user: {
     id: number;
     username: string;
-    displayName: string | null;
-    avatarUrl: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -329,15 +329,15 @@ export interface PinnedPost {
   id: number;
   title: string;
   slug: string;
-  pinOrder: number;
-  isPinned: boolean;
-  viewCount: number;
-  commentCount: number;
-  createdAt: string;
+  pin_order: number;
+  is_pinned: boolean;
+  view_count: number;
+  comment_count: number;
+  created_at: string;
   author: {
     id: number;
     username: string;
-    displayName: string | null;
+    display_name: string | null;
   };
   category: {
     id: number;
@@ -422,9 +422,15 @@ export async function getReports(params: {
   status?: string;
   targetType?: string;
 }): Promise<{ data: Report[]; pagination: any }> {
+  // Convert camelCase query params to snake_case for backend
+  const queryParams: Record<string, any> = { ...params };
+  if (params.targetType !== undefined) {
+    queryParams.target_type = params.targetType;
+    delete queryParams.targetType;
+  }
   const response = await apiClient.get<PaginatedResponse<Report>>(
     API_ENDPOINTS.ADMIN.REPORTS,
-    { params }
+    { params: queryParams }
   );
   return {
     data: response.data.data,
@@ -585,9 +591,19 @@ export async function getAuditLogs(params?: {
   action?: string;
   targetType?: string;
 }): Promise<{ data: AuditLog[]; pagination: any }> {
+  // Convert camelCase query params to snake_case for backend
+  const queryParams: Record<string, any> = { ...params };
+  if (params?.userId !== undefined) {
+    queryParams.user_id = params.userId;
+    delete queryParams.userId;
+  }
+  if (params?.targetType !== undefined) {
+    queryParams.target_type = params.targetType;
+    delete queryParams.targetType;
+  }
   const response = await apiClient.get<PaginatedResponse<AuditLog>>(
     API_ENDPOINTS.ADMIN.AUDIT_LOGS,
-    { params }
+    { params: queryParams }
   );
   return {
     data: response.data.data,

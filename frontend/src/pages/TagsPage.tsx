@@ -44,13 +44,13 @@ export function TagsPage() {
   const groupTagsByPopularity = (tagsList: typeof tags) => {
     if (!tagsList) return { hot: [], popular: [], regular: [] };
     
-    const sorted = [...tagsList].sort((a, b) => b.usageCount - a.usageCount);
-    const maxUsage = sorted[0]?.usageCount || 1;
+    const sorted = [...tagsList].sort((a, b) => b.usage_count - a.usage_count);
+    const maxUsage = sorted[0]?.usage_count || 1;
     
     return {
-      hot: sorted.filter(t => t.usageCount > maxUsage * 0.5),
-      popular: sorted.filter(t => t.usageCount <= maxUsage * 0.5 && t.usageCount > maxUsage * 0.2),
-      regular: sorted.filter(t => t.usageCount <= maxUsage * 0.2),
+      hot: sorted.filter(t => t.usage_count > maxUsage * 0.5),
+      popular: sorted.filter(t => t.usage_count <= maxUsage * 0.5 && t.usage_count > maxUsage * 0.2),
+      regular: sorted.filter(t => t.usage_count <= maxUsage * 0.2),
     };
   };
 
@@ -72,7 +72,7 @@ export function TagsPage() {
         >
           <Hash className="h-3 w-3 mr-1" />
           {tag.name}
-          <span className="ml-2 text-muted-foreground">({tag.usageCount})</span>
+          <span className="ml-2 text-muted-foreground">({tag.usage_count})</span>
         </Badge>
       </Link>
     );
@@ -189,7 +189,7 @@ export function TagsPage() {
                       className="hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
                     >
                       {tag.name}
-                      <span className="ml-1 text-xs opacity-70">({tag.usageCount})</span>
+                      <span className="ml-1 text-xs opacity-70">({tag.usage_count})</span>
                     </Badge>
                   </Link>
                 ))}
@@ -208,13 +208,13 @@ export function TagsPage() {
               <div className="text-sm">
                 <span className="text-muted-foreground">Tổng lượt sử dụng: </span>
                 <span className="font-medium">
-                  {tags.reduce((sum, tag) => sum + tag.usageCount, 0)}
+                  {tags.reduce((sum, tag) => sum + tag.usage_count, 0)}
                 </span>
               </div>
               <div className="text-sm">
                 <span className="text-muted-foreground">Tag phổ biến nhất: </span>
                 <span className="font-medium">
-                  {tags[0]?.name || 'N/A'} ({tags[0]?.usageCount || 0})
+                  {tags[0]?.name || 'N/A'} ({tags[0]?.usage_count || 0})
                 </span>
               </div>
             </div>

@@ -36,7 +36,7 @@ export async function getUserBookmarks(userId: number, page = 1, limit = 10, use
   const [bookmarks, total] = await Promise.all([
     prisma.bookmarks.findMany({
       where: { 
-        userId,
+        user_id: userId,
         posts: {
           categories: viewPermissionFilter || {},
         },
@@ -74,13 +74,13 @@ export async function getUserBookmarks(userId: number, page = 1, limit = 10, use
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
     }),
     prisma.bookmarks.count({ 
       where: { 
-        userId,
+        user_id: userId,
         posts: {
           categories: viewPermissionFilter || {},
         },
@@ -97,7 +97,7 @@ export async function getUserBookmarks(userId: number, page = 1, limit = 10, use
     categories: undefined,
     tags: bookmark.posts.post_tags.map((pt: any) => pt.tags),
     post_tags: undefined,
-    bookmarkedAt: bookmark.createdAt,
+    bookmarkedAt: bookmark.created_at,
   }));
 
   return {
@@ -117,9 +117,9 @@ export async function getUserBookmarks(userId: number, page = 1, limit = 10, use
 export async function isPostBookmarked(userId: number, postId: number): Promise<boolean> {
   const bookmark = await prisma.bookmarks.findUnique({
     where: {
-      userId_postId: {
-        userId,
-        postId,
+      user_id_post_id: {
+        user_id: userId,
+        post_id: postId,
       },
     },
   });
@@ -147,7 +147,7 @@ export async function addBookmark(userId: number, postId: number) {
   // Check if already bookmarked
   const existing = await prisma.bookmarks.findUnique({
     where: {
-      userId_postId: { userId, postId },
+      user_id_post_id: { user_id: userId, post_id: postId },
     },
   });
 
@@ -157,8 +157,8 @@ export async function addBookmark(userId: number, postId: number) {
 
   return prisma.bookmarks.create({
     data: {
-      userId,
-      postId,
+      user_id: userId,
+      post_id: postId,
     },
   });
 }
@@ -169,7 +169,7 @@ export async function addBookmark(userId: number, postId: number) {
 export async function removeBookmark(userId: number, postId: number) {
   const existing = await prisma.bookmarks.findUnique({
     where: {
-      userId_postId: { userId, postId },
+      user_id_post_id: { user_id: userId, post_id: postId },
     },
   });
 
@@ -179,7 +179,7 @@ export async function removeBookmark(userId: number, postId: number) {
 
   return prisma.bookmarks.delete({
     where: {
-      userId_postId: { userId, postId },
+      user_id_post_id: { user_id: userId, post_id: postId },
     },
   });
 }
@@ -200,14 +200,14 @@ export async function toggleBookmark(userId: number, postId: number) {
 
   const existing = await prisma.bookmarks.findUnique({
     where: {
-      userId_postId: { userId, postId },
+      user_id_post_id: { user_id: userId, post_id: postId },
     },
   });
 
   if (existing) {
     await prisma.bookmarks.delete({
       where: {
-        userId_postId: { userId, postId },
+        user_id_post_id: { user_id: userId, post_id: postId },
       },
     });
     return { bookmarked: false };
@@ -216,7 +216,7 @@ export async function toggleBookmark(userId: number, postId: number) {
       throw new BadRequestError('Cannot bookmark a non-published post');
     }
     await prisma.bookmarks.create({
-      data: { userId, postId },
+      data: { user_id: userId, post_id: postId },
     });
     return { bookmarked: true };
   }

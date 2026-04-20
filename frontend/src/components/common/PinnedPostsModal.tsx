@@ -62,16 +62,16 @@ function PinnedPostContent({ postId }: { postId: number }) {
               {post.category.name}
             </Badge>
           )}
-          <span>{post.author?.displayName || post.author?.username}</span>
+          <span>{post.author?.display_name || post.author?.username}</span>
           <span>•</span>
-          <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}</span>
+          <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}</span>
           <span className="flex items-center gap-0.5">
             <Eye className="h-3 w-3" />
-            {post.viewCount}
+            {post.view_count}
           </span>
           <span className="flex items-center gap-0.5">
             <MessageSquare className="h-3 w-3" />
-            {post.commentCount}
+            {post.comment_count}
           </span>
         </DialogDescription>
       </DialogHeader>
@@ -93,7 +93,7 @@ export function PinnedPostsModal() {
 
   // Filter only globally pinned posts
   const pinnedPosts = featuredPosts?.filter(
-    (p: any) => p.isPinned && p.pinType === 'GLOBAL'
+    (p: any) => p.is_pinned && p.pin_type === 'GLOBAL'
   ) ?? [];
 
   const shouldShowModal = useCallback(() => {

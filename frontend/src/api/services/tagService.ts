@@ -7,11 +7,11 @@ export interface Tag {
   name: string;
   slug: string;
   description: string | null;
-  usageCount: number;
-  usePermission: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  usage_count: number;
+  use_permission: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateTagData {

@@ -1,5 +1,13 @@
+-- =============================================================
+-- Squashed migration: consolidates all previous migrations
+-- into a single baseline representing the current schema state.
+-- =============================================================
+
+-- Enable pg_trgm extension for fuzzy / trigram search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('MEMBER', 'MODERATOR', 'ADMIN');
+CREATE TYPE "Role" AS ENUM ('MEMBER', 'MODERATOR', 'ADMIN', 'BOT');
 
 -- CreateEnum
 CREATE TYPE "PostStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'HIDDEN', 'DELETED');
@@ -30,6 +38,9 @@ CREATE TYPE "PermissionLevel" AS ENUM ('ALL', 'MEMBER', 'MODERATOR', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "AuditTarget" AS ENUM ('USER', 'POST', 'COMMENT', 'CATEGORY', 'TAG', 'REPORT', 'SETTINGS');
+
+-- CreateEnum
+CREATE TYPE "OtpPurpose" AS ENUM ('REGISTER', 'RESET_PASSWORD');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -86,6 +97,24 @@ CREATE TABLE "tags" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "otp_tokens" (
+    "id" SERIAL NOT NULL,
+    "email" TEXT NOT NULL,
+    "purpose" "OtpPurpose" NOT NULL DEFAULT 'REGISTER',
+    "code" VARCHAR(255) NOT NULL,
+    "verification_token" TEXT NOT NULL,
+    "is_verified" BOOLEAN NOT NULL DEFAULT false,
+    "verified_at" TIMESTAMP(3),
+    "attempts_made" INTEGER NOT NULL DEFAULT 0,
+    "max_attempts" INTEGER NOT NULL DEFAULT 5,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "otp_tokens_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -153,12 +182,12 @@ CREATE TABLE "refresh_tokens" (
 -- CreateTable
 CREATE TABLE "votes" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "targetType" "VoteTarget" NOT NULL,
-    "targetId" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "target_type" "VoteTarget" NOT NULL,
+    "target_id" INTEGER NOT NULL,
     "value" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "votes_pkey" PRIMARY KEY ("id")
 );
@@ -166,9 +195,9 @@ CREATE TABLE "votes" (
 -- CreateTable
 CREATE TABLE "bookmarks" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "postId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" INTEGER NOT NULL,
+    "post_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "bookmarks_pkey" PRIMARY KEY ("id")
 );
@@ -176,15 +205,15 @@ CREATE TABLE "bookmarks" (
 -- CreateTable
 CREATE TABLE "notifications" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "type" "NotificationType" NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "relatedId" INTEGER,
-    "relatedType" TEXT,
-    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "related_id" INTEGER,
+    "related_type" TEXT,
+    "is_read" BOOLEAN NOT NULL DEFAULT false,
     "deleted_at" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
@@ -192,9 +221,9 @@ CREATE TABLE "notifications" (
 -- CreateTable
 CREATE TABLE "user_blocks" (
     "id" SERIAL NOT NULL,
-    "blockerId" INTEGER NOT NULL,
-    "blockedId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "blocker_id" INTEGER NOT NULL,
+    "blocked_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "user_blocks_pkey" PRIMARY KEY ("id")
 );
@@ -202,17 +231,17 @@ CREATE TABLE "user_blocks" (
 -- CreateTable
 CREATE TABLE "reports" (
     "id" SERIAL NOT NULL,
-    "reporterId" INTEGER NOT NULL,
-    "targetType" "ReportTarget" NOT NULL,
-    "targetId" INTEGER NOT NULL,
+    "reporter_id" INTEGER NOT NULL,
+    "target_type" "ReportTarget" NOT NULL,
+    "target_id" INTEGER NOT NULL,
     "reason" TEXT NOT NULL,
     "description" TEXT,
     "status" "ReportStatus" NOT NULL DEFAULT 'PENDING',
-    "reviewedBy" INTEGER,
-    "reviewedAt" TIMESTAMP(3),
-    "reviewNote" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "reviewed_by" INTEGER,
+    "reviewed_at" TIMESTAMP(3),
+    "review_note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "reports_pkey" PRIMARY KEY ("id")
 );
@@ -222,7 +251,7 @@ CREATE TABLE "audit_logs" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "action" "AuditAction" NOT NULL,
-    "targetType" "AuditTarget" NOT NULL,
+    "target_type" "AuditTarget" NOT NULL,
     "target_id" INTEGER,
     "target_name" TEXT,
     "old_value" TEXT,
@@ -232,6 +261,19 @@ CREATE TABLE "audit_logs" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "user_content_context" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "personality" JSONB NOT NULL,
+    "last_posts" JSONB NOT NULL DEFAULT '[]',
+    "last_comments" JSONB NOT NULL DEFAULT '[]',
+    "action_count" INTEGER NOT NULL DEFAULT 0,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "user_content_context_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -245,6 +287,18 @@ CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tags_slug_key" ON "tags"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "otp_tokens_verification_token_key" ON "otp_tokens"("verification_token");
+
+-- CreateIndex
+CREATE INDEX "otp_tokens_email_idx" ON "otp_tokens"("email");
+
+-- CreateIndex
+CREATE INDEX "otp_tokens_expires_at_idx" ON "otp_tokens"("expires_at");
+
+-- CreateIndex
+CREATE INDEX "otp_tokens_verification_token_idx" ON "otp_tokens"("verification_token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "posts_slug_key" ON "posts"("slug");
@@ -283,40 +337,40 @@ CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens"("user_id");
 CREATE INDEX "refresh_tokens_token_idx" ON "refresh_tokens"("token");
 
 -- CreateIndex
-CREATE INDEX "votes_userId_idx" ON "votes"("userId");
+CREATE INDEX "votes_user_id_idx" ON "votes"("user_id");
 
 -- CreateIndex
-CREATE INDEX "votes_targetType_targetId_idx" ON "votes"("targetType", "targetId");
+CREATE INDEX "votes_target_type_target_id_idx" ON "votes"("target_type", "target_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "votes_userId_targetType_targetId_key" ON "votes"("userId", "targetType", "targetId");
+CREATE UNIQUE INDEX "votes_user_id_target_type_target_id_key" ON "votes"("user_id", "target_type", "target_id");
 
 -- CreateIndex
-CREATE INDEX "bookmarks_userId_idx" ON "bookmarks"("userId");
+CREATE INDEX "bookmarks_user_id_idx" ON "bookmarks"("user_id");
 
 -- CreateIndex
-CREATE INDEX "bookmarks_postId_idx" ON "bookmarks"("postId");
+CREATE INDEX "bookmarks_post_id_idx" ON "bookmarks"("post_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "bookmarks_userId_postId_key" ON "bookmarks"("userId", "postId");
+CREATE UNIQUE INDEX "bookmarks_user_id_post_id_key" ON "bookmarks"("user_id", "post_id");
 
 -- CreateIndex
-CREATE INDEX "notifications_userId_isRead_idx" ON "notifications"("userId", "isRead");
+CREATE INDEX "notifications_user_id_is_read_idx" ON "notifications"("user_id", "is_read");
 
 -- CreateIndex
-CREATE INDEX "notifications_userId_deleted_at_idx" ON "notifications"("userId", "deleted_at");
+CREATE INDEX "notifications_user_id_deleted_at_idx" ON "notifications"("user_id", "deleted_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_blocks_blockerId_blockedId_key" ON "user_blocks"("blockerId", "blockedId");
+CREATE UNIQUE INDEX "user_blocks_blocker_id_blocked_id_key" ON "user_blocks"("blocker_id", "blocked_id");
 
 -- CreateIndex
-CREATE INDEX "reports_reporterId_idx" ON "reports"("reporterId");
+CREATE INDEX "reports_reporter_id_idx" ON "reports"("reporter_id");
 
 -- CreateIndex
 CREATE INDEX "reports_status_idx" ON "reports"("status");
 
 -- CreateIndex
-CREATE INDEX "reports_targetType_targetId_idx" ON "reports"("targetType", "targetId");
+CREATE INDEX "reports_target_type_target_id_idx" ON "reports"("target_type", "target_id");
 
 -- CreateIndex
 CREATE INDEX "audit_logs_user_id_idx" ON "audit_logs"("user_id");
@@ -325,10 +379,23 @@ CREATE INDEX "audit_logs_user_id_idx" ON "audit_logs"("user_id");
 CREATE INDEX "audit_logs_action_idx" ON "audit_logs"("action");
 
 -- CreateIndex
-CREATE INDEX "audit_logs_targetType_target_id_idx" ON "audit_logs"("targetType", "target_id");
+CREATE INDEX "audit_logs_target_type_target_id_idx" ON "audit_logs"("target_type", "target_id");
 
 -- CreateIndex
 CREATE INDEX "audit_logs_created_at_idx" ON "audit_logs"("created_at");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_content_context_user_id_key" ON "user_content_context"("user_id");
+
+-- CreateIndex
+CREATE INDEX "user_content_context_user_id_idx" ON "user_content_context"("user_id");
+
+-- Trigram indexes (from pg_trgm extension)
+CREATE INDEX IF NOT EXISTS idx_posts_title_trgm ON posts USING gin (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_posts_content_trgm ON posts USING gin (content gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_username_trgm ON users USING gin (username gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_display_name_trgm ON users USING gin (display_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_tags_name_trgm ON tags USING gin (name gin_trgm_ops);
 
 -- AddForeignKey
 ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -358,28 +425,31 @@ ALTER TABLE "comments" ADD CONSTRAINT "comments_quoted_comment_id_fkey" FOREIGN 
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "votes" ADD CONSTRAINT "votes_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "votes" ADD CONSTRAINT "votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_postId_fkey" FOREIGN KEY ("postId") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blockerId_fkey" FOREIGN KEY ("blockerId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blocker_id_fkey" FOREIGN KEY ("blocker_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blockedId_fkey" FOREIGN KEY ("blockedId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blocked_id_fkey" FOREIGN KEY ("blocked_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reports" ADD CONSTRAINT "reports_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_id_fkey" FOREIGN KEY ("reporter_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reports" ADD CONSTRAINT "reports_reviewedBy_fkey" FOREIGN KEY ("reviewedBy") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reviewed_by_fkey" FOREIGN KEY ("reviewed_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_content_context" ADD CONSTRAINT "user_content_context_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

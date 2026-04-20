@@ -8,7 +8,7 @@ export interface BookmarkStatus {
 }
 
 export interface BookmarkedPost extends Post {
-  bookmarkedAt: string;
+  bookmarked_at: string;
 }
 
 interface ApiResponse<T> {

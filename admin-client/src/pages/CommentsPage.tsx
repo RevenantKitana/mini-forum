@@ -110,7 +110,7 @@ export function CommentsPage() {
   const handleToggleMask = async (comment: AdminComment) => {
     try {
       await adminService.toggleCommentMask(comment.id.toString());
-      toast.success(comment.isContentMasked ? 'Đã bỏ che nội dung' : 'Đã che nội dung bình luận');
+      toast.success(comment.is_content_masked ? 'Đã bỏ che nội dung' : 'Đã che nội dung bình luận');
       fetchComments();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể thực hiện thao tác');
@@ -307,7 +307,7 @@ export function CommentsPage() {
                             {truncateText(comment.content, 50)}
                           </div>
                         </div>
-                        {comment.isContentMasked && (
+                        {comment.is_content_masked && (
                           <Badge variant="outline" className="text-orange-600 border-orange-300 flex-shrink-0">
                             <ShieldAlert className="h-3 w-3 mr-1" />
                             Đã che
@@ -328,7 +328,7 @@ export function CommentsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium">
-                      {comment.author.displayName || comment.author.username}
+                      {comment.author.display_name || comment.author.username}
                     </div>
                     <div className="text-xs text-muted-foreground">@{comment.author.username}</div>
                   </TableCell>
@@ -347,12 +347,12 @@ export function CommentsPage() {
                     {getStatusBadge(comment.status)}
                   </TableCell>
                   <TableCell className="text-right hidden md:table-cell">
-                    <span className="text-green-600">+{comment.upvoteCount}</span>
+                    <span className="text-green-600">+{comment.upvote_count}</span>
                     {' / '}
-                    <span className="text-red-600">-{comment.downvoteCount}</span>
+                    <span className="text-red-600">-{comment.downvote_count}</span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
-                    {formatDate(comment.createdAt)}
+                    {formatDate(comment.created_at)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -388,7 +388,7 @@ export function CommentsPage() {
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleMask(comment)}>
-                          {comment.isContentMasked ? (
+                          {comment.is_content_masked ? (
                             <>
                               <ShieldOff className="mr-2 h-4 w-4" />
                               Bỏ che nội dung
@@ -452,7 +452,7 @@ export function CommentsPage() {
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-primary" />
               Xem nội dung bình luận
-              {viewingComment?.isContentMasked && (
+              {viewingComment?.is_content_masked && (
                 <Badge variant="outline" className="text-orange-600 border-orange-300 ml-2">
                   <ShieldAlert className="h-3 w-3 mr-1" />
                   Đã che
@@ -463,7 +463,7 @@ export function CommentsPage() {
               <span className="text-amber-600 dark:text-amber-400">⚠ Hành động này đã được ghi vào audit log.</span>
               {viewingComment && (
                 <span className="block mt-1">
-                  Bình luận của <strong>{viewingComment.author.displayName || viewingComment.author.username}</strong> trong bài viết "{decodeHtmlEntities(viewingComment.post.title)}"
+                  Bình luận của <strong>{viewingComment.author.display_name || viewingComment.author.username}</strong> trong bài viết "{decodeHtmlEntities(viewingComment.post.title)}"
                 </span>
               )}
             </DialogDescription>

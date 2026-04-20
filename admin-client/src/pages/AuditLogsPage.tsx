@@ -100,33 +100,33 @@ const fieldLabels: Record<string, string> = {
   description: 'Mô tả',
   email: 'Email',
   username: 'Tên người dùng',
-  displayName: 'Tên hiển thị',
-  avatarUrl: 'Ảnh đại diện',
+  display_name: 'Tên hiển thị',
+  avatar_url: 'Ảnh đại diện',
   bio: 'Giới thiệu',
   role: 'Vai trò',
-  isActive: 'Trạng thái hoạt động',
-  isVerified: 'Đã xác minh',
-  isPinned: 'Ghim',
-  pinType: 'Loại ghim',
-  isLocked: 'Khóa bình luận',
+  is_active: 'Trạng thái hoạt động',
+  is_verified: 'Đã xác minh',
+  is_pinned: 'Ghim',
+  pin_type: 'Loại ghim',
+  is_locked: 'Khóa bình luận',
   status: 'Trạng thái',
   color: 'Màu sắc',
-  sortOrder: 'Thứ tự',
-  viewPermission: 'Quyền xem',
-  postPermission: 'Quyền đăng bài',
-  commentPermission: 'Quyền bình luận',
-  usePermission: 'Quyền sử dụng',
+  sort_order: 'Thứ tự',
+  view_permission: 'Quyền xem',
+  post_permission: 'Quyền đăng bài',
+  comment_permission: 'Quyền bình luận',
+  use_permission: 'Quyền sử dụng',
   reputation: 'Điểm uy tín',
   reason: 'Lý do',
-  reviewNote: 'Ghi chú',
-  categoryId: 'Danh mục',
-  authorId: 'Tác giả',
-  postCount: 'Số bài viết',
-  usageCount: 'Số lần sử dụng',
-  viewCount: 'Lượt xem',
-  upvoteCount: 'Lượt thích',
-  downvoteCount: 'Lượt không thích',
-  commentCount: 'Số bình luận',
+  review_note: 'Ghi chú',
+  category_id: 'Danh mục',
+  author_id: 'Tác giả',
+  post_count: 'Số bài viết',
+  usage_count: 'Số lần sử dụng',
+  view_count: 'Lượt xem',
+  upvote_count: 'Lượt thích',
+  downvote_count: 'Lượt không thích',
+  comment_count: 'Số bình luận',
 };
 
 // Value mappings for human-readable display
@@ -147,29 +147,29 @@ const valueLabels: Record<string, Record<string, string>> = {
     RESOLVED: 'Đã giải quyết',
     DISMISSED: 'Đã bác bỏ',
   },
-  pinType: {
+  pin_type: {
     GLOBAL: 'Toàn cục',
     CATEGORY: 'Trong danh mục',
   },
-  viewPermission: {
+  view_permission: {
     ALL: 'Tất cả',
     MEMBER: 'Thành viên trở lên',
     MODERATOR: 'Điều hành viên trở lên',
     ADMIN: 'Chỉ Admin',
   },
-  postPermission: {
+  post_permission: {
     ALL: 'Tất cả',
     MEMBER: 'Thành viên trở lên',
     MODERATOR: 'Điều hành viên trở lên',
     ADMIN: 'Chỉ Admin',
   },
-  commentPermission: {
+  comment_permission: {
     ALL: 'Tất cả',
     MEMBER: 'Thành viên trở lên',
     MODERATOR: 'Điều hành viên trở lên',
     ADMIN: 'Chỉ Admin',
   },
-  usePermission: {
+  use_permission: {
     ALL: 'Tất cả',
     MEMBER: 'Thành viên trở lên',
     MODERATOR: 'Điều hành viên trở lên',
@@ -319,7 +319,7 @@ const maskSensitiveData = (data: any): any => {
 
 interface Filters {
   action: string;
-  targetType: string;
+  target_type: string;
   search: string;
 }
 
@@ -331,7 +331,7 @@ export function AuditLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<Filters>({
     action: '',
-    targetType: '',
+    target_type: '',
     search: '',
   });
   
@@ -364,7 +364,7 @@ export function AuditLogsPage() {
         limit: 20,
       };
       if (filters.action) params.action = filters.action;
-      if (filters.targetType) params.targetType = filters.targetType;
+      if (filters.target_type) params.targetType = filters.target_type;
       
       const response = await adminService.getAuditLogs(params);
       
@@ -401,7 +401,7 @@ export function AuditLogsPage() {
   };
 
   const handleResetFilters = () => {
-    setFilters({ action: '', targetType: '', search: '' });
+    setFilters({ action: '', target_type: '', search: '' });
     setPage(1);
   };
 
@@ -488,9 +488,9 @@ export function AuditLogsPage() {
             <div className="space-y-2">
               <Label>Đối tượng</Label>
               <Select
-                value={filters.targetType || '_all'}
+                value={filters.target_type || '_all'}
                 onValueChange={(value: string) => {
-                  setFilters({ ...filters, targetType: value === '_all' ? '' : value });
+                  setFilters({ ...filters, target_type: value === '_all' ? '' : value });
                   setPage(1);
                 }}
               >
@@ -550,7 +550,7 @@ export function AuditLogsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {formatDate(log.createdAt)}
+                        {formatDate(log.created_at)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -568,13 +568,13 @@ export function AuditLogsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {getTargetIcon(log.targetType)}
-                        <span>{targetLabels[log.targetType] || log.targetType}</span>
+                        {getTargetIcon(log.target_type)}
+                        <span>{targetLabels[log.target_type] || log.target_type}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground truncate max-w-[200px] block">
-                        {log.targetName || `#${log.targetId}`}
+                        {log.targetName || `#${log.target_id}`}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -652,7 +652,7 @@ export function AuditLogsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Thời gian</Label>
-                  <p className="font-medium">{formatDate(selectedLog.createdAt)}</p>
+                  <p className="font-medium">{formatDate(selectedLog.created_at)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Người thực hiện</Label>
@@ -669,8 +669,8 @@ export function AuditLogsPage() {
                 <div>
                   <Label className="text-muted-foreground">Đối tượng</Label>
                   <div className="font-medium flex items-center gap-2">
-                    {getTargetIcon(selectedLog.targetType)}
-                    {targetLabels[selectedLog.targetType] || selectedLog.targetType}
+                    {getTargetIcon(selectedLog.target_type)}
+                    {targetLabels[selectedLog.target_type] || selectedLog.target_type}
                   </div>
                 </div>
               </div>
@@ -678,7 +678,7 @@ export function AuditLogsPage() {
               <div>
                 <Label className="text-muted-foreground">Mục tiêu</Label>
                 <p className="font-medium">
-                  {selectedLog.targetName || `ID: ${selectedLog.targetId}`}
+                  {selectedLog.targetName || `ID: ${selectedLog.target_id}`}
                 </p>
               </div>
 
@@ -730,7 +730,7 @@ export function AuditLogsPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Target ID</Label>
-                  <p className="font-mono">{selectedLog.targetId}</p>
+                  <p className="font-mono">{selectedLog.target_id}</p>
                 </div>
               </div>
 

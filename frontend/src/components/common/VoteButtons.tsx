@@ -49,13 +49,13 @@ export function VoteButtons({
   // Update local state with server vote status
   useEffect(() => {
     if (targetType === 'post' && postVoteQuery.data) {
-      setCurrentVote(postVoteQuery.data.voteType);
+      setCurrentVote(postVoteQuery.data.vote_type);
     }
   }, [postVoteQuery.data, targetType]);
 
   useEffect(() => {
     if (targetType === 'comment' && commentVoteQuery.data) {
-      setCurrentVote(commentVoteQuery.data.voteType);
+      setCurrentVote(commentVoteQuery.data.vote_type);
     }
   }, [commentVoteQuery.data, targetType]);
 

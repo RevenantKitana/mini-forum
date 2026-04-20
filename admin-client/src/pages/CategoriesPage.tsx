@@ -49,22 +49,22 @@ interface CategoryFormData {
   name: string;
   description: string;
   color: string;
-  sortOrder: number;
-  isActive: boolean;
-  viewPermission: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  postPermission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  commentPermission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  sort_order: number;
+  is_active: boolean;
+  view_permission: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  post_permission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  comment_permission: 'MEMBER' | 'MODERATOR' | 'ADMIN';
 }
 
 const defaultFormData: CategoryFormData = {
   name: '',
   description: '',
   color: '#6366f1',
-  sortOrder: 0,
-  isActive: true,
-  viewPermission: 'ALL',
-  postPermission: 'MEMBER',
-  commentPermission: 'MEMBER',
+  sort_order: 0,
+  is_active: true,
+  view_permission: 'ALL',
+  post_permission: 'MEMBER',
+  comment_permission: 'MEMBER',
 };
 
 const colorPresets = [
@@ -106,7 +106,7 @@ export function CategoriesPage() {
     setEditingCategory(null);
     setFormData({
       ...defaultFormData,
-      sortOrder: categories.length,
+      sort_order: categories.length,
     });
     setDialogOpen(true);
   };
@@ -115,17 +115,17 @@ export function CategoriesPage() {
     setDialogMode('edit');
     setEditingCategory(category);
     // Ensure postPermission and commentPermission have valid values (not 'ALL' for these fields)
-    const validPostPerm = (category.postPermission === 'ALL') ? 'MEMBER' : category.postPermission;
-    const validCommentPerm = (category.commentPermission === 'ALL') ? 'MEMBER' : category.commentPermission;
+    const validPostPerm = (category.post_permission === 'ALL') ? 'MEMBER' : category.post_permission;
+    const validCommentPerm = (category.comment_permission === 'ALL') ? 'MEMBER' : category.comment_permission;
     setFormData({
       name: category.name,
       description: category.description || '',
       color: category.color || '#6366f1',
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-      viewPermission: category.viewPermission || 'ALL',
-      postPermission: validPostPerm || 'MEMBER',
-      commentPermission: validCommentPerm || 'MEMBER',
+      sort_order: category.sort_order,
+      is_active: category.is_active,
+      view_permission: category.view_permission || 'ALL',
+      post_permission: validPostPerm || 'MEMBER',
+      comment_permission: validCommentPerm || 'MEMBER',
     });
     setDialogOpen(true);
   };
@@ -145,11 +145,11 @@ export function CategoriesPage() {
           name: formData.name,
           description: formData.description || undefined,
           color: formData.color || undefined,
-          sortOrder: formData.sortOrder,
-          isActive: formData.isActive,
-          viewPermission: formData.viewPermission,
-          postPermission: formData.postPermission,
-          commentPermission: formData.commentPermission,
+          sortOrder: formData.sort_order,
+          isActive: formData.is_active,
+          viewPermission: formData.view_permission,
+          postPermission: formData.post_permission,
+          commentPermission: formData.comment_permission,
         });
         toast.success('Đã tạo danh mục mới');
       } else if (editingCategory) {
@@ -157,11 +157,11 @@ export function CategoriesPage() {
           name: formData.name,
           description: formData.description,
           color: formData.color,
-          sortOrder: formData.sortOrder,
-          isActive: formData.isActive,
-          viewPermission: formData.viewPermission,
-          postPermission: formData.postPermission,
-          commentPermission: formData.commentPermission,
+          sortOrder: formData.sort_order,
+          isActive: formData.is_active,
+          viewPermission: formData.view_permission,
+          postPermission: formData.post_permission,
+          commentPermission: formData.comment_permission,
         });
         toast.success('Đã cập nhật danh mục');
       }
@@ -177,9 +177,9 @@ export function CategoriesPage() {
   const handleToggleActive = async (category: AdminCategory) => {
     try {
       await adminService.updateCategory(category.id.toString(), {
-        isActive: !category.isActive,
+        isActive: !category.is_active,
       });
-      toast.success(category.isActive ? 'Đã ẩn danh mục' : 'Đã hiện danh mục');
+      toast.success(category.is_active ? 'Đã ẩn danh mục' : 'Đã hiện danh mục');
       fetchCategories();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể thực hiện thao tác');
@@ -187,7 +187,7 @@ export function CategoriesPage() {
   };
 
   const handleDelete = async (category: AdminCategory) => {
-    if (category.postCount > 0 || (category.actualPostCount && category.actualPostCount > 0)) {
+    if (category.post_count > 0 || (category.actual_post_count && category.actual_post_count > 0)) {
       toast.error('Không thể xóa danh mục có bài viết. Vui lòng di chuyển hoặc xóa bài viết trước.');
       return;
     }
@@ -264,11 +264,11 @@ export function CategoriesPage() {
                 </TableRow>
               ) : (
                 categories.map((category) => (
-                  <TableRow key={category.id} className={!category.isActive ? 'opacity-50' : ''}>
+                  <TableRow key={category.id} className={!category.is_active ? 'opacity-50' : ''}>
                     <TableCell>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <GripVertical className="h-4 w-4" />
-                        {category.sortOrder}
+                        {category.sort_order}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -292,36 +292,36 @@ export function CategoriesPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline">
-                        {category.actualPostCount ?? category.postCount} bài
+                        {category.actual_post_count ?? category.post_count} bài
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="space-y-1">
                         <div>
-                          {category.isActive ? (
+                          {category.is_active ? (
                             <Badge variant="success">Hiện</Badge>
                           ) : (
                             <Badge variant="secondary">Ẩn</Badge>
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Xem: {category.viewPermission === 'ALL' ? 'Tất cả' : 
-                                category.viewPermission === 'MEMBER' ? 'Thành viên' :
-                                category.viewPermission === 'MODERATOR' ? 'Điều hành' : 
-                                category.viewPermission === 'ADMIN' ? 'Admin' : 'Tất cả'}
+                          Xem: {category.view_permission === 'ALL' ? 'Tất cả' : 
+                                category.view_permission === 'MEMBER' ? 'Thành viên' :
+                                category.view_permission === 'MODERATOR' ? 'Điều hành' : 
+                                category.view_permission === 'ADMIN' ? 'Admin' : 'Tất cả'}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Đăng: {category.postPermission === 'MEMBER' ? 'Thành viên' :
-                                 category.postPermission === 'MODERATOR' ? 'Điều hành' : 'Admin'}
+                          Đăng: {category.post_permission === 'MEMBER' ? 'Thành viên' :
+                                 category.post_permission === 'MODERATOR' ? 'Điều hành' : 'Admin'}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          BL: {category.commentPermission === 'MEMBER' ? 'Thành viên' :
-                               category.commentPermission === 'MODERATOR' ? 'Điều hành' : 'Admin'}
+                          BL: {category.comment_permission === 'MEMBER' ? 'Thành viên' :
+                               category.comment_permission === 'MODERATOR' ? 'Điều hành' : 'Admin'}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(category.createdAt)}
+                      {formatDate(category.created_at)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -338,7 +338,7 @@ export function CategoriesPage() {
                             Chỉnh sửa
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActive(category)}>
-                            {category.isActive ? (
+                            {category.is_active ? (
                               <>
                                 <EyeOff className="mr-2 h-4 w-4" />
                                 Ẩn danh mục
@@ -411,8 +411,8 @@ export function CategoriesPage() {
                 <Input
                   id="sortOrder"
                   type="number"
-                  value={formData.sortOrder}
-                  onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                  value={formData.sort_order}
+                  onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                   min={0}
                 />
               </div>
@@ -450,8 +450,8 @@ export function CategoriesPage() {
                   </div>
                 </div>
                 <Switch
-                  checked={formData.isActive}
-                  onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
+                  checked={formData.is_active}
+                  onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_active: checked })}
                 />
               </div>
 
@@ -465,9 +465,9 @@ export function CategoriesPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="viewPermission">Ai được xem bài viết?</Label>
                   <Select
-                    value={formData.viewPermission}
+                    value={formData.view_permission}
                     onValueChange={(value: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN') => 
-                      setFormData({ ...formData, viewPermission: value })
+                      setFormData({ ...formData, view_permission: value })
                     }
                   >
                     <SelectTrigger>
@@ -486,9 +486,9 @@ export function CategoriesPage() {
                   <div className="grid gap-2">
                     <Label htmlFor="postPermission">Ai được đăng bài?</Label>
                     <Select
-                      value={formData.postPermission}
+                      value={formData.post_permission}
                       onValueChange={(value: 'MEMBER' | 'MODERATOR' | 'ADMIN') => 
-                        setFormData({ ...formData, postPermission: value })
+                        setFormData({ ...formData, post_permission: value })
                       }
                     >
                       <SelectTrigger>
@@ -505,9 +505,9 @@ export function CategoriesPage() {
                   <div className="grid gap-2">
                     <Label htmlFor="commentPermission">Ai được bình luận?</Label>
                     <Select
-                      value={formData.commentPermission}
+                      value={formData.comment_permission}
                       onValueChange={(value: 'MEMBER' | 'MODERATOR' | 'ADMIN') => 
-                        setFormData({ ...formData, commentPermission: value })
+                        setFormData({ ...formData, comment_permission: value })
                       }
                     >
                       <SelectTrigger>

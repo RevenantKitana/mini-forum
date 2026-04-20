@@ -241,11 +241,11 @@ export function PostDetailPage() {
     );
   }
 
-  const canEdit = user && (user.id === post?.authorId || user.role === 'ADMIN' || user.role === 'MODERATOR');
+  const canEdit = user && (user.id === post?.author_id || user.role === 'ADMIN' || user.role === 'MODERATOR');
   
-  const voteScore = post ? post.upvoteCount - post.downvoteCount : 0;
-  const authorDisplayName = post?.author?.displayName || post?.author?.username || 'Unknown';
-  const authorAvatar = post?.author?.avatarUrl;
+  const voteScore = post ? post.upvote_count - post.downvote_count : 0;
+  const authorDisplayName = post?.author?.display_name || post?.author?.username || 'Unknown';
+  const authorAvatar = post?.author?.avatar_url;
 
   return (
     <div className="animate-fade-in-up">
@@ -256,13 +256,13 @@ export function PostDetailPage() {
             <div className="flex-1">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-3 text-center">
                 {/* Status Badges (Pinned/Locked) */}
-                {post.isPinned && (
+                {post.is_pinned && (
                   <Badge variant="default">
                     <Pin className="h-3 w-3 mr-1" />
                     Pinned
                   </Badge>
                 )}
-                {post.isLocked && (
+                {post.is_locked && (
                   <Badge variant="secondary">
                     <Lock className="h-3 w-3 mr-1" />
                     Locked
@@ -320,11 +320,11 @@ export function PostDetailPage() {
                     <span className="text-muted-foreground/70">@{post.author.username}</span>
                   </Link>
                   <span>•</span>
-                  <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                  <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                   <span>•</span>
                   <div className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
-                    <span>{post.viewCount} views</span>
+                    <span>{post.view_count} views</span>
                   </div>
                 </div>
               )}
@@ -367,21 +367,21 @@ export function PostDetailPage() {
               <VoteButtons
                 targetId={post.id}
                 targetType="post"
-                upvoteCount={post.upvoteCount}
-                downvoteCount={post.downvoteCount}
-                authorId={post.authorId}
+                upvoteCount={post.upvote_count}
+                downvoteCount={post.downvote_count}
+                authorId={post.author_id}
                 size="md"
                 orientation="horizontal"
               />
               <VoteScore
                 score={voteScore}
-                upvoteCount={post.upvoteCount}
-                downvoteCount={post.downvoteCount}
+                upvoteCount={post.upvote_count}
+                downvoteCount={post.downvote_count}
               />
               <Separator orientation="vertical" className="h-6 mx-1" />
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <MessageSquare className="h-4 w-4" />
-                <span>{post.commentCount} bình luận</span>
+                <span>{post.comment_count} bình luận</span>
               </div>
             </div>
 
@@ -420,7 +420,7 @@ export function PostDetailPage() {
         {/* Comment Form - for root comments only */}
         {(() => {
           // Check if locked
-          if (post.isLocked) {
+          if (post.is_locked) {
             return (
               <Card className="bg-muted/50 border-orange-200 dark:border-orange-800">
                 <CardContent className="pt-6 text-center">
@@ -437,7 +437,7 @@ export function PostDetailPage() {
           }
 
           // Check comment permission based on category
-          const commentPermission = post.category?.commentPermission;
+          const commentPermission = post.category?.comment_permission;
           const hasCommentPermission = checkPermissionLevel(user?.role, commentPermission);
 
           // Not logged in
@@ -528,7 +528,7 @@ export function PostDetailPage() {
         })()}
         <div className="pt-1 pb-2 px-2 text-sm border-b flex items-center justify-between">
           {/* Comment Sort Dropdown */}
-          {post.commentCount > 0 && (
+          {post.comment_count > 0 && (
             <Select value={commentSort} onValueChange={(v) => setCommentSort(v as typeof commentSort)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sắp xếp theo" />
@@ -565,7 +565,7 @@ export function PostDetailPage() {
               // Calculate canComment for each comment/reply context
               const canCommentInCategory = checkPermissionLevel(
                 user?.role,
-                post.category?.commentPermission
+                post.category?.comment_permission
               );
               
               return (
@@ -578,7 +578,7 @@ export function PostDetailPage() {
                 comment={comment}
                 postId={id!}
                 threadIndex={index}
-                isPostLocked={post.isLocked}
+                isPostLocked={post.is_locked}
                 canComment={isAuthenticated && canCommentInCategory}
                 commentEditTimeLimit={commentEditTimeLimit}
                 onReply={(c: Comment) => {
@@ -705,14 +705,14 @@ function CommentItem({
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
 
-  const voteScore = comment.upvoteCount - comment.downvoteCount;
-  const authorDisplayName = comment.author?.displayName || comment.author?.username || 'Unknown';
-  const authorAvatar = comment.author?.avatarUrl;
+  const voteScore = comment.upvote_count - comment.downvote_count;
+  const authorDisplayName = comment.author?.display_name || comment.author?.username || 'Unknown';
+  const authorAvatar = comment.author?.avatar_url;
 
   // Check if comment can still be edited (within time limit)
-  const commentAge = Date.now() - new Date(comment.createdAt).getTime();
+  const commentAge = Date.now() - new Date(comment.created_at).getTime();
   const canEditTimeLimit = commentAge < commentEditTimeLimit * 60 * 1000;
-  const isCommentAuthor = user && (Number(user.id) === comment.authorId || user.id === comment.authorId);
+  const isCommentAuthor = user && (Number(user.id) === comment.author_id || user.id === comment.author_id);
   const isModOrAdmin = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
   const canEdit = isCommentAuthor && (canEditTimeLimit || isModOrAdmin);
   const canDelete = isCommentAuthor || isModOrAdmin;
@@ -800,7 +800,7 @@ function CommentItem({
   const totalCommentCount = !isReply ? replies.length : 0;
   const totalReplyCount = !isReply
     ? replies.filter((reply) => {
-        const quotedCommentId = reply.quotedCommentId ?? reply.quotedComment?.id ?? null;
+        const quotedCommentId = reply.quoted_comment_id ?? reply.quotedComment?.id ?? null;
         return quotedCommentId === Number(comment.id);
       }).length
     : 0;
@@ -892,9 +892,9 @@ function CommentItem({
                   </div>
 
                   <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                   </span>
-                  {comment.isEdited && (
+                  {comment.is_edited && (
                     <span className="text-xs text-muted-foreground flex-shrink-0">(đã chỉnh sửa)</span>
                   )}
                 </div>
@@ -942,16 +942,16 @@ function CommentItem({
                       <VoteButtons
                         targetId={comment.id}
                         targetType="comment"
-                        upvoteCount={comment.upvoteCount}
-                        downvoteCount={comment.downvoteCount}
-                        authorId={comment.authorId}
+                        upvoteCount={comment.upvote_count}
+                        downvoteCount={comment.downvote_count}
+                        authorId={comment.author_id}
                         size="sm"
                         orientation="horizontal"
                       />
                       <VoteScore
                         score={voteScore}
-                        upvoteCount={comment.upvoteCount}
-                        downvoteCount={comment.downvoteCount}
+                        upvoteCount={comment.upvote_count}
+                        downvoteCount={comment.downvote_count}
                       />
                       {!isReply && totalCommentCount > 0 && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">

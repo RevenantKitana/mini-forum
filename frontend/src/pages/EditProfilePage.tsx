@@ -32,11 +32,11 @@ export function EditProfilePage() {
   const { user, refreshUser } = useAuth();
 
   // Profile form state
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [bio, setBio] = useState(user?.bio || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || user?.avatar || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || user?.avatar || '');
   const [dateOfBirth, setDateOfBirth] = useState(
-    user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : ''
+    user?.date_of_birth ? new Date(user.date_of_birth).toISOString().split('T')[0] : ''
   );
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>(user?.gender || '');
 

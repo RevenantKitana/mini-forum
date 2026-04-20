@@ -12,16 +12,16 @@ export interface Category {
   description: string | null;
   color: string | null;
   icon?: string | null;
-  sortOrder: number;
-  postCount: number;
-  viewCount?: number;
-  commentCount?: number;
-  isActive: boolean;
-  viewPermission?: PermissionLevel;
-  postPermission?: PermissionLevel;
-  commentPermission?: PermissionLevel;
-  createdAt: string;
-  updatedAt: string;
+  sort_order: number;
+  post_count: number;
+  view_count?: number;
+  comment_count?: number;
+  is_active: boolean;
+  view_permission?: PermissionLevel;
+  post_permission?: PermissionLevel;
+  comment_permission?: PermissionLevel;
+  created_at: string;
+  updated_at: string;
   popularTags?: PopularTag[];
 }
 
@@ -29,7 +29,7 @@ export interface PopularTag {
   id: number;
   name: string;
   slug: string;
-  usageCount: number;
+  usage_count: number;
 }
 
 export interface CreateCategoryData {
@@ -38,7 +38,7 @@ export interface CreateCategoryData {
   description?: string;
   icon?: string;
   color?: string;
-  sortOrder?: number;
+  sort_order?: number;
 }
 
 export interface UpdateCategoryData {
@@ -46,8 +46,8 @@ export interface UpdateCategoryData {
   description?: string;
   icon?: string;
   color?: string;
-  sortOrder?: number;
-  isActive?: boolean;
+  sort_order?: number;
+  is_active?: boolean;
 }
 
 // API Response wrapper

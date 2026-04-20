@@ -92,17 +92,17 @@ export function CategoriesPage() {
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <FileText className="h-4 w-4" />
-                        <span>{category.postCount} bài viết</span>
+                        <span>{category.post_count} bài viết</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
-                        <span className="hidden sm:inline">{category.viewCount?.toLocaleString() || 0} lượt xem</span>
-                        <span className="sm:hidden">{category.viewCount?.toLocaleString() || 0}</span>
+                        <span className="hidden sm:inline">{category.view_count?.toLocaleString() || 0} lượt xem</span>
+                        <span className="sm:hidden">{category.view_count?.toLocaleString() || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        <span className="hidden sm:inline">{category.commentCount?.toLocaleString() || 0} bình luận</span>
-                        <span className="sm:hidden">{category.commentCount?.toLocaleString() || 0}</span>
+                        <span className="hidden sm:inline">{category.comment_count?.toLocaleString() || 0} bình luận</span>
+                        <span className="sm:hidden">{category.comment_count?.toLocaleString() || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export function CategoriesPage() {
             <div className="text-sm">
               <span className="text-muted-foreground">Tổng số bài viết: </span>
               <span className="font-medium">
-                {categories.reduce((sum: number, cat: Category) => sum + cat.postCount, 0)}
+                {categories.reduce((sum: number, cat: Category) => sum + cat.post_count, 0)}
               </span>
             </div>
           </div>

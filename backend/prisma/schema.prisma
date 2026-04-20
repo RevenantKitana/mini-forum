@@ -12,7 +12,7 @@ model audit_logs {
   id          Int         @id @default(autoincrement())
   user_id     Int
   action      AuditAction
-  targetType  AuditTarget
+  target_type AuditTarget
   target_id   Int?
   target_name String?
   old_value   String?
@@ -24,21 +24,21 @@ model audit_logs {
 
   @@index([action])
   @@index([created_at])
-  @@index([targetType, target_id])
+  @@index([target_type, target_id])
   @@index([user_id])
 }
 
 model bookmarks {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  postId    Int
-  createdAt DateTime @default(now())
-  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  created_at DateTime @default(now())
+  posts      posts    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([userId, postId])
-  @@index([postId])
-  @@index([userId])
+  @@unique([user_id, post_id])
+  @@index([post_id])
+  @@index([user_id])
 }
 
 model categories {
@@ -85,20 +85,20 @@ model comments {
 }
 
 model notifications {
-  id          Int              @id @default(autoincrement())
-  userId      Int
-  type        NotificationType
-  title       String
-  content     String
-  relatedId   Int?
-  relatedType String?
-  isRead      Boolean          @default(false)
-  deleted_at  DateTime?
-  createdAt   DateTime         @default(now())
-  users       users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           Int              @id @default(autoincrement())
+  user_id      Int
+  type         NotificationType
+  title        String
+  content      String
+  related_id   Int?
+  related_type String?
+  is_read      Boolean          @default(false)
+  deleted_at   DateTime?
+  created_at   DateTime         @default(now())
+  users        users            @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([userId, deleted_at])
-  @@index([userId, isRead])
+  @@index([user_id, deleted_at])
+  @@index([user_id, is_read])
 }
 
 model post_tags {
@@ -155,24 +155,24 @@ model refresh_tokens {
 }
 
 model reports {
-  id                              Int          @id @default(autoincrement())
-  reporterId                      Int
-  targetType                      ReportTarget
-  targetId                        Int
-  reason                          String
-  description                     String?
-  status                          ReportStatus @default(PENDING)
-  reviewedBy                      Int?
-  reviewedAt                      DateTime?
-  reviewNote                      String?
-  createdAt                       DateTime     @default(now())
-  updatedAt                       DateTime
-  users_reports_reporterIdTousers users        @relation("reports_reporterIdTousers", fields: [reporterId], references: [id], onDelete: Cascade)
-  users_reports_reviewedByTousers users?       @relation("reports_reviewedByTousers", fields: [reviewedBy], references: [id])
+  id                                Int          @id @default(autoincrement())
+  reporter_id                       Int
+  target_type                       ReportTarget
+  target_id                         Int
+  reason                            String
+  description                       String?
+  status                            ReportStatus @default(PENDING)
+  reviewed_by                       Int?
+  reviewed_at                       DateTime?
+  review_note                       String?
+  created_at                        DateTime     @default(now())
+  updated_at                        DateTime
+  users_reports_reporter_idTousers  users        @relation("reports_reporter_idTousers", fields: [reporter_id], references: [id], onDelete: Cascade)
+  users_reports_reviewed_byTousers  users?       @relation("reports_reviewed_byTousers", fields: [reviewed_by], references: [id])
 
-  @@index([reporterId])
+  @@index([reporter_id])
   @@index([status])
-  @@index([targetType, targetId])
+  @@index([target_type, target_id])
 }
 
 model tags {
@@ -189,14 +189,14 @@ model tags {
 }
 
 model user_blocks {
-  id                                 Int      @id @default(autoincrement())
-  blockerId                          Int
-  blockedId                          Int
-  createdAt                          DateTime @default(now())
-  users_user_blocks_blockedIdTousers users    @relation("user_blocks_blockedIdTousers", fields: [blockedId], references: [id], onDelete: Cascade)
-  users_user_blocks_blockerIdTousers users    @relation("user_blocks_blockerIdTousers", fields: [blockerId], references: [id], onDelete: Cascade)
+  id                                   Int      @id @default(autoincrement())
+  blocker_id                           Int
+  blocked_id                           Int
+  created_at                           DateTime @default(now())
+  users_user_blocks_blocked_idTousers  users    @relation("user_blocks_blocked_idTousers", fields: [blocked_id], references: [id], onDelete: Cascade)
+  users_user_blocks_blocker_idTousers  users    @relation("user_blocks_blocker_idTousers", fields: [blocker_id], references: [id], onDelete: Cascade)
 
-  @@unique([blockerId, blockedId])
+  @@unique([blocker_id, blocked_id])
 }
 
 model users {
@@ -223,10 +223,10 @@ model users {
   notifications                            notifications[]
   posts                                    posts[]
   refresh_tokens                           refresh_tokens[]
-  reports_reports_reporterIdTousers        reports[]        @relation("reports_reporterIdTousers")
-  reports_reports_reviewedByTousers        reports[]        @relation("reports_reviewedByTousers")
-  user_blocks_user_blocks_blockedIdTousers user_blocks[]    @relation("user_blocks_blockedIdTousers")
-  user_blocks_user_blocks_blockerIdTousers user_blocks[]    @relation("user_blocks_blockerIdTousers")
+  reports_reports_reporter_idTousers        reports[]        @relation("reports_reporter_idTousers")
+  reports_reports_reviewed_byTousers        reports[]        @relation("reports_reviewed_byTousers")
+  user_blocks_user_blocks_blocked_idTousers user_blocks[]    @relation("user_blocks_blocked_idTousers")
+  user_blocks_user_blocks_blocker_idTousers user_blocks[]    @relation("user_blocks_blocker_idTousers")
   votes                                    votes[]
   user_content_context                     user_content_context?
 }
@@ -245,18 +245,18 @@ model user_content_context {
 }
 
 model votes {
-  id         Int        @id @default(autoincrement())
-  userId     Int
-  targetType VoteTarget
-  targetId   Int
-  value      Int
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime
-  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int        @id @default(autoincrement())
+  user_id     Int
+  target_type VoteTarget
+  target_id   Int
+  value       Int
+  created_at  DateTime   @default(now())
+  updated_at  DateTime
+  users       users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([userId, targetType, targetId])
-  @@index([targetType, targetId])
-  @@index([userId])
+  @@unique([user_id, target_type, target_id])
+  @@index([target_type, target_id])
+  @@index([user_id])
 }
 
 enum AuditAction {

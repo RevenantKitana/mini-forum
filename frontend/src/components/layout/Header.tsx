@@ -166,9 +166,9 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full ml-1 btn-press">
                     <Avatar className="h-8 w-8 sm:h-8 sm:w-8 ring-2 ring-transparent hover:ring-primary/20 transition-all">
-                      <AvatarImage src={user?.avatar || undefined} alt={user?.displayName || user?.username} />
+                      <AvatarImage src={user?.avatar || undefined} alt={user?.display_name || user?.username} />
                       <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                        {(user?.displayName || user?.username || 'U')?.[0]?.toUpperCase() || 'U'}
+                        {(user?.display_name || user?.username || 'U')?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -176,7 +176,7 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56 min-w-[min(224px,calc(100vw-2rem))] animate-fade-in-scale">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.displayName || user?.username || 'User'}</p>
+                      <p className="text-sm font-medium leading-none">{user?.display_name || user?.username || 'User'}</p>
                       <p className="text-xs text-muted-foreground">@{user?.username || 'unknown'}</p>
                     </div>
                   </DropdownMenuLabel>

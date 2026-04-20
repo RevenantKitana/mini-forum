@@ -46,9 +46,9 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const voteScore = post.upvoteCount - post.downvoteCount;
-  const authorDisplayName = post.author?.displayName || post.author?.username || 'Unknown';
-  const authorAvatar = post.author?.avatarUrl;
+  const voteScore = post.upvote_count - post.downvote_count;
+  const authorDisplayName = post.author?.display_name || post.author?.username || 'Unknown';
+  const authorAvatar = post.author?.avatar_url;
   
   // Determine author badge based on role
   const getAuthorBadge = () => {
@@ -94,21 +94,21 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <Card className="ml-2 relative overflow-visible card-hover-lift border-l-2  border-l-transparent hover:border-l-primary transition-all duration-1000 flex flex-col">
       {/* Corner icons: pinned (left) and locked (right) */}
-      {post.isPinned && (post.pinType === 'CATEGORY' || post.pinType === 'GLOBAL') && (
+      {post.is_pinned && (post.pin_type === 'CATEGORY' || post.pin_type === 'GLOBAL') && (
         <div className="absolute top-0 left-0 translate-x-1/2 -translate-y-1/2 -rotate-45">
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="flex-shrink-0">
-                <Pin className={`h-4 w-4 ${post.pinType === 'GLOBAL' ? 'text-primary' : 'text-orange-500'}`} />
+                <Pin className={`h-4 w-4 ${post.pin_type === 'GLOBAL' ? 'text-primary' : 'text-orange-500'}`} />
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {post.pinType === 'GLOBAL' ? 'Pinned globally' : 'Pinned category'}
+              {post.pin_type === 'GLOBAL' ? 'Pinned globally' : 'Pinned category'}
             </TooltipContent>
           </Tooltip>
         </div>
       )}
-      {post.isLocked && (
+      {post.is_locked && (
         <div className="absolute top-2 right-2 z-10 pointer-events-auto">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -148,7 +148,7 @@ export function PostCard({ post }: PostCardProps) {
               >
                 <Badge variant="outline" size="sm" className="gap-1 font-medium inline-flex items-center">
                   {post.category.name}
-                  {post.category.viewPermission && post.category.viewPermission !== 'ALL' }
+                  {post.category.view_permission && post.category.view_permission !== 'ALL' }
                 </Badge>
               </Link>
             )}
@@ -226,11 +226,11 @@ export function PostCard({ post }: PostCardProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-muted-foreground text-responsive-xs flex-shrink-0">
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {format(new Date(post.createdAt), 'dd/MM/yyyy')}
+              {format(new Date(post.created_at), 'dd/MM/yyyy')}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -251,16 +251,16 @@ export function PostCard({ post }: PostCardProps) {
           <VoteButtons
             targetId={post.id}
             targetType="post"
-            upvoteCount={post.upvoteCount}
-            downvoteCount={post.downvoteCount}
-            authorId={post.authorId}
+            upvoteCount={post.upvote_count}
+            downvoteCount={post.downvote_count}
+            authorId={post.author_id}
             size="sm"
             orientation="horizontal"
           />
           <VoteScore
             score={voteScore}
-            upvoteCount={post.upvoteCount}
-            downvoteCount={post.downvoteCount}
+            upvoteCount={post.upvote_count}
+            downvoteCount={post.downvote_count}
           />
 
           {/* Comments count */}
@@ -268,7 +268,7 @@ export function PostCard({ post }: PostCardProps) {
             <TooltipTrigger asChild>
               <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
                 <MessageSquare className="h-3.5 w-3.5" />
-                <span className="ml-1.5">{post.commentCount}</span>
+                <span className="ml-1.5">{post.comment_count}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -281,7 +281,7 @@ export function PostCard({ post }: PostCardProps) {
             <TooltipTrigger asChild>
               <div className="hidden md:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md hover:bg-muted transition-all cursor-help">
                 <Eye className="h-3.5 w-3.5" />
-                <span className="ml-1.5">{post.viewCount}</span>
+                <span className="ml-1.5">{post.view_count}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">

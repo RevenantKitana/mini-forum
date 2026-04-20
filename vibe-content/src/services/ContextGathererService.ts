@@ -354,10 +354,10 @@ export class ContextGathererService {
       for (const post of posts) {
         const existingVote = await prisma.votes.findUnique({
           where: {
-            userId_targetType_targetId: {
-              userId,
-              targetType: 'POST',
-              targetId: post.id,
+            user_id_target_type_target_id: {
+              user_id: userId,
+              target_type: 'POST',
+              target_id: post.id,
             },
           },
         });
@@ -418,10 +418,10 @@ export class ContextGathererService {
       for (const comment of comments) {
         const existingVote = await prisma.votes.findUnique({
           where: {
-            userId_targetType_targetId: {
-              userId,
-              targetType: 'COMMENT',
-              targetId: comment.id,
+            user_id_target_type_target_id: {
+              user_id: userId,
+              target_type: 'COMMENT',
+              target_id: comment.id,
             },
           },
         });

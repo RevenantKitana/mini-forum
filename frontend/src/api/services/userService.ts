@@ -4,10 +4,10 @@ import { User, PaginatedResponse } from '@/types';
 
 // Extended User type with additional fields
 export interface UserProfile extends User {
-  postCount: number;
-  commentCount: number;
-  isBlockedByMe?: boolean;
-  lastActiveAt?: string | null;
+  post_count: number;
+  comment_count: number;
+  is_blocked_by_me?: boolean;
+  last_active_at?: string | null;
 }
 
 export interface UserPost {
@@ -15,14 +15,14 @@ export interface UserPost {
   title: string;
   slug: string;
   excerpt: string | null;
-  viewCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  commentCount: number;
+  view_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
   status: string;
-  isPinned: boolean;
-  isLocked: boolean;
-  createdAt: string;
+  is_pinned: boolean;
+  is_locked: boolean;
+  created_at: string;
   category: {
     id: number;
     name: string;
@@ -39,10 +39,10 @@ export interface UserPost {
 export interface UserComment {
   id: number;
   content: string;
-  upvoteCount: number;
-  downvoteCount: number;
+  upvote_count: number;
+  downvote_count: number;
   status: string;
-  createdAt: string;
+  created_at: string;
   post: {
     id: number;
     title: string;

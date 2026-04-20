@@ -8,7 +8,7 @@ const auditLogSelect = {
   id: true,
   user_id: true,
   action: true,
-  targetType: true,
+  target_type: true,
   target_id: true,
   target_name: true,
   old_value: true,
@@ -58,7 +58,7 @@ export async function createAuditLog(data: CreateAuditLogInput) {
     data: {
       user_id: data.userId,
       action: data.action,
-      targetType: data.targetType,
+      target_type: data.targetType,
       target_id: data.targetId,
       target_name: data.targetName,
       old_value: data.oldValue ? (typeof data.oldValue === 'string' ? data.oldValue : JSON.stringify(data.oldValue)) : null,
@@ -97,7 +97,7 @@ export async function getAuditLogs(params: {
   }
 
   if (params.targetType) {
-    where.targetType = params.targetType;
+    where.target_type = params.targetType;
   }
 
   if (params.targetId) {

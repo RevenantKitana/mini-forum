@@ -6,16 +6,16 @@ export interface AuthUser {
   id: number;
   email: string;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   bio: string | null;
-  dateOfBirth: string | null;
+  date_of_birth: string | null;
   gender: 'male' | 'female' | 'other' | null;
   role: string;
   reputation: number;
-  isVerified: boolean;
-  isActive: boolean;
-  createdAt: string;
+  is_verified: boolean;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface LoginRequest {
@@ -27,7 +27,7 @@ export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
-  displayName?: string;
+  display_name?: string;
   registrationToken?: string;
 }
 
@@ -55,7 +55,7 @@ export async function register(data: RegisterRequest): Promise<AuthUser> {
       email: data.email,
       username: data.username,
       password: data.password,
-      display_name: data.displayName,
+      display_name: data.display_name,
       registrationToken: data.registrationToken,
     }
   );

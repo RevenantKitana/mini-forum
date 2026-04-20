@@ -26,7 +26,7 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
         <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
           {showOrder}
         </span>
-      ) : post.isPinned && post.pinType === 'GLOBAL' ? (
+      ) : post.is_pinned && post.pin_type === 'GLOBAL' ? (
         <Pin className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" aria-label="Ghim toàn cục" />
       ) : null}
       <div className="flex-1 min-w-0">
@@ -41,15 +41,15 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
           )}
           <span className="flex items-center gap-0.5">
             <Eye className="h-3 w-3" />
-            {post.viewCount}
+            {post.view_count}
           </span>
           <span className="flex items-center gap-0.5">
             <MessageSquare className="h-3 w-3" />
-            {post.commentCount}
+            {post.comment_count}
           </span>
         </div>
         <div className="text-[10px] text-muted-foreground mt-1">
-          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
+          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
         </div>
       </div>
       <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -104,16 +104,16 @@ function PinnedPostContentDialog({ postId, open, onOpenChange }: { postId: numbe
                     {post.category.name}
                   </Badge>
                 )}
-                <span>{post.author?.displayName || post.author?.username}</span>
+                <span>{post.author?.display_name || post.author?.username}</span>
                 <span>•</span>
-                <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}</span>
+                <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}</span>
                 <span className="flex items-center gap-0.5">
                   <Eye className="h-3 w-3" />
-                  {post.viewCount}
+                  {post.view_count}
                 </span>
                 <span className="flex items-center gap-0.5">
                   <MessageSquare className="h-3 w-3" />
-                  {post.commentCount}
+                  {post.comment_count}
                 </span>
               </>
             )}
@@ -162,8 +162,8 @@ export function RightSidebar() {
   const [showPinnedContent, setShowPinnedContent] = useState(false);
 
   // Separate pinned vs trending for modal display
-  const pinnedPosts = allFeaturedPosts?.filter(p => p.isPinned && p.pinType === 'GLOBAL') ?? [];
-  const trendingPosts = allFeaturedPosts?.filter(p => !(p.isPinned && p.pinType === 'GLOBAL')) ?? [];
+  const pinnedPosts = allFeaturedPosts?.filter(p => p.is_pinned && p.pin_type === 'GLOBAL') ?? [];
+  const trendingPosts = allFeaturedPosts?.filter(p => !(p.is_pinned && p.pin_type === 'GLOBAL')) ?? [];
 
   // Handle click on pinned post - show content dialog
   const handlePinnedPostClick = (postId: number) => {
@@ -204,7 +204,7 @@ export function RightSidebar() {
                     >
                       <FeaturedPostItem
                         post={post}
-                        onClick={post.isPinned && post.pinType === 'GLOBAL'
+                        onClick={post.is_pinned && post.pin_type === 'GLOBAL'
                           ? (e: React.MouseEvent) => { e.preventDefault(); handlePinnedPostClick(post.id); }
                           : undefined
                         }

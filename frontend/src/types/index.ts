@@ -7,19 +7,19 @@ export type NotificationType = 'COMMENT' | 'REPLY' | 'UPVOTE' | 'MENTION' | 'SYS
 export interface User {
   id: number;
   username: string;
-  displayName: string | null;
+  display_name: string | null;
   email: string;
   avatar?: string;
-  avatarUrl?: string | null;
+  avatar_url?: string | null;
   role: UserRole | string;
   bio?: string | null;
-  dateOfBirth?: string | null;
+  date_of_birth?: string | null;
   gender?: 'male' | 'female' | 'other' | null;
   reputation: number;
-  isVerified?: boolean;
-  isActive?: boolean;
-  createdAt: string;
-  updatedAt?: string;
+  is_verified?: boolean;
+  is_active?: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Category {
@@ -29,16 +29,16 @@ export interface Category {
   description: string;
   color?: string | null;
   icon?: string | null;
-  sortOrder?: number;
-  postCount: number;
-  viewCount?: number;
-  commentCount?: number;
-  isActive?: boolean;
-  viewPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  postPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  commentPermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  createdAt?: string;
-  updatedAt?: string;
+  sort_order?: number;
+  post_count: number;
+  view_count?: number;
+  comment_count?: number;
+  is_active?: boolean;
+  view_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  post_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  comment_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Tag {
@@ -46,11 +46,11 @@ export interface Tag {
   name: string;
   slug: string;
   description?: string;
-  usageCount?: number;
-  usePermission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  usage_count?: number;
+  use_permission?: 'ALL' | 'MEMBER' | 'MODERATOR' | 'ADMIN';
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Post {
@@ -59,77 +59,77 @@ export interface Post {
   slug: string;
   content: string;
   excerpt?: string | null;
-  authorId: number;
+  author_id: number;
   author?: User;
-  categoryId: number;
+  category_id: number;
   category?: Category;
   tags: Tag[];
-  viewCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  commentCount: number;
+  view_count: number;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
   status: 'DRAFT' | 'PUBLISHED' | 'HIDDEN' | 'DELETED';
-  isLocked: boolean;
-  isPinned: boolean;
-  pinType?: 'GLOBAL' | 'CATEGORY' | null;
-  createdAt: string;
-  updatedAt: string;
+  is_locked: boolean;
+  is_pinned: boolean;
+  pin_type?: 'GLOBAL' | 'CATEGORY' | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Comment {
   id: number;
   content: string;
-  postId: number;
-  authorId: number;
+  post_id: number;
+  author_id: number;
   author?: User;
-  parentId?: number | null;
-  quotedCommentId?: number | null;
-  quotedComment?: {
+  parent_id?: number | null;
+  quoted_comment_id?: number | null;
+  quoted_comment?: {
     id: number;
     content: string;
     author?: User;
   } | null;
   replies?: Comment[];
-  upvoteCount: number;
-  downvoteCount: number;
+  upvote_count: number;
+  downvote_count: number;
   status: 'VISIBLE' | 'HIDDEN' | 'DELETED';
-  isEdited?: boolean;
+  is_edited?: boolean;
   _count?: {
     replies: number;
   };
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Vote {
   id: number;
-  userId: number;
-  targetId: number;
-  targetType: 'POST' | 'COMMENT';
+  user_id: number;
+  target_id: number;
+  target_type: 'POST' | 'COMMENT';
   value: 1 | -1; // 1 for upvote, -1 for downvote
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Bookmark {
   id: number;
-  userId: number;
-  postId: number;
-  createdAt: string;
+  user_id: number;
+  post_id: number;
+  created_at: string;
 }
 
 export interface Notification {
   id: number;
-  userId: number;
+  user_id: number;
   type: NotificationType;
   title: string;
   content: string;
-  relatedId?: number | null;
-  relatedType?: string | null;
-  isRead: boolean;
-  createdAt: string;
+  related_id?: number | null;
+  related_type?: string | null;
+  is_read: boolean;
+  created_at: string;
   // Enriched navigation info
-  postId?: number | null;
-  commentId?: number | null;
+  post_id?: number | null;
+  comment_id?: number | null;
 }
 
 // API Response types
@@ -159,18 +159,18 @@ export interface RegisterFormData {
 export interface PostFormData {
   title: string;
   content: string;
-  categoryId: string;
+  category_id: string;
   tags: string[];
 }
 
 export interface CommentFormData {
   content: string;
-  parentId?: string;
+  parent_id?: string;
 }
 
 export interface ProfileFormData {
-  displayName: string;
+  display_name: string;
   bio: string;
-  dateOfBirth?: string;
+  date_of_birth?: string;
   gender?: 'male' | 'female' | 'other';
 }

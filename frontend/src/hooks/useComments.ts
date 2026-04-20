@@ -74,7 +74,7 @@ export function useUpdateComment() {
       commentService.update(id, data),
     onSuccess: (updatedComment: Comment) => {
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: commentKeys.byPost(updatedComment.postId) });
+      queryClient.invalidateQueries({ queryKey: commentKeys.byPost(updatedComment.post_id) });
       queryClient.setQueryData(commentKeys.detail(updatedComment.id), updatedComment);
     },
   });
@@ -107,7 +107,7 @@ export function useToggleCommentHide() {
   return useMutation({
     mutationFn: (id: number | string) => commentService.toggleHide(id),
     onSuccess: (updatedComment: Comment) => {
-      queryClient.invalidateQueries({ queryKey: commentKeys.byPost(updatedComment.postId) });
+      queryClient.invalidateQueries({ queryKey: commentKeys.byPost(updatedComment.post_id) });
     },
   });
 }

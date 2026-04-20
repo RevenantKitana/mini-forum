@@ -62,7 +62,7 @@ export function HomePage() {
   const canViewCategory = useMemo(() => {
     if (!selectedCategory) return true; // No category selected, can view all
     
-    const viewPermission = selectedCategory.viewPermission || 'ALL';
+    const viewPermission = selectedCategory.view_permission || 'ALL';
     
     if (viewPermission === 'ALL') return true;
     if (!isAuthenticated) return false;
@@ -80,7 +80,7 @@ export function HomePage() {
   const { data: allCategories } = useCategories();
   const visibleCategories = useMemo(() =>
     allCategories?.filter(cat => {
-      const perm = cat.viewPermission || 'ALL';
+      const perm = cat.view_permission || 'ALL';
       if (perm === 'ALL') return true;
       if (!isAuthenticated || !user) return false;
       const role = user.role;
@@ -233,7 +233,7 @@ export function HomePage() {
               )}
               <h1 className="font-bold max-w-[45%] sm:max-w-[30%] truncate text-responsive-2xl">
                 {headerContent.title}
-                {categorySlug && selectedCategory && (<span className="ml-1">({selectedCategory.postCount})</span>)}
+                {categorySlug && selectedCategory && (<span className="ml-1">({selectedCategory.post_count})</span>)}
               </h1>
               <p className="flex-1 min-w-0 line-clamp-2 text-muted-foreground text-responsive-sm border-l border-border pl-1 sm:pl-2">
                 {headerContent.description}
@@ -374,7 +374,7 @@ export function HomePage() {
         {!canViewCategory && selectedCategory ? (
           <RestrictedContent
             title={`Nội dung "${selectedCategory.name}" bị giới hạn`}
-            requiredPermission={selectedCategory.viewPermission as 'MEMBER' | 'MODERATOR' | 'ADMIN'}
+            requiredPermission={selectedCategory.view_permission as 'MEMBER' | 'MODERATOR' | 'ADMIN'}
             type="category"
           />
         ) : isLoading ? (

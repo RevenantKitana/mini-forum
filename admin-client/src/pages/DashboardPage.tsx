@@ -196,11 +196,11 @@ export function DashboardPage() {
   const getActivityText = (activity: any) => {
     switch (activity.type) {
       case 'USER_REGISTERED':
-        return `${activity.data.displayName || activity.data.username} đã đăng ký`;
+        return `${activity.data.display_name || activity.data.username} đã đăng ký`;
       case 'POST_CREATED':
-        return `${activity.data.author?.displayName || activity.data.author?.username} đăng bài "${activity.data.title?.substring(0, 40)}..."`;
+        return `${activity.data.author?.display_name || activity.data.author?.username} đăng bài "${activity.data.title?.substring(0, 40)}..."`;
       case 'COMMENT_CREATED':
-        return `${activity.data.author?.displayName || activity.data.author?.username} bình luận trong "${activity.data.post?.title?.substring(0, 30)}..."`;
+        return `${activity.data.author?.display_name || activity.data.author?.username} bình luận trong "${activity.data.post?.title?.substring(0, 30)}..."`;
       default:
         return 'Hoạt động không xác định';
     }
@@ -319,7 +319,7 @@ export function DashboardPage() {
                   <div className="flex items-center gap-2 min-w-[60px]">
                     <Input
                       type="number"
-                      value={post.pinOrder}
+                      value={post.pin_order}
                       onChange={(e) => handleUpdatePinOrder(post.id, parseInt(e.target.value) || 0)}
                       className="w-16 h-8 text-center"
                       min={0}
@@ -328,11 +328,11 @@ export function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{decodeHtmlEntities(post.title)}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{post.author.displayName || post.author.username}</span>
+                      <span>{post.author.display_name || post.author.username}</span>
                       <span>•</span>
-                      <span>{post.viewCount} lượt xem</span>
+                      <span>{post.view_count} lượt xem</span>
                       <span>•</span>
-                      <span>{post.commentCount} bình luận</span>
+                      <span>{post.comment_count} bình luận</span>
                     </div>
                   </div>
                   {post.category && (
@@ -415,7 +415,7 @@ export function DashboardPage() {
                       />
                       <span className="font-medium">{category.name}</span>
                     </div>
-                    <Badge variant="outline">{category.postCount} bài</Badge>
+                    <Badge variant="outline">{category.post_count} bài</Badge>
                   </div>
                 ))
               ) : (
@@ -444,7 +444,7 @@ export function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm truncate">{getActivityText(activity)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(activity.createdAt)}
+                        {formatDate(activity.created_at)}
                       </p>
                     </div>
                   </div>
@@ -474,7 +474,7 @@ export function DashboardPage() {
                           {log.action}
                         </span>
                         <Badge variant="outline" className="text-xs">
-                          {log.targetType}
+                          {log.target_type}
                         </Badge>
                       </div>
                       <p className="text-sm">
@@ -484,7 +484,7 @@ export function DashboardPage() {
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(log.createdAt)}
+                        {formatDate(log.created_at)}
                       </p>
                     </div>
                   </div>

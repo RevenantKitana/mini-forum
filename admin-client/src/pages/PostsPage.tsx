@@ -92,7 +92,7 @@ export function PostsPage() {
   const handleTogglePin = async (post: AdminPost) => {
     try {
       await adminService.togglePostPin(post.id.toString());
-      toast.success(post.isPinned ? 'Đã bỏ ghim bài viết' : 'Đã ghim bài viết');
+      toast.success(post.is_pinned ? 'Đã bỏ ghim bài viết' : 'Đã ghim bài viết');
       fetchPosts();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể thực hiện thao tác');
@@ -112,7 +112,7 @@ export function PostsPage() {
   const handleToggleLock = async (post: AdminPost) => {
     try {
       await adminService.togglePostLock(post.id.toString());
-      toast.success(post.isLocked ? 'Đã mở khóa bài viết' : 'Đã khóa bài viết');
+      toast.success(post.is_locked ? 'Đã mở khóa bài viết' : 'Đã khóa bài viết');
       fetchPosts();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể thực hiện thao tác');
@@ -349,12 +349,12 @@ export function PostsPage() {
                     <Badge variant="outline" className="hidden sm:inline-flex">{post.category?.name || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(post.status, post.isPinned, post.isLocked, post.pinType)}
+                    {getStatusBadge(post.status, post.is_pinned, post.is_locked, post.pin_type)}
                   </TableCell>
-                  <TableCell className="text-right hidden md:table-cell">{post.viewCount.toLocaleString()}</TableCell>
-                  <TableCell className="text-right hidden md:table-cell">{post.commentCount}</TableCell>
+                  <TableCell className="text-right hidden md:table-cell">{post.view_count.toLocaleString()}</TableCell>
+                  <TableCell className="text-right hidden md:table-cell">{post.comment_count}</TableCell>
                   <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
-                    {formatDate(post.createdAt)}
+                    {formatDate(post.created_at)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -377,14 +377,14 @@ export function PostsPage() {
                           </a>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        {post.isPinned ? (
+                        {post.is_pinned ? (
                           <>
                             <DropdownMenuItem onClick={() => handleTogglePin(post)}>
                               <PinOff className="mr-2 h-4 w-4" />
                               Bỏ ghim
-                              {post.pinType && (
+                              {post.pin_type && (
                                 <span className="ml-auto text-xs text-muted-foreground">
-                                  ({post.pinType === 'GLOBAL' ? 'Toàn cục' : 'Category'})
+                                  ({post.pin_type === 'GLOBAL' ? 'Toàn cục' : 'Category'})
                                 </span>
                               )}
                             </DropdownMenuItem>
@@ -402,7 +402,7 @@ export function PostsPage() {
                           </>
                         )}
                         <DropdownMenuItem onClick={() => handleToggleLock(post)}>
-                          {post.isLocked ? (
+                          {post.is_locked ? (
                             <>
                               <Unlock className="mr-2 h-4 w-4" />
                               Mở khóa
@@ -483,14 +483,14 @@ export function PostsPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>@{previewPost.author.username}</span>
                 <span>·</span>
-                <span>{formatDate(previewPost.createdAt)}</span>
+                <span>{formatDate(previewPost.created_at)}</span>
                 <span>·</span>
-                {getStatusBadge(previewPost.status, previewPost.isPinned, previewPost.isLocked, previewPost.pinType)}
+                {getStatusBadge(previewPost.status, previewPost.is_pinned, previewPost.is_locked, previewPost.pin_type)}
               </div>
               <div className="flex gap-4 text-sm">
-                <span>{previewPost.viewCount} lượt xem</span>
-                <span>{previewPost.upvoteCount} upvote</span>
-                <span>{previewPost.commentCount} bình luận</span>
+                <span>{previewPost.view_count} lượt xem</span>
+                <span>{previewPost.upvote_count} upvote</span>
+                <span>{previewPost.comment_count} bình luận</span>
               </div>
               {previewPost.content && (
                 <div className="prose prose-sm dark:prose-invert max-w-none border-t pt-4">

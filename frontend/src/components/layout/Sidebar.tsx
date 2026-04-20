@@ -84,21 +84,21 @@ export function Sidebar() {
   // Handle category click - maintains current tags, checks permission
   const handleCategoryClick = (categorySlug: string | null, category?: any) => {
     // Check if category requires permission
-    if (category && category.viewPermission && category.viewPermission !== 'ALL') {
+    if (category && category.view_permission && category.view_permission !== 'ALL') {
       // Not logged in - prompt login dialog
       if (!isAuthenticated) {
-        setLoginDialogPermission(category.viewPermission as 'MEMBER' | 'MODERATOR' | 'ADMIN');
+        setLoginDialogPermission(category.view_permission as 'MEMBER' | 'MODERATOR' | 'ADMIN');
         setLoginDialogDescription(
-          `Để xem danh mục "${category.name}", bạn cần đăng nhập với quyền ${permissionLabels[category.viewPermission] || category.viewPermission} trở lên.`
+          `Để xem danh mục "${category.name}", bạn cần đăng nhập với quyền ${permissionLabels[category.view_permission] || category.view_permission} trở lên.`
         );
         setLoginDialogOpen(true);
         return;
       }
       
       // Logged in but no permission
-      if (!checkPermissionLevel(user?.role, category.viewPermission)) {
+      if (!checkPermissionLevel(user?.role, category.view_permission)) {
         toast.error(
-          `Bạn cần quyền ${permissionLabels[category.viewPermission] || category.viewPermission} trở lên để xem danh mục này.`
+          `Bạn cần quyền ${permissionLabels[category.view_permission] || category.view_permission} trở lên để xem danh mục này.`
         );
         return;
       }
@@ -149,7 +149,7 @@ export function Sidebar() {
   const shouldHideFilters = HIDE_FILTERS_PATHS.some(path => location.pathname.startsWith(path));
 
   // Calculate total posts across all categories
-  const totalPosts = categories?.reduce((sum, cat) => sum + cat.postCount, 0) || 0;
+  const totalPosts = categories?.reduce((sum, cat) => sum + cat.post_count, 0) || 0;
 
   return (
     <aside className="h-full overflow-hidden scrollbar-gutter-stable animate-enter-left transition-transform duration-300">
@@ -192,11 +192,11 @@ export function Sidebar() {
                         <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
                           <span className="flex items-center gap-0.5">
                             <Eye className="h-3 w-3" />
-                            {post.viewCount}
+                            {post.view_count}
                           </span>
                           <span className="flex items-center gap-0.5">
                             <MessageSquare className="h-3 w-3" />
-                            {post.commentCount}
+                            {post.comment_count}
                           </span>
                           {post.tags && post.tags.length > 0 && (
                             <span className="flex items-center gap-0.5 truncate">
@@ -253,7 +253,7 @@ export function Sidebar() {
                         </div>
                       </button>
                       {categories?.map((category) => {
-                        const isRestricted = category.viewPermission && category.viewPermission !== 'ALL';
+                        const isRestricted = category.view_permission && category.view_permission !== 'ALL';
                         
                         return (
                         <button
@@ -293,7 +293,7 @@ export function Sidebar() {
                                 borderColor: category.color || undefined,
                               }}
                             >
-                              {category.postCount}
+                              {category.post_count}
                             </Badge>
                           </div>
                         </button>
@@ -355,8 +355,8 @@ export function Sidebar() {
                     <div className="flex flex-wrap gap-1.5 overflow-y-auto">
                     {filteredPopularTags.map((tag) => {
                       const isActive = activeTags.includes(tag.slug);
-                      const isRestricted = tag.usePermission && tag.usePermission !== 'ALL';
-                      const isInactive = tag.isActive === false;
+                      const isRestricted = tag.use_permission && tag.use_permission !== 'ALL';
+                      const isInactive = tag.is_active === false;
                       
                       const tagBadge = (
                         <Badge
@@ -385,7 +385,7 @@ export function Sidebar() {
                             <TooltipContent side="top" className="text-xs">
                               {isInactive 
                                 ? 'Tag này đã bị vô hiệu hóa'
-                                : `Yêu cầu quyền ${permissionLabels[tag.usePermission!] || tag.usePermission} để sử dụng`}
+                                : `Yêu cầu quyền ${permissionLabels[tag.use_permission!] || tag.use_permission} để sử dụng`}
                             </TooltipContent>
                           </Tooltip>
                         );

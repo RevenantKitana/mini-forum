@@ -5,14 +5,14 @@ import { Notification, PaginatedResponse } from '@/types';
 // Extended Notification type
 export interface NotificationItem {
   id: number;
-  userId: number;
+  user_id: number;
   type: 'COMMENT' | 'REPLY' | 'UPVOTE' | 'MENTION' | 'SYSTEM';
   title: string;
   content: string;
-  relatedType: string | null;
-  relatedId: number | null;
-  isRead: boolean;
-  createdAt: string;
+  related_type: string | null;
+  related_id: number | null;
+  is_read: boolean;
+  created_at: string;
   // Navigation info (enriched by backend)
   postId?: number | null;
   postSlug?: string | null;

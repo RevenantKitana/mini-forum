@@ -10,13 +10,13 @@ export interface AdminUser {
   id: number;
   email: string;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: string;
   reputation: number;
-  isVerified: boolean;
-  isActive: boolean;
-  createdAt: string;
+  is_verified: boolean;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface AuthResponse {

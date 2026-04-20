@@ -5,8 +5,8 @@ import { API_ENDPOINTS } from '../endpoints';
 export interface CommentAuthor {
   id: number;
   username: string;
-  displayName: string | null;
-  avatarUrl: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
   role: string;
   reputation: number;
 }
@@ -20,16 +20,16 @@ export interface QuotedComment {
 export interface Comment {
   id: number;
   content: string;
-  authorId: number;
-  postId: number;
-  parentId: number | null;
-  quotedCommentId: number | null;
-  upvoteCount: number;
-  downvoteCount: number;
+  author_id: number;
+  post_id: number;
+  parent_id: number | null;
+  quoted_comment_id: number | null;
+  upvote_count: number;
+  downvote_count: number;
   status: 'VISIBLE' | 'HIDDEN' | 'DELETED';
-  isEdited: boolean;
-  createdAt: string;
-  updatedAt: string;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
   author: CommentAuthor;
   quotedComment?: QuotedComment | null;
   replies?: Comment[];
@@ -62,7 +62,7 @@ export interface PaginatedCommentsResponse {
     total: number;
     totalPages: number;
   };
-  isLocked: boolean;
+  is_locked: boolean;
 }
 
 // API Response wrapper
@@ -98,7 +98,7 @@ export const commentService = {
     return {
       data: response.data.data,
       pagination: response.data.pagination!,
-      isLocked: response.data.isLocked || false,
+      is_locked: response.data.isLocked || false,
     };
   },
 

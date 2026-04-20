@@ -8,16 +8,16 @@ export interface VoteResult {
 }
 
 export interface VoteStatus {
-  hasVoted: boolean;
-  voteType: 'up' | 'down' | null;
+  has_voted: boolean;
+  vote_type: 'up' | 'down' | null;
 }
 
 export interface VoteHistoryItem {
   id: number;
-  targetType: 'POST' | 'COMMENT';
-  targetId: number;
+  target_type: 'POST' | 'COMMENT';
+  target_id: number;
   voteType: 'upvote' | 'downvote';
-  createdAt: string;
+  created_at: string;
   target: {
     title?: string;
     slug?: string;
@@ -25,8 +25,8 @@ export interface VoteHistoryItem {
     author: {
       id: number;
       username: string;
-      displayName: string | null;
-      avatarUrl: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
     } | null;
     post?: {
       id: number;

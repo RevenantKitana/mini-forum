@@ -292,15 +292,15 @@ export function SearchPage() {
                           className="flex items-center gap-4 hover:opacity-80"
                         >
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.avatarUrl || undefined} />
+                            <AvatarImage src={user.avatar_url || undefined} />
                             <AvatarFallback>
-                              {user.displayName?.charAt(0) || user.username.charAt(0).toUpperCase()}
+                              {user.display_name?.charAt(0) || user.username.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">
-                                {user.displayName || user.username}
+                                {user.display_name || user.username}
                               </span>
                               <Badge variant="outline" size="xs">
                                 {user.role}

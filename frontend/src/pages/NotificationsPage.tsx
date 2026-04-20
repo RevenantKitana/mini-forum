@@ -90,14 +90,14 @@ export function NotificationsPage() {
       return `/posts/${notification.postId}`;
     }
 
-    if (!notification.relatedType || !notification.relatedId) {
+    if (!notification.related_type || !notification.related_id) {
       return undefined;
     }
 
-    switch (notification.relatedType) {
+    switch (notification.related_type) {
       case 'POST':
         // Fallback: use relatedId for POST type
-        return `/posts/${notification.relatedId}`;
+        return `/posts/${notification.related_id}`;
       case 'COMMENT':
         // For comments, relatedId is commentId - need postId which isn't available
         return undefined;
@@ -200,7 +200,7 @@ export function NotificationsPage() {
               <Card
                 className={cn(
                   'transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer',
-                  !notification.isRead && !isFading && 'bg-primary/5 border-primary/20',
+                  !notification.is_read && !isFading && 'bg-primary/5 border-primary/20',
                   isFading && 'opacity-50 scale-95 pointer-events-none'
                 )}
               >
@@ -213,11 +213,11 @@ export function NotificationsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className={cn('text-sm', !notification.isRead && 'font-medium')}>
+                      <p className={cn('text-sm', !notification.is_read && 'font-medium')}>
                         {notification.content}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.createdAt), {
+                        {formatDistanceToNow(new Date(notification.created_at), {
                           addSuffix: true,
                           locale: vi,
                         })}
@@ -226,7 +226,7 @@ export function NotificationsPage() {
 
                     {/* Status & Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {!notification.isRead && (
+                      {!notification.is_read && (
                         <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" title="Chưa đọc" />
                       )}
                       <Button
@@ -236,11 +236,11 @@ export function NotificationsPage() {
                         onClick={(e: React.MouseEvent) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (!notification.isRead) {
+                          if (!notification.is_read) {
                             handleMarkAsRead(notification.id);
                           }
                         }}
-                        disabled={notification.isRead || markAsReadMutation.isPending}
+                        disabled={notification.is_read || markAsReadMutation.isPending}
                         title="Đánh dấu đã đọc"
                       >
                         <Check className="h-4 w-4" />
@@ -264,7 +264,7 @@ export function NotificationsPage() {
                   <Link
                     to={link}
                     onClick={() => {
-                      if (!notification.isRead) {
+                      if (!notification.is_read) {
                         handleMarkAsRead(notification.id);
                       }
                     }}

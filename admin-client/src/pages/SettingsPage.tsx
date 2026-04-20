@@ -38,7 +38,7 @@ export function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Tên hiển thị</Label>
-              <Input value={user?.displayName || ''} disabled />
+              <Input value={user?.display_name || ''} disabled />
             </div>
             <div className="space-y-2">
               <Label>Vai trò</Label>

@@ -126,11 +126,11 @@ export function PostFormDialog({
   };
 
   // Filter tags that user has permission to use
-  const userAccessibleTags = availableTags.filter((tag: Tag) => hasPermission(tag.usePermission));
+  const userAccessibleTags = availableTags.filter((tag: Tag) => hasPermission(tag.use_permission));
 
   // Filter categories that user has permission to post
   const userAccessibleCategories = categories.filter((category: Category) => 
-    hasPermission(category.postPermission)
+    hasPermission(category.post_permission)
   );
 
   const {
@@ -156,12 +156,12 @@ export function PostFormDialog({
   );
 
   // Filter recommended tags that user has permission to use
-  const accessibleRecommendedTags = recommendedTags.filter((tag: Tag) => hasPermission(tag.usePermission));
+  const accessibleRecommendedTags = recommendedTags.filter((tag: Tag) => hasPermission(tag.use_permission));
 
   // Authorization check for edit mode
   useEffect(() => {
     if (mode === 'edit' && isOpen && post && user) {
-      const isOwner = post.authorId === user.id || post.author?.id === user.id;
+      const isOwner = post.author_id === user.id || post.author?.id === user.id;
       const isAdmin = user.role === 'ADMIN';
       const isModerator = user.role === 'MODERATOR';
 
@@ -226,7 +226,7 @@ export function PostFormDialog({
     reset({
       title: post.title,
       content: post.content,
-      categoryId: String(post.categoryId),
+      categoryId: String(post.category_id),
     });
     // Set tags
     if (post.tags) {
@@ -344,7 +344,7 @@ export function PostFormDialog({
       {
         title: data.title,
         content: data.content,
-        categoryId: parseInt(data.categoryId),
+        category_id: parseInt(data.categoryId),
         tags: allTagNames,
         status: 'PUBLISHED',
       },
@@ -449,7 +449,7 @@ export function PostFormDialog({
       }
 
       // Tag exists - check permissions
-      if (!existingTag.isActive) {
+      if (!existingTag.is_active) {
         // Tag is inactive
         const warning = `Tag "${existingTag.name}" đã bị vô hiệu hóa và không thể sử dụng.`;
         if (!restrictedTagWarnings.includes(warning)) {
@@ -459,9 +459,9 @@ export function PostFormDialog({
         return;
       }
       
-      if (!hasPermission(existingTag.usePermission)) {
+      if (!hasPermission(existingTag.use_permission)) {
         // User doesn't have permission to use this tag
-        const requiredRole = permissionLabels[existingTag.usePermission] || existingTag.usePermission;
+        const requiredRole = permissionLabels[existingTag.use_permission] || existingTag.use_permission;
         const warning = `Tag "${existingTag.name}" yêu cầu quyền ${requiredRole} trở lên để sử dụng.`;
         if (!restrictedTagWarnings.includes(warning)) {
           setRestrictedTagWarnings(prev => [...prev, warning]);
@@ -506,7 +506,7 @@ export function PostFormDialog({
 
   const isLoading = mode === 'edit' && postLoading;
   const isEditing = mode === 'edit' && !isLoading;
-  const categoryName = isEditing ? categories.find((c: any) => c.id === post?.categoryId)?.name : '';
+  const categoryName = isEditing ? categories.find((c: any) => c.id === post?.category_id)?.name : '';
   const isMutating = mode === 'create' ? createPostMutation.isPending : updatePostMutation.isPending;
 
   return (
