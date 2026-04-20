@@ -238,11 +238,15 @@ export class ContextGathererService {
     });
 
     // Pick a recent published post NOT by this bot user
+    // Filter by categories where bot (MEMBER role) can comment
     const posts = await prisma.posts.findMany({
       where: {
         status: 'PUBLISHED',
         author_id: { not: userId },
         is_locked: false,
+        categories: {
+          comment_permission: { in: ['ALL', 'MEMBER'] },
+        },
       },
       orderBy: { created_at: 'desc' },
       take: 20,

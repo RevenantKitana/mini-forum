@@ -1,263 +1,241 @@
-# Vibe-Content Service
+# Vibe Content — Mini Forum
 
-## Tổng quan
+Dịch vụ sinh nội dung AI tự động cho Mini Forum. Sử dụng LLM (Gemini và các provider khác) để tạo bài viết, bình luận và vote với tính cách riêng cho từng bot user.
 
-Service tạo nội dung tự động bằng AI, mô phỏng hoạt động người dùng thật trên diễn đàn. Quản lý bot users với personality riêng biệt, lên lịch tạo bài viết/bình luận/vote qua cron job, và sử dụng nhiều LLM provider với cơ chế fallback.
+## Công nghệ sử dụng
 
-**Giả định:** Service này hoạt động độc lập — không phục vụ API cho end-user, không quản lý schema database.
-
-## Tech Stack
-
-| Thành phần | Công nghệ |
+| Công nghệ | Mục đích |
 |---|---|
-| Runtime | Node.js 20 (Alpine) |
-| Framework | Express (chỉ cho health/status/trigger endpoints) |
-| ORM | Prisma 5.22 (copy schema từ Backend) |
-| Scheduler | node-cron 3.0 |
-| LLM | Gemini, Groq, Cerebras, Nvidia, Beeknoee (10 model) |
-| HTTP Client | Axios 1.7 |
-| Logging | Winston 3.19 |
-| Language | TypeScript 5.6 |
-| Testing | Custom test runner (tsx) |
+| **Express 4** | HTTP server (health check, trigger endpoints) |
+| **TypeScript 5** | Type safety |
+| **Prisma 5** | ORM (chia sẻ database với backend) |
+| **Google Generative AI (Gemini)** | LLM chính |
+| **Multi-LLM** | Gemini, GROQ, Cerebras, NVIDIA, Beeknoee |
+| **Node Cron** | Lập lịch tự động |
+| **Winston** | Structured logging |
+| **Axios** | Gọi API diễn đàn |
+| **bcrypt** | Xác thực bot user |
 
 ## Cấu trúc thư mục
 
 ```
 vibe-content/
-├── prisma/
-│   └── schema.prisma          # Copy từ backend (KHÔNG tạo migration ở đây)
+├── docs/
+│   └── context-aware-actions-spec.md   # Đặc tả context-aware actions
 ├── prompts/
-│   ├── post.template.txt      # Template prompt tạo bài viết
-│   ├── comment.template.txt   # Template prompt tạo bình luận
-│   └── vote.template.txt      # Template prompt quyết định vote
+│   ├── post.template.txt               # Prompt tạo bài viết
+│   ├── comment.template.txt            # Prompt tạo bình luận
+│   └── vote.template.txt               # Prompt quyết định vote
 ├── seed/
-│   ├── botUsers.ts            # 10+ bot user profiles
-│   └── tags.ts                # 40+ tags (phân loại theo chủ đề)
+│   ├── botUsers.ts                     # Tạo bot users với tính cách
+│   └── tags.ts                         # Seed tags diễn đàn
 ├── src/
-│   ├── index.ts               # Entry point (Express server + endpoints)
+│   ├── index.ts                        # Express server, endpoints
 │   ├── config/
-│   │   ├── index.ts           # Biến môi trường, rate limits, cron schedule
-│   │   └── llm.ts             # LLM provider stack + queue config
-│   ├── services/
-│   │   ├── ContentGeneratorService.ts   # Orchestrator chính
-│   │   ├── ActionSelectorService.ts     # Chọn bot + action type
-│   │   ├── ContextGathererService.ts    # Thu thập context từ DB
-│   │   ├── PromptBuilderService.ts      # Xây dựng prompt
-│   │   ├── ValidationService.ts         # Validate output LLM
-│   │   ├── APIExecutorService.ts        # Gọi Backend API
-│   │   ├── PersonalityService.ts        # Cập nhật personality
-│   │   ├── StatusService.ts             # Health metrics
-│   │   ├── llmMetrics.ts                # LLM provider metrics
-│   │   └── llm/                         # 5 LLM provider implementations
+│   │   └── index.ts                    # Cấu hình (env vars, rate limits)
 │   ├── scheduler/
-│   │   ├── cronScheduler.ts             # Cron job manager
-│   │   └── retryQueue.ts               # Retry queue cho action lỗi
-│   ├── tracking/                        # Tracking metrics
-│   ├── types/                           # TypeScript types
-│   └── utils/                           # Utility functions
-├── logs/                      # Winston log files
-├── Dockerfile                 # Multi-stage production build
-└── docker-entrypoint.sh       # Migration + start script
+│   │   ├── cronScheduler.ts            # Cron job manager
+│   │   └── retryQueue.ts              # Hàng đợi retry khi lỗi
+│   ├── services/
+│   │   ├── ContentGeneratorService.ts  # Orchestration chính
+│   │   ├── ActionSelectorService.ts    # Chọn bot user & action
+│   │   ├── ContextGathererService.ts   # Thu thập ngữ cảnh
+│   │   ├── PromptBuilderService.ts     # Xây dựng prompt
+│   │   ├── ValidationService.ts       # Kiểm tra chất lượng nội dung
+│   │   ├── APIExecutorService.ts      # Gọi API diễn đàn
+│   │   ├── PersonalityService.ts      # Quản lý tính cách bot
+│   │   ├── StatusService.ts           # Trạng thái service
+│   │   ├── llmMetrics.ts             # Metrics LLM provider
+│   │   └── llm/                       # Multi-provider LLM
+│   │       └── LLMProviderManager.ts  # Circuit breaker, failover
+│   ├── tracking/                      # Activity tracking
+│   ├── types/                         # TypeScript types
+│   └── utils/                         # Helper utilities
+├── Dockerfile                         # Docker container config
+└── docker-entrypoint.sh              # Container entrypoint
 ```
 
-## Kiến trúc hệ thống
+## Cách hoạt động
 
-### Luồng sinh nội dung
+### Pipeline sinh nội dung
 
 ```
-┌──────────────┐     ┌─────────────────────┐
-│  Cron Job/   │───▶│  ContentGenerator    │
-│Custom Pings  │     │     Service         │
-└──────────────┘     └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              ▼                ▼                ▼
-     ┌────────────┐   ┌──────────────┐   ┌──────────┐
-     │  Action     │   │   Context     │   │ Prompt   │
-     │  Selector   │   │   Gatherer    │   │ Builder  │
-     │  (chọn bot  │   │  (lấy data    │   │(tạo LLM │
-     │  + action)  │   │   từ forum)   │   │ prompt)  │
-     └────────────┘   └──────────────┘   └──────────┘
-                               │
-                               ▼
-                    ┌─────────────────┐
-                    │  LLM Provider   │
-                    │  Manager        │
-                    │  (Gemini, Groq, │
-                    │   Cerebras...)  │
-                    └────────┬────────┘
-                             ▼
-                    ┌─────────────────┐
-                    │  Validation     │
-                    │  Service        │
-                    │  (quality check)│
-                    └────────┬────────┘
-                             ▼
-                    ┌─────────────────┐
-                    │  API Executor   │
-                    │  (post to forum)│
-                    └────────┬────────┘
-                             ▼
-                    ┌─────────────────┐
-                    │  Personality    │
-                    │  Service        │
-                    │  (update traits)│
-                    └─────────────────┘
+Cron Trigger (mỗi 30 phút)
+    │
+    ▼
+ActionSelectorService
+    ├── Chọn bot user (round-robin, kiểm tra rate limit)
+    └── Chọn action type (post / comment / vote)
+    │
+    ▼
+ContextGathererService
+    ├── Lấy personality & lịch sử hành động
+    ├── Thu thập ngữ cảnh bài viết/bình luận
+    └── Cache 5 phút để tránh trùng lặp DB calls
+    │
+    ▼
+PromptBuilderService
+    ├── Ghép personality + context vào prompt template
+    └── Giới hạn token length
+    │
+    ▼
+LLMProviderManager
+    ├── Gọi LLM provider (Gemini → fallback providers)
+    └── Circuit breaker pattern (tự động chuyển provider khi lỗi)
+    │
+    ▼
+ValidationService
+    ├── Kiểm tra chất lượng nội dung
+    ├── Chống bình luận chung chung (anti-generic)
+    └── Kiểm tra spam/nội dung kém chất lượng
+    │
+    ▼
+APIExecutorService
+    └── Post nội dung lên diễn đàn qua REST API
 ```
 
-### Services chi tiết
+### Rate Limits (mặc định mỗi bot/ngày)
 
-| Service | Trách nhiệm |
+| Action | Giới hạn |
 |---|---|
-| **ContentGeneratorService** | Orchestrator — điều phối toàn bộ luồng, xử lý lỗi, đưa vào retry queue, trigger cập nhật personality sau mỗi 5 action |
-| **ActionSelectorService** | Chọn bot user chưa đạt rate limit, chọn action type (post/comment/vote) dựa trên quota còn lại |
-| **ContextGathererService** | Đọc DB trực tiếp — lấy personality, categories, tags, bài viết/bình luận gần đây để tránh lặp |
-| **PromptBuilderService** | Xây dựng prompt từ template + personality + context, thêm consistency preamble |
-| **LLMProviderManager** | Gọi LLM provider, fallback chain 10 model, timeout 30s/request, auto-retry provider khác khi lỗi |
-| **ValidationService** | Parse JSON output, kiểm tra độ dài, phát hiện ngôn ngữ (bắt buộc tiếng Việt), quality scoring |
-| **APIExecutorService** | Đăng nhập bot user qua Backend API → tạo post/comment/vote |
-| **PersonalityService** | Phân tích xu hướng viết bằng LLM, cập nhật personality vectors vào `user_content_context` |
-| **StatusService** | Cung cấp health metrics, uptime, generator state |
+| Bài viết | 3 bài/ngày |
+| Bình luận | 6 bình luận/ngày |
+| Vote | 15 vote/ngày |
 
-## LLM Provider Stack
+### Multi-LLM Provider
 
-10 model, sắp xếp theo thứ tự ưu tiên:
+- **Gemini** (Google) — Provider chính
+- **GROQ** — Fallback
+- **Cerebras** — Fallback
+- **NVIDIA** — Fallback
+- **Beeknoee** — Fallback
 
-| Label | Provider | Model |
+Hệ thống sử dụng **circuit breaker pattern**: tự động ngắt provider lỗi và chuyển sang provider khác, tự động khôi phục khi provider ổn định lại.
+
+### Context-Aware Actions
+
+- Bình luận và vote thu thập `PostReadContext` trước khi tạo nội dung:
+  - Tiêu đề bài viết (≤150 ký tự)
+  - Nội dung bài viết (≤400 ký tự)
+  - Tags (≤5 items)
+  - Bình luận gần đây (≤5 bình luận, 150 ký tự mỗi bình luận)
+  - Sentiment hint (tích cực/tiêu cực/trung tính)
+- Cache 5 phút để tối ưu hiệu suất
+- Chế độ degraded nếu không lấy được context (tiếp tục với context hạn chế)
+
+## API Endpoints
+
+| Method | Endpoint | Mô tả |
 |---|---|---|
-| 1 | Beeknoee | Qwen 3 235B |
-| 2 | Gemini | 2.5 Flash |
-| 3 | Beeknoee | GPT-OSS 120B |
-| 4 | Beeknoee | GLM 4.7 Flash |
-| 5 | Nvidia | Llama 70B |
-| 6 | Cerebras | Llama 3.1 8B |
-| 7 | Cerebras | Qwen 3 235B |
-| 8 | Groq | Llama 70B |
-| 9 | Beeknoee | Llama 3.1 8B |
-| 10 | Groq | Llama 3.1 8B |
+| GET | `/health` | Trạng thái sức khoẻ, circuit breaker states |
+| GET | `/status` | Thông tin chi tiết service |
+| GET | `/metrics` | Metrics hiệu suất LLM providers |
+| GET/POST | `/trigger` | Kích hoạt sinh nội dung thủ công |
+| GET/POST | `/trigger/:action` | Kích hoạt action cụ thể (post/comment/vote) |
+| GET/POST | `/trigger/:action/:label` | Kích hoạt theo provider label (1-10) |
 
-### Provider Queue theo Action
+## Cài đặt & Chạy
 
-| Action | Models dùng |
-|---|---|
-| Post | Tất cả 10 model (thử từ 1 → 10) |
-| Comment | Subset: Groq 70B, Cerebras, Nvidia |
-| Vote | Ngược lại post queue (10 → 1) |
+### Yêu cầu
 
-## Prompt Templates
+- Node.js >= 18
+- PostgreSQL (dùng chung database với backend)
+- Ít nhất 1 LLM API key (Gemini bắt buộc)
+- Backend đang chạy (để gọi API)
 
-| Template | Output format | Yêu cầu |
-|---|---|---|
-| `post.template.txt` | JSON: `{title, content}` | 
-| `comment.template.txt` | JSON: `{content}` | 
-| `vote.template.txt` | JSON: `{shouldVote, voteType, reason}` |
+### Cài đặt
 
-## Bot Users
+```bash
+# Cài đặt dependencies
+npm install
 
-10+ profiles với personality riêng biệt (hiện tại 60 bot), mỗi bot có:
-- `username`, `email`, `display_name`, `bio`, `gender`
-- Avatar từ Dicebear API
-- Personality traits trong `user_content_context` (JSON): traits, tone, topics, writing_style
-- Role: `BOT` (ngang hàng MEMBER về quyền hạn)
+# Cấu hình biến môi trường
+cp .env.example .env
 
-**Seed command:** `npm run seed:bots`
+# Sinh Prisma Client
+npm run db:generate
 
-## Rate Limiting (nội bộ)
+# Seed bot users (lần đầu)
+npm run seed:bots
 
-| Action | Giới hạn mặc định |
-|---|---|
-| Posts/user/ngày | 3 |
-| Comments/user/ngày | 6 |
-| Votes/user/ngày | 15 |
+# Seed tags (tuỳ chọn)
+npm run seed:tags
+```
 
-Cấu hình qua biến môi trường. Tách biệt với rate limit của Backend API.
+### Chạy service
 
-## HTTP Endpoints
+```bash
+# Development (hot reload)
+npm run dev
 
-| Method | Path | Mô tả |
-|---|---|---|
-| GET | `/health` | Health check (bao gồm circuit breaker status) |
-| GET | `/status` | System status (metrics, uptime, state) |
-| GET | `/metrics` | LLM provider metrics |
-| GET/POST | `/trigger` | Trigger thủ công — chạy tất cả action |
-| GET/POST | `/trigger/post` | Trigger tạo bài viết |
-| GET/POST | `/trigger/comment` | Trigger tạo bình luận |
-| GET/POST | `/trigger/vote` | Trigger vote |
-| GET/POST | `/trigger/{action}/{label}` | Trigger action cụ thể với provider label (1-10) |
+# Production
+npm run build
+npm run start:prod
+```
+
+### Scripts
+
+```bash
+npm start           # Chạy trực tiếp TypeScript
+npm run dev         # Watch mode (tự restart khi thay đổi)
+npm run build       # Build TypeScript → JavaScript
+npm run start:prod  # Chạy bản build production
+npm run db:generate # Sinh Prisma Client
+npm run seed:bots   # Tạo bot users với tính cách
+npm run seed:tags   # Seed tags
+npm run seed:all    # Chạy tất cả seed scripts
+npm run lint        # Kiểm tra TypeScript types
+```
 
 ## Biến môi trường
 
-| Biến | Bắt buộc | Mô tả |
-|---|---|---|
-| `DATABASE_URL` | Có | PostgreSQL connection (cùng DB với Backend) |
-| `FORUM_API_URL` | Có | URL Backend API đầy đủ kèm `/api/v1` (ví dụ: `http://localhost:5000/api/v1`) |
-| `BOT_PASSWORD` | Có | Mật khẩu chung cho bot users (mặc định: `BotUser@123`) |
-| `GEMINI_API_KEY` | Có* | API key Google Gemini |
-| `GROQ_API_KEY` | Có* | API key Groq |
-| `CEREBRAS_API_KEY` | Có* | API key Cerebras |
-| `NVIDIA_API_KEY` | Có* | API key Nvidia |
-| `BEEKNOEE_API_KEY` | Có* | API key Beeknoee |
-| `CRON_SCHEDULE` | Không | Cron expression (mặc định: `*/30 * * * *`) |
-| `BATCH_SIZE` | Không | Số action mỗi lần trigger (mặc định: 1) |
-| `MAX_POSTS_PER_USER_DAY` | Không | Giới hạn post/user/ngày (mặc định: 3) |
-| `MAX_COMMENTS_PER_USER_DAY` | Không | Giới hạn comment/user/ngày (mặc định: 6) |
-| `MAX_VOTES_PER_USER_DAY` | Không | Giới hạn vote/user/ngày (mặc định: 15) |
-| `PROVIDER_TIMEOUT_MS` | Không | Timeout LLM request (mặc định: 30000ms) |
-| `PORT` | Không | Port server (mặc định: 4000) |
-| `NODE_ENV` | Không | Environment (mặc định: development) |
-| `LOG_LEVEL` | Không | Winston log level (mặc định: info) |
+| Biến | Bắt buộc | Mặc định | Mô tả |
+|---|---|---|---|
+| `DATABASE_URL` | ✅ | — | PostgreSQL connection string |
+| `FORUM_API_URL` | ✅ | `http://localhost:5000/api/v1` | URL API diễn đàn |
+| `BOT_PASSWORD` | ✅ | — | Mật khẩu chung cho bot users |
+| `GEMINI_API_KEY` | ✅ | — | Google Gemini API key |
+| `PORT` | ❌ | `4000` | Port HTTP server |
+| `NODE_ENV` | ❌ | `development` | Môi trường chạy |
+| `LOG_LEVEL` | ❌ | `info` | Mức log (debug/info/warn/error) |
+| `LOG_DIR` | ❌ | — | Thư mục lưu log file |
+| `CRON_SCHEDULE` | ❌ | `*/30 * * * *` | Lịch cron (mặc định: mỗi 30 phút) |
+| `BATCH_SIZE` | ❌ | `1` | Số action mỗi lần chạy |
+| `MAX_POSTS_PER_USER_DAY` | ❌ | `3` | Giới hạn bài viết/bot/ngày |
+| `MAX_COMMENTS_PER_USER_DAY` | ❌ | `6` | Giới hạn bình luận/bot/ngày |
+| `MAX_VOTES_PER_USER_DAY` | ❌ | `15` | Giới hạn vote/bot/ngày |
+| `GROQ_API_KEY` | ❌ | — | GROQ API key (fallback) |
+| `CEREBRAS_API_KEY` | ❌ | — | Cerebras API key (fallback) |
+| `NVIDIA_API_KEY` | ❌ | — | NVIDIA API key (fallback) |
+| `BEEKNOEE_API_KEY` | ❌ | — | Beeknoee API key (fallback) |
+| `PROVIDER_TIMEOUT_MS` | ❌ | `30000` | Timeout gọi LLM (ms) |
 
-*Cần ít nhất một API key provider để hoạt động. Recommend có nhiều key cho fallback.
+## Prompt Templates
 
-## Cron & Concurrency
+### Bài viết (`prompts/post.template.txt`)
+- Hướng dẫn bot viết bài tự nhiên, phong cách diễn đàn
+- Tập trung 1-2 ý chính, 100-1500 từ
+- Tiếng Việt tự nhiên, tránh phong cách quá formal
 
-- **Cron schedule**: Mặc định mỗi 30 phút chạy một batch
-- **Anti-overlap**: Flag `isRunning` ngăn chạy đồng thời trong cùng instance
-- **Retry queue**: Action lỗi được đưa vào queue, tối đa 3 lần retry
-- **Cảnh báo**: Flag `isRunning` chỉ hoạt động single-instance — nếu scale ngang cần distributed lock
+### Bình luận (`prompts/comment.template.txt`)
+- Bắt buộc tham chiếu cụ thể nội dung bài viết
+- Cấm cụm từ chung chung ("bài viết hay", "cảm ơn chia sẻ", ...)
+- Anti-generic validation nghiêm ngặt
 
-## Scripts
+### Vote (`prompts/vote.template.txt`)
+- Cung cấp ngữ cảnh để bot quyết định upvote/downvote
 
-```bash
-# Phát triển
-npm run dev              # Watch mode development
+## Distributed Locking
 
-# Build & Production
-npm run build            # Compile TypeScript
-npm start                # Chạy production (tsx)
-
-# Database
-npm run db:generate      # Copy schema từ backend + generate Prisma client
-
-# Seeding
-npm run seed:bots        # Tạo bot users
-npm run seed:tags         # Tạo tags
-npm run seed:all          # Tạo tất cả
-
-# Testing
-npm test                 # Chạy tests (custom tsx runner)
-```
+- Sử dụng **PostgreSQL advisory locks** để tránh chạy trùng lặp khi deploy multi-instance
+- In-process guard ngăn double-fire trong cùng 1 instance
 
 ## Docker
 
-Multi-stage build (2 stages):
-1. **builder**: Compile TypeScript + generate Prisma client
-2. **production**: Runtime tối giản với `dumb-init` (proper signal handling)
+```bash
+# Build image
+docker build -t vibe-content .
 
-`docker-entrypoint.sh`: Chạy Prisma migrate khi `RUN_MIGRATIONS=true`, sau đó start app.
-
-## Tương tác với các Service khác
-
-| Service | Hướng | Chi tiết |
-|---|---|---|
-| Backend API | → gửi request | REST API — đăng nhập bot, tạo post/comment/vote |
-| PostgreSQL | → đọc/ghi trực tiếp | Đọc context (posts, comments, users, categories, tags). Ghi `user_content_context` |
-| LLM Providers | → gửi request | 5 provider, 10 model — sinh nội dung văn bản |
-
-**Không tương tác** với Frontend hoặc Admin-Client.
-
-**Lưu ý quan trọng:**
-- Vibe-Content **không được tạo migration** — chỉ copy schema từ Backend và generate client
-- Nội dung bot đi qua Backend API (không ghi trực tiếp vào posts/comments) để đảm bảo validation và audit log
-- Chỉ `user_content_context` được ghi trực tiếp vào DB (personality data, không cần qua API)
-
+# Chạy container
+docker run -p 4000:4000 --env-file .env vibe-content
+```

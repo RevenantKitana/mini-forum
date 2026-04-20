@@ -1,185 +1,145 @@
-# Admin-Client Service
+# Admin Client — Mini Forum
 
-## Tổng quan
+Trang quản trị dành cho Moderator và Admin, xây dựng bằng React 18 + TypeScript + Vite.
 
-Bảng điều khiển quản trị (admin dashboard) dành riêng cho ADMIN và MODERATOR. Cung cấp giao diện quản lý người dùng, nội dung, báo cáo vi phạm và cấu hình hệ thống.
+## Công nghệ sử dụng
 
-**Giả định:** Admin-Client là ứng dụng tách biệt với Frontend — không chia sẻ code, component hay state, dù tech stack tương tự.
-
-## Tech Stack
-
-| Thành phần | Công nghệ |
+| Công nghệ | Mục đích |
 |---|---|
-| Framework | React 18.2 |
-| Build tool | Vite 6.3 |
-| Language | TypeScript |
-| Styling | Tailwind 4.1 |
-| UI Components | Radix UI (không dùng MUI) |
-| Routing | React Router 6.21 |
-| State Management | TanStack Query 5.90, React Context |
-| Testing | Vitest, React Testing Library |
+| **React 18** | UI framework |
+| **TypeScript** | Type safety |
+| **Vite** | Build tool & dev server |
+| **React Router DOM 6** | Client-side routing |
+| **TanStack React Query** | Server state management & caching |
+| **Axios** | HTTP client |
+| **Radix UI** | Headless component library |
+| **Tailwind CSS** | Utility-first CSS |
+| **Lucide React** | Icon library |
+| **Sonner** | Toast notifications |
+| **Class Variance Authority** | Component variant styling |
 
 ## Cấu trúc thư mục
 
 ```
-admin-client/src/
-├── App.tsx                    # Root component (routing + auth guard)
-├── main.tsx                   # Entry point
-├── api/
-│   ├── axios.ts               # Axios instance
-│   ├── endpoints.ts           # API endpoint constants
-│   └── services/
-│       ├── authService.ts     # Login, logout, getCurrentUser
-│       └── adminService.ts    # Admin operations
-├── pages/                     # 11 page components
-├── components/
-│   ├── auth/                  # Auth-related components
-│   ├── layout/                # Admin layout (sidebar, header)
-│   └── ui/                    # Shared UI components
-├── contexts/
-│   └── AuthContext.tsx         # Auth state + role verification
-├── utils/                     # Utility functions
-├── lib/
-│   └── utils.ts               # Helper functions
-├── styles/
-│   └── globals.css            # Global styles
-└── test/
-    └── setup.ts               # Test configuration
+admin-client/
+└── src/
+    ├── App.tsx              # Routing chính, protected routes
+    ├── main.tsx             # Entry point
+    ├── api/
+    │   ├── axios.ts         # Axios instance với token management
+    │   ├── endpoints.ts     # Admin API endpoints
+    │   └── services/
+    │       ├── adminService  # Dashboard, quản lý nội dung
+    │       └── authService   # Đăng nhập, token refresh
+    ├── components/
+    │   ├── auth/            # Login form, ProtectedRoute
+    │   ├── layout/          # AdminLayout, sidebar, header
+    │   └── ui/              # Radix UI components
+    ├── contexts/
+    │   └── AuthContext.tsx   # Xác thực admin/moderator
+    ├── pages/               # 12 trang quản trị
+    ├── lib/                 # Utility functions
+    ├── styles/              # Global CSS
+    └── utils/               # Helper utilities
 ```
 
-## Pages
+## Các trang quản trị
 
-| Page | Route | Mô tả |
-|---|---|---|
-| `LoginPage` | `/login` | Đăng nhập quản trị (public) |
-| `DashboardPage` | `/` | Tổng quan: thống kê, biểu đồ |
-| `UsersPage` | `/users` | Quản lý người dùng (xem, ban, đổi role) |
-| `PostsPage` | `/posts` | Quản lý bài viết (ẩn, xóa, pin) |
-| `CommentsPage` | `/comments` | Quản lý bình luận |
-| `ReportsPage` | `/reports` | Xử lý báo cáo vi phạm |
-| `CategoriesPage` | `/categories` | CRUD danh mục |
-| `TagsPage` | `/tags` | CRUD thẻ |
-| `AuditLogsPage` | `/audit-logs` | Xem nhật ký hành động |
-| `OperationalDashboardPage` | `/ops` | Dashboard vận hành hệ thống |
-| `SettingsPage` | `/settings` | Cấu hình hệ thống |
+| Trang | Route | Quyền truy cập | Mô tả |
+|---|---|---|---|
+| Dashboard | `/` | Mod + Admin | Thống kê tổng quan |
+| Quản lý người dùng | `/users` | Mod + Admin | Danh sách, ban/unban, đổi role |
+| Quản lý bài viết | `/posts` | Mod + Admin | Duyệt, ẩn, ghim, khoá bài viết |
+| Quản lý bình luận | `/comments` | Mod + Admin | Duyệt, ẩn, mask bình luận |
+| Báo cáo vi phạm | `/reports` | Mod + Admin | Xử lý report (pending → resolved/dismissed) |
+| Danh mục | `/categories` | Mod + Admin | CRUD danh mục |
+| Tags | `/tags` | Mod + Admin | CRUD tag |
+| Audit Logs | `/audit-logs` | Admin only | Nhật ký hành động quản trị |
+| Operational Dashboard | `/operational` | Admin only | Metrics hệ thống, hiệu suất |
+| Cài đặt | `/settings` | Admin only | Cấu hình hệ thống |
+| Đăng nhập | `/login` | Public | Đăng nhập quản trị |
 
-## Tính năng chi tiết
+## Tính năng
 
 ### Dashboard
-- Thống kê tổng quan: số users, posts, comments, reports
+- Thống kê tổng quan: số người dùng, bài viết, bình luận, báo cáo
 - Biểu đồ hoạt động
-- Danh sách reports mới nhất
 
-### Quản lý người dùng (UsersPage)
-- Danh sách người dùng với phân trang, tìm kiếm
-- Thay đổi role (Member ↔ Moderator ↔ Admin)
-- Ban/unban tài khoản
-- Xem chi tiết hoạt động
+### Quản lý người dùng
+- Danh sách người dùng với bộ lọc
+- Ban/Unban tài khoản
+- Thay đổi vai trò (Member ↔ Moderator ↔ Admin)
 
-### Quản lý bài viết (PostsPage)
-- Danh sách bài viết với bộ lọc (status, category)
-- Pin/unpin bài viết (Global hoặc Category)
-- Kéo thả sắp xếp thứ tự pin (React DnD)
-- Lock/unlock bình luận
-- Thay đổi trạng thái (Published, Hidden, Deleted)
+### Quản lý nội dung
+- Duyệt và kiểm duyệt bài viết, bình luận
+- Ghim bài viết (toàn cục hoặc theo danh mục)
+- Khoá bài viết (không cho bình luận thêm)
+- Ẩn/hiện nội dung
+- Mask nội dung nhạy cảm
 
-### Quản lý bình luận (CommentsPage)
-- Danh sách bình luận
-- Ẩn/hiện bình luận (mask content)
-- Xem nội dung đã ẩn (Admin only)
-- Xóa bình luận
+### Báo cáo vi phạm
+- Hàng đợi báo cáo chờ xử lý
+- Workflow: Pending → Reviewing → Resolved / Dismissed
 
-### Xử lý báo cáo (ReportsPage)
-- Workflow trạng thái: Pending → Reviewing → Resolved/Dismissed
-- Xem nội dung vi phạm (user/post/comment)
-- Ghi chú xử lý
-- Bộ lọc theo trạng thái
+### Audit Log
+- Theo dõi mọi hành động quản trị
+- Lọc theo loại hành động, người thực hiện, thời gian
 
-### Quản lý danh mục (CategoriesPage) — Admin only
-- CRUD danh mục
-- Cấu hình phân quyền view/post/comment per category
-- Sắp xếp thứ tự hiển thị
-- Chọn màu sắc
+### Xác thực
+- JWT-based authentication
+- Chỉ cho phép vai trò Admin và Moderator
+- Tự động refresh token
+- Fallback sang stored user nếu API lỗi
 
-### Quản lý tags (TagsPage)
-- CRUD tags
-- Cấu hình quyền sử dụng (ALL, MEMBER, MODERATOR, ADMIN)
-- Theo dõi số lượng sử dụng (usage_count)
-
-### Nhật ký hành động (AuditLogsPage) — Admin only
-- Xem tất cả hành động admin (tạo, sửa, xóa, ban, pin, lock...)
-- Bộ lọc theo action, target type, user
-- Chi tiết old/new values cho mỗi thao tác
-- Thông tin IP, user agent
-
-## Xác thực & Phân quyền
-
-### AuthContext
-
-- `useAuth()` hook cung cấp: `user`, `isAuthenticated`, `isLoading`, `isAdmin`, `isModerator`
-- Phương thức: `login(email, password)`, `logout()`, `refreshUser()`
-- **Kiểm tra role bắt buộc**: Chỉ cho phép ADMIN hoặc MODERATOR truy cập — user thường bị từ chối
-- **localStorage key**: `admin_user` (tách biệt với Frontend dùng `forum_access_token`)
-
-### Route Protection
-
-- Tất cả route ngoại trừ `/login` được bọc trong `ProtectedRoute`
-- Nếu user chưa đăng nhập hoặc không đủ quyền → redirect về `/login`
-
-## API Integration
-
-| Service | Chức năng |
-|---|---|
-| `authService` | Đăng nhập, đăng xuất, lấy user hiện tại |
-| `adminService` | Thao tác quản trị: quản lý users, posts, comments, reports, categories, tags, audit logs |
-
-## Biến môi trường
-
-| Biến | Bắt buộc | Mô tả |
-|---|---|---|
-| `VITE_API_URL` | Có | URL Backend API |
-
-## Vite Configuration
-
-- **Dev server port**: 5174 (strict — tách biệt với Frontend port 5173)
-- **API Proxy**: `/api` → `VITE_API_URL`
-- **Path alias**: `@` → `src/`
-
-## Scripts
+## Cài đặt & Chạy
 
 ```bash
-npm run dev              # Dev server tại localhost:5174
-npm run build            # Production build
-npm run lint             # ESLint
-npm test                 # Chạy Vitest
-npm run test:watch       # Watch mode
-npm run test:ui          # Vitest UI
-npm run test:coverage    # Coverage report
+# Cài đặt dependencies
+npm install
+
+# Chạy development server (port 5174)
+npm run dev
+
+# Build production
+npm run build
+
+# Preview bản build
+npm run preview
+
+# Kiểm tra lint
+npm run lint
 ```
 
-## Khác biệt so với Frontend
+## Cấu hình
 
-| Tiêu chí | Frontend | Admin-Client |
+### Vite
+
+- Path alias: `@` → `./src`
+- Dev port: **5174** (strict)
+- Proxy: `/api` → Backend server
+
+### Biến môi trường
+
+Tạo file `.env` tại thư mục `admin-client/`:
+
+```env
+VITE_API_URL=http://localhost:5000/api/v1
+```
+
+## Phân quyền
+
+| Tính năng | Moderator | Admin |
 |---|---|---|
-| Đối tượng | Người dùng cuối | ADMIN, MODERATOR |
-| Port | 5173 | 5174 |
-| Router | React Router 7 | React Router 6 |
-| UI Library | Radix UI + MUI | Radix UI (không MUI) |
-| localStorage key | `forum_access_token` | `admin_user` |
-| Chức năng | Đọc/viết nội dung cá nhân | Quản lý toàn bộ hệ thống |
-| Shared code | Không | Không |
+| Dashboard | ✅ | ✅ |
+| Quản lý người dùng | ✅ | ✅ |
+| Quản lý bài viết | ✅ | ✅ |
+| Quản lý bình luận | ✅ | ✅ |
+| Xử lý báo cáo | ✅ | ✅ |
+| Quản lý danh mục/tag | ✅ | ✅ |
+| Audit Logs | ❌ | ✅ |
+| Operational Dashboard | ❌ | ✅ |
+| Cài đặt hệ thống | ❌ | ✅ |
 
-## Tương tác với các Service khác
+## Triển khai
 
-| Service | Hướng | Chi tiết |
-|---|---|---|
-| Backend | → gửi request | REST API qua Vite proxy, JWT auth, admin endpoints |
-
-**Không tương tác trực tiếp** với Frontend, Vibe-Content, hoặc PostgreSQL.
-
-## Deployment
-
-- **Vercel**: Cấu hình sẵn (`vercel.json`)
-- **Build output**: Static files
-- **Yêu cầu**: Set `VITE_API_URL` trỏ đến Backend production URL
-
+Hỗ trợ triển khai trên **Vercel** với cấu hình có sẵn trong `vercel.json`.

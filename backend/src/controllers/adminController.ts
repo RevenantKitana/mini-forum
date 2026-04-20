@@ -1572,6 +1572,11 @@ export async function deletePost(req: AuthRequest, res: Response, next: NextFunc
       throw new NotFoundError('Post not found');
     }
 
+    // Prevent deleting already-deleted posts
+    if (post.status === 'DELETED') {
+      throw new BadRequestError('Post is already deleted');
+    }
+
     await prisma.posts.update({
       where: { id },
       data: { status: 'DELETED' },
@@ -1610,6 +1615,11 @@ export async function deleteComment(req: AuthRequest, res: Response, next: NextF
 
     if (!comment) {
       throw new NotFoundError('Comment not found');
+    }
+
+    // Prevent deleting already-deleted comments
+    if (comment.status === 'DELETED') {
+      throw new BadRequestError('Comment is already deleted');
     }
 
     await prisma.comments.update({

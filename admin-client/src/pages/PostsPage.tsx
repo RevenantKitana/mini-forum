@@ -51,6 +51,7 @@ export function PostsPage() {
   const [total, setTotal] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [previewPost, setPreviewPost] = useState<AdminPost | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -122,12 +123,22 @@ export function PostsPage() {
   const handleDelete = async (postId: number) => {
     if (!confirm('Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác.')) return;
 
+    // Prevent multiple deletion attempts
+    if (deletingIds.has(postId)) return;
+
     try {
+      setDeletingIds(prev => new Set(prev).add(postId));
       await adminService.deletePost(postId.toString());
       toast.success('Đã xóa bài viết');
       fetchPosts();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Không thể xóa bài viết');
+    } finally {
+      setDeletingIds(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
     }
   };
 
@@ -168,6 +179,7 @@ export function PostsPage() {
   const handleBulkDelete = async () => {
     if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} bài viết?`)) return;
     try {
+      setDeletingIds(new Set(selectedIds));
       await Promise.all(
         Array.from(selectedIds).map(id => adminService.deletePost(id.toString()))
       );
@@ -176,6 +188,8 @@ export function PostsPage() {
       fetchPosts();
     } catch {
       toast.error('Không thể xóa một số bài viết');
+    } finally {
+      setDeletingIds(new Set());
     }
   };
 
@@ -282,7 +296,7 @@ export function PostsPage() {
             <Button variant="outline" size="sm" onClick={handleBulkHide}>
               <EyeOff className="h-3.5 w-3.5 mr-1" /> Ẩn
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={deletingIds.size > 0}>
               <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
@@ -430,10 +444,11 @@ export function PostsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleDelete(post.id)}
+                          disabled={deletingIds.has(post.id)}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa bài viết
+                          {deletingIds.has(post.id) ? 'Đang xóa...' : 'Xóa bài viết'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -506,8 +521,8 @@ export function PostsPage() {
                 <Button size="sm" variant="outline" onClick={() => { handleToggleVisibility(previewPost); setPreviewPost(null); }}>
                   {previewPost.status === 'HIDDEN' ? <><Eye className="h-3.5 w-3.5 mr-1" /> Hiện</> : <><EyeOff className="h-3.5 w-3.5 mr-1" /> Ẩn</>}
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => { handleDelete(previewPost.id); setPreviewPost(null); }}>
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa
+                <Button size="sm" variant="destructive" onClick={() => { handleDelete(previewPost.id); setPreviewPost(null); }} disabled={deletingIds.has(previewPost.id)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> {deletingIds.has(previewPost.id) ? 'Đang xóa...' : 'Xóa'}
                 </Button>
               </div>
             </div>
