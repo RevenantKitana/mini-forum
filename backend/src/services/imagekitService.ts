@@ -43,9 +43,9 @@ export async function uploadImage(
   });
 
   return {
-    fileId: response.fileId,
-    filePath: response.filePath,
-    url: response.url,
+    fileId: response.fileId as string,
+    filePath: response.filePath as string,
+    url: response.url as string,
   };
 }
 
