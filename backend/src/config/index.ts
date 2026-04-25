@@ -105,9 +105,9 @@ const config: Config = {
     resendDelaySeconds: parseInt(process.env.OTP_RESEND_DELAY_SECONDS!, 10),
   },
   imagekit: {
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY!,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY!,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT!,
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY as string,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY as string,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT as string,
   },
 };
 
