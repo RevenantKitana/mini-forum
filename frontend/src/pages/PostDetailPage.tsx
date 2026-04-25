@@ -18,6 +18,8 @@ import { VoteScore } from '@/components/common/VoteScore';
 import { BookmarkButton } from '@/components/common/BookmarkButton';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
+import { BlockRenderer } from '@/components/post/BlockRenderer';
+import { getAvatarUrl } from '@/utils/imageHelpers';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -55,6 +57,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { ReportModal } from '@/components/common/ReportModal';
 import { PostFormDialog } from '@/components/common/PostFormDialog';
 import { EmojiPicker } from '@/components/common/EmojiPicker';
+import { AvatarPreviewModal } from '@/components/common/AvatarPreviewModal';
 import { decodeHtmlEntities } from '@/lib/utils';
 
 // Default fallback - will be overridden by config from API
@@ -103,6 +106,7 @@ export function PostDetailPage() {
   const [replyContent, setReplyContent] = useState<string>('');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment'; id: number } | null>(null);
+  const [authorAvatarModalOpen, setAuthorAvatarModalOpen] = useState(false);
   const [commentSort, setCommentSort] = useState<'popular' | 'latest' | 'oldest'>('popular');
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -245,7 +249,7 @@ export function PostDetailPage() {
   
   const voteScore = post ? post.upvote_count - post.downvote_count : 0;
   const authorDisplayName = post?.author?.display_name || post?.author?.username || 'Unknown';
-  const authorAvatar = post?.author?.avatar_url;
+  const authorAvatar = getAvatarUrl(post?.author, 'preview');
 
   return (
     <div className="animate-fade-in-up">
@@ -297,10 +301,17 @@ export function PostDetailPage() {
                     to={`/users/${post.author.username}`}
                     className="flex items-center gap-2 hover:text-foreground transition-colors"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                      <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAuthorAvatarModalOpen(true); }}
+                      className="rounded-full ring-1 ring-transparent hover:ring-primary transition-all duration-200 flex-shrink-0"
+                      aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
+                        <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </button>
                     <span className="font-medium flex items-center gap-2">
                       {authorDisplayName}
                       {/* Role badge */}
@@ -345,8 +356,11 @@ export function PostDetailPage() {
 
         <CardContent>
 
-          <MarkdownRenderer content={post.content} />
-          
+          {/* Block layout content */}
+          {post.blocks && post.blocks.length > 0 ? (
+            <BlockRenderer blocks={post.blocks} />
+          ) : null}
+
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4">
               {post.tags.map((tag) => (
@@ -639,6 +653,15 @@ export function PostDetailPage() {
         />
       )}
 
+      {/* Post Author Avatar Preview Modal */}
+      {post?.author && (
+        <AvatarPreviewModal
+          isOpen={authorAvatarModalOpen}
+          onClose={() => setAuthorAvatarModalOpen(false)}
+          user={post.author}
+        />
+      )}
+
       {/* Edit Post Dialog */}
       {post && (
         <PostFormDialog
@@ -701,13 +724,15 @@ function CommentItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
+  // Phase 2 UC-02: Avatar preview modal
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
 
   const voteScore = comment.upvote_count - comment.downvote_count;
   const authorDisplayName = comment.author?.display_name || comment.author?.username || 'Unknown';
-  const authorAvatar = comment.author?.avatar_url;
+  const authorAvatar = getAvatarUrl(comment.author, 'preview');
 
   // Check if comment can still be edited (within time limit)
   const commentAge = Date.now() - new Date(comment.created_at).getTime();
@@ -863,10 +888,17 @@ function CommentItem({
               {comment.author && (
                 <div className={isReply ? 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-1' : 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-2'}>
                   <Link to={`/users/${comment.author.username}`} className="flex items-center gap-2 hover:text-foreground transition-colors">
-                    <Avatar className={isReply ? 'h-5 w-5 flex-shrink-0' : 'h-6 w-6 flex-shrink-0'}>
-                      <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                      <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsAvatarModalOpen(true); }}
+                      className="rounded-full ring-1 ring-transparent hover:ring-primary transition-all duration-200 flex-shrink-0"
+                      aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+                    >
+                      <Avatar className={isReply ? 'h-5 w-5' : 'h-6 w-6'}>
+                        <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
+                        <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </button>
                   </Link>
 
                   <div className="flex items-center gap-2">
@@ -1121,6 +1153,15 @@ function CommentItem({
             />
           ))}
         </div>
+      )}
+
+      {/* Phase 2 UC-02: Avatar Preview Modal for comment author */}
+      {comment.author && (
+        <AvatarPreviewModal
+          isOpen={isAvatarModalOpen}
+          onClose={() => setIsAvatarModalOpen(false)}
+          user={comment.author}
+        />
       )}
     </div>
   );

@@ -21,9 +21,6 @@ const REFRESH_TOKEN_KEY = 'forum_refresh_token';
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Token management functions

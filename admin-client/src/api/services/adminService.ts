@@ -47,7 +47,8 @@ export interface User {
   email: string;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: string;
   reputation: number;
   is_verified: boolean;
@@ -66,27 +67,38 @@ export interface Post {
   title: string;
   slug: string;
   content?: string;
+  excerpt?: string | null;
   status: string;
   is_pinned: boolean;
   pin_type?: 'GLOBAL' | 'CATEGORY' | null;
   is_locked: boolean;
+  use_block_layout: boolean;
   view_count: number;
   upvote_count: number;
   downvote_count: number;
   comment_count: number;
+  mediaCount?: number;
   created_at: string;
   updated_at: string;
   author: {
     id: number;
     username: string;
     display_name: string | null;
-    avatar_url?: string | null;
+    avatar_preview_url?: string | null;
+    avatar_standard_url?: string | null;
   };
   category: {
     id: number;
     name: string;
     slug: string;
   } | null;
+  blocks?: Array<{
+    id: number;
+    type: 'TEXT' | 'IMAGE';
+    content: string | null;
+    sort_order: number;
+    media?: Array<{ id: number; preview_url: string; standard_url: string; sort_order: number }>;
+  }>;
 }
 
 export interface Comment {
@@ -122,7 +134,7 @@ export interface Report {
     id: number;
     username: string;
     display_name?: string | null;
-    avatar_url?: string | null;
+    avatar_preview_url?: string | null;
   };
   target?: any;
   reviewer?: {
@@ -183,7 +195,7 @@ export interface AuditLog {
     id: number;
     username: string;
     display_name: string | null;
-    avatar_url: string | null;
+    avatar_preview_url: string | null;
   } | null;
 }
 

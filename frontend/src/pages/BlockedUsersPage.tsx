@@ -9,12 +9,14 @@ import { toast } from 'sonner';
 import { UserX, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { getAvatarUrl } from '@/utils/imageHelpers';
 
 interface BlockedUser {
   id: number;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
+  avatar_preview_url: string | null;
+  avatar_standard_url: string | null;
   blockedAt: string;
 }
 
@@ -25,7 +27,8 @@ interface BlockedUserLegacy {
     id: number;
     username: string;
     display_name: string | null;
-    avatar_url: string | null;
+    avatar_preview_url: string | null;
+    avatar_standard_url: string | null;
   };
   created_at: string;
 }
@@ -66,7 +69,8 @@ export function BlockedUsersPage() {
           id: item.blocked.id,
           username: item.blocked.username,
           display_name: item.blocked.display_name,
-          avatar_url: item.blocked.avatar_url,
+          avatar_preview_url: item.blocked.avatar_preview_url,
+          avatar_standard_url: item.blocked.avatar_standard_url,
           blockedAt: item.created_at,
         };
       } else {
@@ -75,7 +79,8 @@ export function BlockedUsersPage() {
           id: item.id,
           username: item.username,
           display_name: item.display_name,
-          avatar_url: item.avatar_url,
+          avatar_preview_url: item.avatar_preview_url,
+          avatar_standard_url: item.avatar_standard_url,
           blockedAt: item.blockedAt,
         };
       }
@@ -140,7 +145,7 @@ export function BlockedUsersPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage
-                        src={user.avatar_url || undefined}
+                        src={getAvatarUrl(user, 'preview') || undefined}
                         alt={user.display_name || user.username}
                       />
                       <AvatarFallback>

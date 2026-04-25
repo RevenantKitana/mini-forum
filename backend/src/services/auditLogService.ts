@@ -20,7 +20,6 @@ const auditLogSelect = {
       id: true,
       username: true,
       display_name: true,
-      avatar_url: true,
     },
   },
 };

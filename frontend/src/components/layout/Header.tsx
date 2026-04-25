@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/app/components/ui/button';
+import { getAvatarUrl } from '@/utils/imageHelpers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -166,7 +167,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full ml-1 btn-press">
                     <Avatar className="h-8 w-8 sm:h-8 sm:w-8 ring-2 ring-transparent hover:ring-primary/20 transition-all">
-                      <AvatarImage src={user?.avatar || undefined} alt={user?.display_name || user?.username} />
+                      <AvatarImage src={getAvatarUrl(user, 'preview') || undefined} alt={user?.display_name || user?.username} />
                       <AvatarFallback className="bg-primary/10 text-primary font-medium">
                         {(user?.display_name || user?.username || 'U')?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>

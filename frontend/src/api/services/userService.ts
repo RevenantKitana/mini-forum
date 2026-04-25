@@ -136,12 +136,13 @@ export async function changePassword(userId: number, data: ChangePasswordData): 
 }
 
 /**
- * Update avatar
+ * Upload avatar via multipart/form-data (Phase 5)
+ * @param formData must contain a 'file' field (max 5 MB, jpeg/png/webp)
  */
-export async function updateAvatar(userId: number, avatarUrl: string): Promise<UserProfile> {
-  const response = await apiClient.patch<ApiResponse<UserProfile>>(
-    `${API_ENDPOINTS.USERS.BY_ID(userId)}/avatar`,
-    { avatar_url: avatarUrl }
+export async function uploadAvatar(userId: number, formData: FormData): Promise<UserProfile> {
+  const response = await apiClient.post<ApiResponse<UserProfile>>(
+    API_ENDPOINTS.USERS.AVATAR_UPLOAD(userId),
+    formData,
   );
   return response.data.data;
 }

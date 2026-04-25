@@ -19,6 +19,7 @@ import {
 } from '@/app/components/ui/select';
 import { useState, useEffect } from 'react';
 import { trackSearch } from '@/utils/analytics';
+import { getAvatarUrl } from '@/utils/imageHelpers';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -292,7 +293,7 @@ export function SearchPage() {
                           className="flex items-center gap-4 hover:opacity-80"
                         >
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarImage src={getAvatarUrl(user, 'preview') || undefined} />
                             <AvatarFallback>
                               {user.display_name?.charAt(0) || user.username.charAt(0).toUpperCase()}
                             </AvatarFallback>

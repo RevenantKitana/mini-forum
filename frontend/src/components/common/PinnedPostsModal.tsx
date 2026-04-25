@@ -14,6 +14,7 @@ import { ScrollArea } from '@/app/components/ui/scroll-area';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
 import { Skeleton } from '@/app/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 import { Pin, Eye, MessageSquare, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -30,6 +31,7 @@ const MODAL_COOLDOWN_MS = 10 * 60 * 1000;
  */
 function PinnedPostContent({ postId }: { postId: number }) {
   const { data: post, isLoading } = usePost(postId);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -54,7 +56,30 @@ function PinnedPostContent({ postId }: { postId: number }) {
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-base pr-6">
           <Pin className="h-4 w-4 text-primary flex-shrink-0" />
-          <span className="line-clamp-2">{decodeHtmlEntities(post.title)}</span>
+          {post.media && post.media.length > 0 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="line-clamp-2 cursor-default"
+                  onMouseEnter={() => setPreviewImageUrl(post.media[0].preview_url)}
+                  onMouseLeave={() => setPreviewImageUrl(null)}
+                >
+                  {decodeHtmlEntities(post.title)}
+                </span>
+              </TooltipTrigger>
+              {previewImageUrl && (
+                <TooltipContent side="bottom" className="p-1">
+                  <img
+                    src={previewImageUrl}
+                    alt="Post image preview"
+                    className="max-h-48 max-w-xs rounded object-contain"
+                  />
+                </TooltipContent>
+              )}
+            </Tooltip>
+          ) : (
+            <span className="line-clamp-2">{decodeHtmlEntities(post.title)}</span>
+          )}
         </DialogTitle>
         <DialogDescription className="text-xs flex items-center gap-3 flex-wrap">
           {post.category && (

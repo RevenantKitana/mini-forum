@@ -10,7 +10,10 @@ export interface User {
   display_name: string | null;
   email: string;
   avatar?: string;
+  /** @deprecated — legacy fallback only. Use avatar_preview_url / avatar_standard_url via getAvatarUrl() helper. */
   avatar_url?: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: UserRole | string;
   bio?: string | null;
   date_of_birth?: string | null;

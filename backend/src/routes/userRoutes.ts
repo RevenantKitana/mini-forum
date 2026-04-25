@@ -3,6 +3,7 @@ import * as userController from '../controllers/userController.js';
 import { authMiddleware, optionalAuthMiddleware } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validateMiddleware.js';
 import { updateProfileSchema, changeUsernameSchema, changePasswordSchema } from '../validations/userValidation.js';
+import { uploadSingle } from '../middlewares/uploadMiddleware.js';
 
 const router = Router();
 
@@ -18,7 +19,9 @@ router.get('/:id(\\d+)/comments', optionalAuthMiddleware, userController.getUser
 router.put('/:id(\\d+)', authMiddleware, validate(updateProfileSchema), userController.updateProfile as RequestHandler);
 router.patch('/:id(\\d+)/username', authMiddleware, validate(changeUsernameSchema), userController.changeUsername as RequestHandler);
 router.patch('/:id(\\d+)/password', authMiddleware, validate(changePasswordSchema), userController.changePassword as RequestHandler);
-router.patch('/:id(\\d+)/avatar', authMiddleware, userController.updateAvatar as RequestHandler);
+
+// Phase 3: multipart avatar upload
+router.post('/:id(\\d+)/avatar/upload', authMiddleware, uploadSingle, userController.uploadAvatar as RequestHandler);
 
 export default router;
 

@@ -13,7 +13,8 @@ const publicUserSelect = {
   id: true,
   username: true,
   display_name: true,
-  avatar_url: true,
+  avatar_preview_url: true,
+  avatar_standard_url: true,
   bio: true,
   role: true,
   reputation: true,
@@ -211,16 +212,35 @@ export async function changePassword(userId: number, data: ChangePasswordInput) 
 }
 
 /**
- * Upload avatar (returns URL - actual file handling would be done separately)
+ * Update user record with ImageKit avatar fields after a successful upload.
+ * Called by uploadAvatar controller after uploading to ImageKit.
  */
-export async function updateAvatar(userId: number, avatar_url: string) {
+export async function uploadAvatarToImageKit(
+  userId: number,
+  data: {
+    avatar_imagekit_file_id: string;
+    avatar_preview_url: string;
+    avatar_standard_url: string;
+  },
+) {
   const user = await prisma.users.update({
     where: { id: userId },
     select: privateUserSelect,
-    data: { avatar_url },
+    data,
   });
 
   return user;
+}
+
+/**
+ * Get avatar_imagekit_file_id for a user (used to delete the old file before uploading a new one).
+ */
+export async function getAvatarImagekitFileId(userId: number): Promise<string | null> {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { avatar_imagekit_file_id: true },
+  });
+  return user?.avatar_imagekit_file_id ?? null;
 }
 
 /**

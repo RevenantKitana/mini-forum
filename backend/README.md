@@ -17,6 +17,8 @@ REST API server cho Mini Forum, xây dựng bằng Express + TypeScript + Prisma
 | **Morgan** | HTTP request logging |
 | **Brevo (Sendinblue)** | Gửi email OTP |
 | **cookie-parser** | Quản lý cookie (refresh token) |
+| **@imagekit/nodejs** | Upload & transform ảnh (avatar, post media) |
+| **multer** | Xử lý multipart/form-data (file upload) |
 
 ## Cấu trúc thư mục
 
@@ -29,7 +31,9 @@ backend/
 ├── scripts/
 │   ├── backupDb.ts          # Backup database
 │   ├── clearData.ts         # Xoá dữ liệu
-│   └── wipeAllDb.ts         # Xoá toàn bộ database
+│   ├── wipeAllDb.ts         # Xoá toàn bộ database
+│   ├── migrateAvatarUrls.ts # Di chuyển avatar_url cũ lên ImageKit
+│   └── cleanupLegacyAvatars.ts # Xoá avatar_url legacy sau migration
 ├── src/
 │   ├── app.ts               # Express app setup, middleware stack
 │   ├── index.ts             # Server startup, database connection
@@ -75,6 +79,9 @@ Base URL: `http://localhost:5000/api/v1`
 | PATCH | `/posts/:id/status` | Thay đổi trạng thái |
 | POST | `/posts/:id/vote` | Vote bài viết |
 | POST | `/posts/:id/bookmark` | Bookmark bài viết |
+| POST | `/posts/:id/media` | Upload ảnh cho bài viết (multipart, field: `files`) |
+| DELETE | `/posts/:id/media/:mediaId` | Xoá ảnh khỏi bài viết |
+| PATCH | `/posts/:id/media/reorder` | Cập nhật thứ tự ảnh (`{ orderedIds: number[] }`) |
 
 ### Bình luận (`/comments`)
 | Method | Endpoint | Mô tả |
@@ -90,6 +97,7 @@ Base URL: `http://localhost:5000/api/v1`
 |---|---|---|
 | GET | `/users/:id` | Thông tin người dùng |
 | PUT | `/users/:id` | Cập nhật hồ sơ |
+| POST | `/users/:id/avatar/upload` | Upload avatar (multipart, field: `file`) |
 | GET | `/users/:id/bookmarks` | Bookmarks của người dùng |
 
 ### Khác
@@ -107,8 +115,9 @@ Base URL: `http://localhost:5000/api/v1`
 
 ### Models chính (20+ bảng)
 
-- **users** — Người dùng (username, email, password, role, reputation, avatar, bio, ...)
+- **users** — Người dùng (username, email, password, role, reputation, bio, `avatar_preview_url`, `avatar_standard_url`, `avatar_imagekit_file_id`, ...)
 - **posts** — Bài viết (title, content, status, view_count, vote_score, pinned, locked, ...)
+- **post_media** — Ảnh đính kèm của bài viết (imagekit_file_id, preview_url, standard_url, sort_order)
 - **comments** — Bình luận lồng nhau (content, parent_id, quoted_comment_id, is_masked, ...)
 - **categories** — Danh mục (name, slug, permission_level, sort_order, ...)
 - **tags / post_tags** — Hệ thống gắn thẻ
@@ -200,8 +209,23 @@ npm run db:backup     # Backup database
 | `COMMENT_EDIT_TIME_LIMIT` | ✅ | Thời gian cho phép sửa bình luận (phút) |
 | `BREVO_API_KEY` | ✅ | API key dịch vụ email Brevo |
 | `BREVO_FROM_EMAIL` | ✅ | Email gửi OTP |
+| `IMAGEKIT_PUBLIC_KEY` | ✅ | Public key từ ImageKit dashboard |
+| `IMAGEKIT_PRIVATE_KEY` | ✅ | Private key từ ImageKit dashboard |
+| `IMAGEKIT_URL_ENDPOINT` | ✅ | URL endpoint ImageKit (vd: `https://ik.imagekit.io/your_id`) |
 | `PORT` | ❌ | Port server (mặc định: 5000) |
 | `NODE_ENV` | ❌ | Môi trường (development/production) |
+
+### Cấu hình ImageKit
+
+1. Đăng ký tại [https://imagekit.io/](https://imagekit.io/)
+2. Vào **Developer Options → API Keys** để lấy Public Key và Private Key
+3. URL Endpoint hiển thị ở trang dashboard chính (dạng `https://ik.imagekit.io/<your_imagekit_id>`)
+4. Thêm 3 biến vào file `.env` của backend
+
+ImageKit được sử dụng để lưu trữ và transform ảnh:
+- **Avatar:** upload qua `POST /users/:id/avatar/upload`; tự động xoá ảnh cũ sau upload thành công
+- **Post media:** upload qua `POST /posts/:id/media`; tối đa 10 ảnh/bài viết
+- **Transformation presets:** `preview` (300×300, WebP, q-80) và `standard` (1200px wide, WebP, q-85)
 
 ## Docker
 

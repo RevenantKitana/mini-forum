@@ -16,7 +16,8 @@ const authorSelect = {
   id: true,
   username: true,
   display_name: true,
-  avatar_url: true,
+  avatar_preview_url: true,
+  avatar_standard_url: true,
   role: true,
   reputation: true,
 };

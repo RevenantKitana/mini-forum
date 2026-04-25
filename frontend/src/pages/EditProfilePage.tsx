@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUpdateProfile, useChangePassword, useUpdateAvatar } from '@/hooks/useUsers';
+import { useUpdateProfile, useChangePassword } from '@/hooks/useUsers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
@@ -10,9 +10,9 @@ import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { ArrowLeft, Save, User, Lock, AlertCircle, ImageIcon, Calendar, CheckCircle2, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
+import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
 
 // Helper: password strength row indicator
 function StrengthItem({ ok, label }: { ok: boolean; label: string }) {
@@ -34,7 +34,6 @@ export function EditProfilePage() {
   // Profile form state
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [bio, setBio] = useState(user?.bio || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || user?.avatar || '');
   const [dateOfBirth, setDateOfBirth] = useState(
     user?.date_of_birth ? new Date(user.date_of_birth).toISOString().split('T')[0] : ''
   );
@@ -56,7 +55,6 @@ export function EditProfilePage() {
   });
 
   const updateProfileMutation = useUpdateProfile();
-  const updateAvatarMutation = useUpdateAvatar();
   const changePasswordMutation = useChangePassword();
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -75,27 +73,6 @@ export function EditProfilePage() {
       toast.success('Cập nhật thông tin thành công!');
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'Không thể cập nhật thông tin cá nhân.');
-    }
-  };
-
-  const handleAvatarSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!avatarUrl.trim()) {
-      toast.error('Vui lòng nhập URL ảnh đại diện');
-      return;
-    }
-
-    try {
-      await updateAvatarMutation.mutateAsync({
-        avatar_url: avatarUrl.trim(),
-      });
-
-      // Refresh user from server to update auth context
-      await refreshUser();
-      toast.success('Cập nhật ảnh đại diện thành công!');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || 'Không thể cập nhật ảnh đại diện.');
     }
   };
 
@@ -184,37 +161,11 @@ export function EditProfilePage() {
             Ảnh đại diện
           </CardTitle>
           <CardDescription>
-            Cập nhật ảnh đại diện bằng URL
+            Tải lên ảnh đại diện từ máy tính. Hỗ trợ cắt ảnh trước khi lưu.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAvatarSubmit} className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Avatar className="h-20 w-20 flex-shrink-0">
-                <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-                <AvatarFallback className="text-xl">
-                  {displayName?.[0]?.toUpperCase() || user.username[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="avatarUrl">URL ảnh đại diện</Label>
-                <Input
-                  id="avatarUrl"
-                  type="url"
-                  placeholder="https://example.com/avatar.jpg"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Nhập URL ảnh từ internet (hỗ trợ JPG, PNG, GIF, WebP)
-                </p>
-              </div>
-            </div>
-            <Button type="submit" disabled={updateAvatarMutation.isPending} variant="outline" className="w-full sm:w-auto">
-              <Save className="h-4 w-4 mr-2" />
-              {updateAvatarMutation.isPending ? 'Đang lưu...' : 'Cập nhật ảnh đại diện'}
-            </Button>
-          </form>
+          <AvatarCropDialog />
         </CardContent>
       </Card>
 

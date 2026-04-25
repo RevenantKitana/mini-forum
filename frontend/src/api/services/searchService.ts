@@ -19,7 +19,10 @@ export interface SearchResult {
     id: number;
     username: string;
     display_name: string | null;
+    /** @deprecated — use getAvatarUrl() helper */
     avatar_url: string | null;
+    avatar_preview_url?: string | null;
+    avatar_standard_url?: string | null;
     role: string;
     reputation: number;
   };
@@ -40,7 +43,10 @@ export interface SearchUser {
   id: number;
   username: string;
   display_name: string | null;
+  /** @deprecated — use getAvatarUrl() helper */
   avatar_url: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: string;
   reputation: number;
   created_at: string;

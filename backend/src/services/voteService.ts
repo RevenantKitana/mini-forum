@@ -444,7 +444,8 @@ export async function getUserVoteHistory(
           id: true,
           username: true,
           display_name: true,
-          avatar_url: true,
+          avatar_preview_url: true,
+          avatar_standard_url: true,
         }
       }
     }
@@ -463,7 +464,8 @@ export async function getUserVoteHistory(
           id: true,
           username: true,
           display_name: true,
-          avatar_url: true,
+          avatar_preview_url: true,
+          avatar_standard_url: true,
         }
       },
       posts: {

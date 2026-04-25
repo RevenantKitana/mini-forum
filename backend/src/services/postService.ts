@@ -4,6 +4,8 @@ import { CreatePostInput, UpdatePostInput, UpdatePostStatusInput, ListPostsQuery
 import { generateSlug } from '../utils/slug.js';
 import { PostStatus } from '@prisma/client';
 import { getBlockedUserIds } from './blockService.js';
+import { deleteAllPostMedia } from './postMediaService.js';
+import { validateBlocks } from './blockValidationService.js';
 
 /**
  * Generate unique slug
@@ -40,7 +42,8 @@ const authorSelect = {
   id: true,
   username: true,
   display_name: true,
-  avatar_url: true,
+  avatar_preview_url: true,
+  avatar_standard_url: true,
   role: true,
   reputation: true,
 };
@@ -72,7 +75,20 @@ const tagSelect = {
 };
 
 /**
+ * Media select fields (shared across list and detail)
+ */
+const mediaSelect = {
+  id: true,
+  preview_url: true,
+  standard_url: true,
+  sort_order: true,
+  block_id: true,
+};
+
+/**
  * Post select fields for list
+ * Only the first (lowest sort_order) media item is fetched for feed performance.
+ * _count: aggregation to get total media count for UC-01 (newsfeed image display)
  */
 const postListSelect = {
   id: true,
@@ -88,25 +104,75 @@ const postListSelect = {
   is_pinned: true,
   pin_type: true,
   is_locked: true,
+  use_block_layout: true,
   created_at: true,
   updated_at: true,
   users: { select: authorSelect },
   categories: { select: categorySelect },
   post_tags: { select: tagSelect },
+  post_media: {
+    select: mediaSelect,
+    orderBy: { sort_order: 'asc' as const },
+    take: 3,
+  },
+  _count: {
+    select: {
+      post_media: true,
+    },
+  },
 };
 
 /**
  * Post select fields for detail
+ * Full media list ordered by sort_order.
+ * Includes post_blocks for block-layout posts.
  */
 const postDetailSelect = {
   ...postListSelect,
   content: true,
+  post_media: {
+    select: mediaSelect,
+    orderBy: { sort_order: 'asc' as const },
+  },
+  post_blocks: {
+    select: {
+      id: true,
+      type: true,
+      content: true,
+      sort_order: true,
+      post_media: {
+        select: mediaSelect,
+        orderBy: { sort_order: 'asc' as const },
+      },
+    },
+    orderBy: { sort_order: 'asc' as const },
+  },
 };
 
 /**
- * Transform post tags from nested structure and rename relation fields
+ * Transform post from Prisma shape into API shape:
+ * - rename relation keys to friendly names
+ * - flatten nested tag structure
+ * - expose media array
+ * - add mediaCount from aggregation (Phase 1: UC-01 newsfeed image display)
+ * - expose blocks array (Phase 3: block layout)
  */
 function transformPostTags(post: any) {
+  // Validate mediaCount is a non-negative integer
+  const mediaCount = post._count?.post_media || 0;
+  if (!Number.isInteger(mediaCount) || mediaCount < 0) {
+    throw new Error(`Invalid mediaCount value: ${mediaCount}`);
+  }
+
+  // Transform blocks: rename post_media inside each block to "media"
+  const blocks = (post.post_blocks || []).map((block: any) => ({
+    id: block.id,
+    type: block.type,
+    content: block.content ?? null,
+    sort_order: block.sort_order,
+    media: block.post_media || [],
+  }));
+
   return {
     ...post,
     author: post.users,
@@ -115,6 +181,12 @@ function transformPostTags(post: any) {
     categories: undefined,
     tags: post.post_tags?.map((pt: any) => pt.tags) || [],
     post_tags: undefined,
+    media: post.post_media || [],
+    post_media: undefined,
+    post_blocks: undefined,
+    blocks,
+    mediaCount,
+    _count: undefined,
   };
 }
 
@@ -446,38 +518,57 @@ export async function createPost(data: CreatePostInput, author_id: number, userR
     }
   }
 
+  // Determine blocks to create — always use block layout.
+  // If client sends explicit blocks, use those; otherwise auto-wrap content into a TEXT block.
+  const blocksToCreate =
+    data.blocks && data.blocks.length > 0
+      ? data.blocks
+      : [{ type: 'TEXT' as const, content: data.content || '', sort_order: 1 }];
+
+  validateBlocks(blocksToCreate);
+
   // Generate unique slug
   const slug = await generateUniqueSlug(data.title);
 
-  // Generate excerpt
-  const excerpt = generateExcerpt(data.content);
+  // Generate excerpt from first TEXT block
+  const firstTextBlock = blocksToCreate.find((b) => b.type === 'TEXT');
+  const contentForExcerpt = firstTextBlock?.content || data.content || '';
+  const excerpt = generateExcerpt(contentForExcerpt);
 
-  // Create post with tags
+  // Prepare tag creation data (to reuse for both code paths)
+  const tagCreateData = data.tags.length > 0
+    ? await Promise.all(
+        data.tags.map(async (tagName) => {
+          const tagSlug = generateSlug(tagName);
+          const tag = await prisma.tags.upsert({
+            where: { slug: tagSlug },
+            update: { usage_count: { increment: 1 } },
+            create: { name: tagName, slug: tagSlug, usage_count: 1 },
+          });
+          return { tag_id: tag.id };
+        })
+      )
+    : [];
+
+  // Create post with blocks (always block layout)
   const post = await prisma.posts.create({
     data: {
       title: data.title,
       slug,
-      content: data.content,
+      content: data.content || '',
       excerpt,
       author_id,
       category_id: data.category_id,
       status: data.status as PostStatus,
-      post_tags: data.tags.length > 0
-        ? {
-            create: await Promise.all(
-              data.tags.map(async (tagName) => {
-                const tagSlug = generateSlug(tagName);
-                // Get or create tag
-                const tag = await prisma.tags.upsert({
-                  where: { slug: tagSlug },
-                  update: { usage_count: { increment: 1 } },
-                  create: { name: tagName, slug: tagSlug, usage_count: 1 },
-                });
-                return { tag_id: tag.id };
-              })
-            ),
-          }
-        : undefined,
+      use_block_layout: true,
+      post_tags: tagCreateData.length > 0 ? { create: tagCreateData } : undefined,
+      post_blocks: {
+        create: blocksToCreate.map((block) => ({
+          type: block.type as 'TEXT' | 'IMAGE',
+          content: block.type === 'TEXT' ? (block.content ?? null) : null,
+          sort_order: block.sort_order,
+        })),
+      },
     },
     select: postDetailSelect,
   });
@@ -513,17 +604,32 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
   }
 
   // Prepare update data
-  const updated_ata: Record<string, any> = {};
+  const updateData: Record<string, any> = {};
 
   if (data.title) {
-    updated_ata.title = data.title;
-    updated_ata.slug = await generateUniqueSlug(data.title);
+    updateData.title = data.title;
+    updateData.slug = await generateUniqueSlug(data.title);
   }
 
-  if (data.content) {
-    updated_ata.content = data.content;
-    updated_ata.excerpt = generateExcerpt(data.content);
+  // Validate blocks if provided
+  const hasBlocks = data.blocks !== undefined && data.blocks.length > 0;
+  if (hasBlocks && data.blocks) {
+    validateBlocks(data.blocks);
   }
+
+  if (data.content !== undefined) {
+    updateData.content = data.content;
+    // Update excerpt from first text block if provided, otherwise use content
+    if (hasBlocks && data.blocks) {
+      const firstTextBlock = data.blocks.find((b) => b.type === 'TEXT');
+      updateData.excerpt = generateExcerpt(firstTextBlock?.content || '');
+    } else {
+      updateData.excerpt = generateExcerpt(data.content);
+    }
+  }
+
+  // Always keep block layout enabled
+  updateData.use_block_layout = true;
 
   if (data.category_id && data.category_id !== post.category_id) {
     // Verify new category exists
@@ -535,7 +641,7 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
       throw new BadRequestError('Category not found');
     }
 
-    updated_ata.categories = { connect: { id: data.category_id } };
+    updateData.categories = { connect: { id: data.category_id } };
 
     // Update category counts
     await prisma.categories.update({
@@ -580,9 +686,39 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
     }
   }
 
+  // Handle blocks update: replace all blocks for the post
+  if (data.blocks !== undefined) {
+    // Delete all existing blocks (cascades post_media block_id to NULL via SetNull)
+    await prisma.post_blocks.deleteMany({ where: { post_id: id } });
+
+    // Create new blocks
+    if (data.blocks.length > 0) {
+      for (const block of data.blocks) {
+        const created = await prisma.post_blocks.create({
+          data: {
+            post_id: id,
+            type: block.type as 'TEXT' | 'IMAGE',
+            content: block.type === 'TEXT' ? (block.content ?? null) : null,
+            sort_order: block.sort_order,
+          },
+        });
+        // Re-associate existing media IDs with this block (for IMAGE blocks in edit mode)
+        if (block.type === 'IMAGE' && block.mediaIds && block.mediaIds.length > 0) {
+          await prisma.post_media.updateMany({
+            where: {
+              id: { in: block.mediaIds },
+              post_id: id, // security: only allow media belonging to this post
+            },
+            data: { block_id: created.id },
+          });
+        }
+      }
+    }
+  }
+
   const updatedPost = await prisma.posts.update({
     where: { id },
-    data: updated_ata,
+    data: updateData,
     select: postDetailSelect,
   });
 
@@ -642,6 +778,9 @@ export async function deletePost(id: number, userId: number, userRole: string) {
   if (!isOwner && !isModOrAdmin) {
     throw new ForbiddenError('You do not have permission to delete this post');
   }
+
+  // Delete all ImageKit files and post_media records before soft-deleting the post
+  await deleteAllPostMedia(id);
 
   // Soft delete - change status to DELETED
   await prisma.posts.update({

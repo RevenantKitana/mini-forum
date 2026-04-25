@@ -9,11 +9,14 @@ import { VoteButtons } from '@/components/common/VoteButtons';
 import { BookmarkButton } from '@/components/common/BookmarkButton';
 import { CategoryColorIcon } from '@/components/common/CategoryColorIcon';
 import { VoteScore } from '@/components/common/VoteScore';
-import { MessageSquare, Eye, Pin, Lock, Shield } from 'lucide-react';
+import { ImagePreviewModal } from '@/components/common/ImagePreviewModal';
+import { AvatarPreviewModal } from '@/components/common/AvatarPreviewModal';
+import { MessageSquare, Eye, Pin, Lock, Shield, ImageIcon } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 import { trackPostInteraction } from '@/utils/analytics';
+import { getAvatarUrl, getPostMediaUrl } from '@/utils/imageHelpers';
 
 /**
  * Decode HTML entities recursively to handle double-encoding
@@ -48,7 +51,16 @@ interface PostCardProps {
 export function PostCard({ post }: PostCardProps) {
   const voteScore = post.upvote_count - post.downvote_count;
   const authorDisplayName = post.author?.display_name || post.author?.username || 'Unknown';
-  const authorAvatar = post.author?.avatar_url;
+  const authorAvatar = getAvatarUrl(post.author, 'preview');
+  
+  // Phase 1 UC-01: State for image preview modal (mobile click handler)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  
+  // Phase 2 UC-02: State for avatar preview modal
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  
+  // Phase 1 UC-01: State for desktop tooltip image preview (up to 3 images per spec)
+  const [showImageTooltip, setShowImageTooltip] = useState(false);
   
   // Determine author badge based on role
   const getAuthorBadge = () => {
@@ -190,10 +202,17 @@ export function PostCard({ post }: PostCardProps) {
               to={`/users/${post.author.username}`}
               className="flex items-center gap-1.5 hover:text-foreground transition-colors group/author flex-shrink-0 min-w-0 max-w-[50%]"
             >
-              <Avatar className="h-5 w-5 sm:h-5 sm:w-5 flex-shrink-0 transition-transform duration-200 group-hover/author:scale-110">
-                <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                <AvatarFallback className="text-[10px]">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsAvatarModalOpen(true); }}
+                className="flex-shrink-0 rounded-full ring-1 ring-transparent hover:ring-primary transition-all duration-200"
+                aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+              >
+                <Avatar className="h-5 w-5 sm:h-5 sm:w-5 transition-transform duration-200 group-hover/author:scale-110">
+                  <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
+                  <AvatarFallback className="text-[10px]">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </button>
               {isAuthorNameTruncated ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -237,11 +256,66 @@ export function PostCard({ post }: PostCardProps) {
       </CardHeader>
 
       <CardContent className="pb-1.5 sm:pb-2 flex-1 space-y-1 sm:space-y-1.5 border-b">
-        {/* Excerpt */}
-        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 whitespace-pre-line leading-relaxed">
-          {decodedExcerpt}
-        </p>
+        {/* Excerpt with media indicator - Phase 1 UC-01 */}
+        <div className="flex gap-2 sm:gap-3 items-start justify-between">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3 whitespace-pre-line leading-relaxed flex-1">
+            {decodedExcerpt}
+          </p>
+
+          {/* Phase 1 UC-01: Image icon + count badge (instead of thumbnail) */}
+          {(post.mediaCount || 0) > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsImageModalOpen(true)}
+                  onMouseEnter={() => setShowImageTooltip(true)}
+                  onMouseLeave={() => setShowImageTooltip(false)}
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-md bg-muted hover:bg-primary/10 transition-colors cursor-pointer group"
+                  aria-label={`${post.mediaCount} image(s) in this post`}
+                >
+                  <ImageIcon className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-medium text-foreground">{post.mediaCount}</span>
+                </button>
+              </TooltipTrigger>
+              {showImageTooltip && post.media && post.media.length > 0 && (
+                <TooltipContent side="left" className="p-2">
+                  <div className="flex flex-nowrap gap-2 items-center justify-start">
+                    {post.media.slice(0, 3).map((img) => {
+                      const url = getPostMediaUrl(img, 'standard');
+                      return url ? (
+                        <img
+                          key={img.id}
+                          src={url}
+                          alt=""
+                          className="block h-32 w-auto flex-shrink-0 rounded"
+                          loading="lazy"
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          )}
+        </div>
       </CardContent>
+
+      {/* Phase 1 UC-01: Image Preview Modal for mobile/click */}
+      <ImagePreviewModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        images={post.media || []}
+        postTitle={post.title}
+      />
+
+      {/* Phase 2 UC-02: Avatar Preview Modal */}
+      {post.author && (
+        <AvatarPreviewModal
+          isOpen={isAvatarModalOpen}
+          onClose={() => setIsAvatarModalOpen(false)}
+          user={post.author}
+        />
+      )}
 
       {/* Footer Stats & Actions */}
       <CardFooter className="pb-1 sm:pb-1.5 pt-1 sm:pt-1.5 flex items-center justify-between gap-1 sm:gap-1.5 flex-wrap">

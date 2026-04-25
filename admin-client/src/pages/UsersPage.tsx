@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminService, AdminUser } from '@/api/services/adminService';
+import { getAvatarUrl } from '@/utils/imageHelpers';
 import {
   Table,
   TableBody,
@@ -240,7 +241,7 @@ export function UsersPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar_url || undefined} />
+                        <AvatarImage src={getAvatarUrl(user, 'preview') || undefined} />
                         <AvatarFallback>
                           {user.username[0]?.toUpperCase()}
                         </AvatarFallback>

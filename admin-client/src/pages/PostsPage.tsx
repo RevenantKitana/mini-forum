@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { formatDate, truncateText, decodeHtmlEntities } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function PostsPage() {
   const [posts, setPosts] = useState<AdminPost[]>([]);
@@ -507,9 +508,72 @@ export function PostsPage() {
                 <span>{previewPost.upvote_count} upvote</span>
                 <span>{previewPost.comment_count} bình luận</span>
               </div>
-              {previewPost.content && (
+              {/* Block layout info */}
+              <div className="flex items-center gap-2 flex-wrap text-sm">
+                {previewPost.use_block_layout ? (
+                  <Badge variant="secondary" className="gap-1 bg-blue-500/10 text-blue-600 border-blue-200">
+                    Block Layout
+                    {previewPost.blocks && previewPost.blocks.length > 0 && (
+                      <span className="font-normal">
+                        · {previewPost.blocks.filter(b => b.type === 'TEXT').length} văn bản
+                        / {previewPost.blocks.filter(b => b.type === 'IMAGE').length} hình ảnh
+                      </span>
+                    )}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="gap-1 text-muted-foreground">
+                    Classic Layout
+                    {previewPost.mediaCount != null && previewPost.mediaCount > 0 && (
+                      <span className="font-normal">· {previewPost.mediaCount} ảnh</span>
+                    )}
+                  </Badge>
+                )}
+              </div>
+              {previewPost.content && !previewPost.use_block_layout && (
                 <div className="prose prose-sm dark:prose-invert max-w-none border-t pt-4">
                   <div dangerouslySetInnerHTML={{ __html: previewPost.content.substring(0, 2000) }} />
+                </div>
+              )}
+              {previewPost.use_block_layout && previewPost.blocks && previewPost.blocks.length > 0 && (
+                <div className="space-y-3 border-t pt-4">
+                  {[...previewPost.blocks]
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((block, idx) => (
+                      <div key={block.id} className="rounded border bg-muted/30 p-2 text-sm">
+                        <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground">
+                          <span className="font-medium">{block.type === 'TEXT' ? '📝 Văn bản' : '🖼️ Hình ảnh'}</span>
+                          <span>Block {idx + 1}</span>
+                        </div>
+                        {block.type === 'TEXT' && block.content && (
+                          <p className="text-xs text-foreground line-clamp-3 whitespace-pre-wrap">
+                            {block.content.substring(0, 300)}{block.content.length > 300 ? '…' : ''}
+                          </p>
+                        )}
+                        {block.type === 'IMAGE' && block.media && block.media.length > 0 && (
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            {block.media.map((m) => (
+                              <Tooltip key={m.id}>
+                                <TooltipTrigger asChild>
+                                  <img
+                                    src={m.preview_url}
+                                    alt=""
+                                    className="h-14 w-14 object-cover rounded border cursor-pointer"
+                                    loading="lazy"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="p-1">
+                                  <img
+                                    src={m.standard_url}
+                                    alt=""
+                                    className="max-h-48 max-w-xs rounded object-contain"
+                                  />
+                                </TooltipContent>
+                              </Tooltip>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                 </div>
               )}
               <div className="flex gap-2 border-t pt-4">

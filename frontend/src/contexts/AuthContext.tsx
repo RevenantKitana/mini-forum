@@ -11,7 +11,8 @@ export interface User {
   display_name: string | null;
   email: string;
   avatar?: string;
-  avatar_url?: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: string;
   bio?: string | null;
   date_of_birth?: string | null;
@@ -47,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     username: apiUser.username,
     display_name: apiUser.display_name,
     email: apiUser.email,
-    avatar_url: apiUser.avatar_url,
+    avatar_preview_url: apiUser.avatar_preview_url,
+    avatar_standard_url: apiUser.avatar_standard_url,
     bio: apiUser.bio,
     date_of_birth: apiUser.date_of_birth,
     gender: apiUser.gender,

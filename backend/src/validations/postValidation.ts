@@ -1,6 +1,17 @@
 import { z } from 'zod';
 
 /**
+ * Block input schema (used in create/update post with block layout)
+ */
+export const postBlockInputSchema = z.object({
+  type: z.enum(['TEXT', 'IMAGE']),
+  content: z.string().max(10000).optional(),
+  sort_order: z.number().int().nonnegative(),
+  // For IMAGE blocks in update: existing media IDs to re-associate with this block
+  mediaIds: z.array(z.number().int().positive()).optional(),
+});
+
+/**
  * Create post request schema
  */
 export const createPostSchema = z.object({
@@ -10,8 +21,10 @@ export const createPostSchema = z.object({
     .max(200, 'Title must be at most 200 characters'),
   content: z
     .string()
-    .min(20, 'Content must be at least 20 characters')
-    .max(50000, 'Content must be at most 50000 characters'),
+    .min(0)
+    .max(50000, 'Content must be at most 50000 characters')
+    .optional()
+    .default(''),
   category_id: z
     .number()
     .int()
@@ -25,6 +38,8 @@ export const createPostSchema = z.object({
     .enum(['DRAFT', 'PUBLISHED'])
     .optional()
     .default('PUBLISHED'),
+  use_block_layout: z.boolean().optional().default(true),
+  blocks: z.array(postBlockInputSchema).max(50).optional().default([]),
 });
 
 /**
@@ -38,7 +53,7 @@ export const updatePostSchema = z.object({
     .optional(),
   content: z
     .string()
-    .min(20, 'Content must be at least 20 characters')
+    .min(0)
     .max(50000, 'Content must be at most 50000 characters')
     .optional(),
   category_id: z
@@ -50,6 +65,8 @@ export const updatePostSchema = z.object({
     .array(z.string().max(50))
     .max(10, 'Maximum 10 tags allowed')
     .optional(),
+  use_block_layout: z.boolean().optional(),
+  blocks: z.array(postBlockInputSchema).max(50).optional(),
 });
 
 /**
@@ -77,6 +94,7 @@ export const listPostsQuerySchema = z.object({
 });
 
 // Export types
+export type PostBlockInput = z.infer<typeof postBlockInputSchema>;
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
 export type UpdatePostStatusInput = z.infer<typeof updatePostStatusSchema>;

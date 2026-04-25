@@ -14,12 +14,21 @@ import {
   DialogDescription,
 } from '@/app/components/ui/dialog';
 import { Button } from '@/app/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
 import { Pin, Eye, MessageSquare, ArrowUpRight, ChevronRight, TrendingUp, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { decodeHtmlEntities } from '@/lib/utils';
 
 function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?: number; onClick?: (e: React.MouseEvent) => void }) {
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const hasImage = post.media && post.media.length > 0;
+
+  const handleMouseEnter = () => {
+    if (hasImage) setPreviewImageUrl(post.media[0].preview_url);
+  };
+  const handleMouseLeave = () => setPreviewImageUrl(null);
+
   const content = (
     <div className="flex items-start gap-2">
       {showOrder !== undefined ? (
@@ -57,24 +66,43 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
   );
 
   // If onClick is provided (for pinned posts), use a button instead of a link
-  if (onClick) {
-    return (
-      <button
-        className="block w-full text-left p-3 hover:bg-muted/50 transition-all duration-200 group hover:translate-x-0.5"
-        onClick={onClick}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return (
+  const item = onClick ? (
+    <button
+      className="block w-full text-left p-3 hover:bg-muted/50 transition-all duration-200 group hover:translate-x-0.5"
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {content}
+    </button>
+  ) : (
     <Link
       to={`/posts/${post.id}`}
       className="block p-3 hover:bg-muted/50 transition-all duration-200 group hover:translate-x-0.5"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {content}
     </Link>
+  );
+
+  if (!hasImage) return item;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {item}
+      </TooltipTrigger>
+      {previewImageUrl && (
+        <TooltipContent side="left" className="p-1">
+          <img
+            src={previewImageUrl}
+            alt="Post image preview"
+            className="max-h-48 max-w-xs rounded object-contain"
+          />
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }
 

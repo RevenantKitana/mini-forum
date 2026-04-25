@@ -49,7 +49,8 @@ export async function getUserBookmarks(userId: number, page = 1, limit = 10, use
                 id: true,
                 username: true,
                 display_name: true,
-                avatar_url: true,
+                avatar_preview_url: true,
+                avatar_standard_url: true,
               },
             },
             categories: {

@@ -6,9 +6,12 @@ import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCategories } from '@/hooks/useCategories';
 import { useTags, usePopularTagsForCategory } from '@/hooks/useTags';
-import { useCreatePost, useUpdatePost, usePost } from '@/hooks/usePosts';
+import { useCreatePost, useUpdatePost, usePost, useUploadPostMedia, useDeletePostMedia, useReorderPostMedia } from '@/hooks/usePosts';
 import { Category } from '@/api/services/categoryService';
 import { Tag } from '@/api/services/tagService';
+import { MediaUploadZone, MediaZoneItem } from '@/components/post/MediaUploadZone';
+import { BlockEditor, EditorBlock, EditorImageBlock } from '@/components/post/BlockEditor';
+import { PostBlock } from '@/api/services/postService';
 import {
   Dialog,
   DialogContent,
@@ -34,8 +37,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/app/components/ui/badge';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
 import { Skeleton } from '@/app/components/ui/skeleton';
+import { Switch } from '@/app/components/ui/switch';
 import { toast } from 'sonner';
-import { X, Plus, Loader2, Save, Send, TrendingUp, Trash2, PenSquare, Edit2, AlertTriangle } from 'lucide-react';
+import { X, Plus, Loader2, Save, Send, TrendingUp, Trash2, PenSquare, Edit2, AlertTriangle, LayoutList } from 'lucide-react';
 import { MarkdownGuide } from '@/components/common/MarkdownGuide';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +57,7 @@ interface DraftData {
 
 const postSchema = z.object({
   title: z.string().min(10, 'Tiêu đề tối thiểu 10 ký tự').max(200, 'Tiêu đề tối đa 200 ký tự'),
-  content: z.string().min(50, 'Nội dung tối thiểu 50 ký tự').max(10000, 'Nội dung tối đa 10000 ký tự'),
+  content: z.string().max(10000, 'Nội dung tối đa 10000 ký tự').default(''),
   categoryId: z.string().min(1, 'Vui lòng chọn danh mục'),
 });
 
@@ -94,11 +98,21 @@ export function PostFormDialog({
   const [pendingSubmitData, setPendingSubmitData] = useState<PostFormData | null>(null);
   // Track restricted tags that user tried to add
   const [restrictedTagWarnings, setRestrictedTagWarnings] = useState<string[]>([]);
+  // Media items (Phase 6)
+  const [mediaItems, setMediaItems] = useState<MediaZoneItem[]>([]);
+  // Track initial existing media IDs for reorder detection (edit mode)
+  const [initialExistingIds, setInitialExistingIds] = useState<number[]>([]);
+  // Phase 3: Block layout
+  const [useBlockLayout, setUseBlockLayout] = useState(false);
+  const [blockEditorBlocks, setBlockEditorBlocks] = useState<EditorBlock[]>([]);
 
   const { data: categories = [] } = useCategories();
   const { data: availableTags = [] } = useTags();
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
+  const uploadMediaMutation = useUploadPostMedia();
+  const deleteMediaMutation = useDeletePostMedia();
+  const reorderMediaMutation = useReorderPostMedia();
   const { data: post, isLoading: postLoading } = usePost(
     mode === 'edit' && postId ? postId : undefined
   );
@@ -225,7 +239,7 @@ export function PostFormDialog({
     
     reset({
       title: post.title,
-      content: post.content,
+      content: post.content || '',
       categoryId: String(post.category_id),
     });
     // Set tags
@@ -241,6 +255,49 @@ export function PostFormDialog({
       });
       setSelectedTags([]);
       setCustomTags(deduplicatedTagNames);
+    }
+
+    // Phase 3: Load block layout
+    if (post.use_block_layout && post.blocks && post.blocks.length > 0) {
+      setUseBlockLayout(true);
+      const loaded: EditorBlock[] = [...post.blocks]
+        .sort((a: PostBlock, b: PostBlock) => a.sort_order - b.sort_order)
+        .map((block: PostBlock) => {
+          if (block.type === 'TEXT') {
+            return {
+              key: `edit-${block.id}`,
+              type: 'TEXT' as const,
+              content: block.content ?? '',
+              blockId: block.id,
+            };
+          } else {
+            return {
+              key: `edit-${block.id}`,
+              type: 'IMAGE' as const,
+              blockId: block.id,
+              mediaItems: (block.media || []).map((m) => ({
+                kind: 'existing' as const,
+                id: m.id,
+                previewUrl: m.preview_url,
+              })),
+            };
+          }
+        });
+      setBlockEditorBlocks(loaded);
+    } else {
+      setUseBlockLayout(false);
+      setBlockEditorBlocks([]);
+      // Load existing media (Phase 6 — classic layout)
+      if (post.media) {
+        const sorted = [...post.media].sort((a, b) => a.sort_order - b.sort_order);
+        const items: MediaZoneItem[] = sorted.map((m) => ({
+          kind: 'existing',
+          id: m.id,
+          previewUrl: m.preview_url,
+        }));
+        setMediaItems(items);
+        setInitialExistingIds(sorted.map((m) => m.id));
+      }
     }
   }, [mode, isOpen, post, reset]);
 
@@ -267,6 +324,14 @@ export function PostFormDialog({
     setSelectedTags([]);
     setCustomTags([]);
     setTagInput('');
+    // Revoke object URLs for new media items to avoid memory leaks
+    mediaItems.forEach((item) => {
+      if (item.kind === 'new') URL.revokeObjectURL(item.previewUrl);
+    });
+    setMediaItems([]);
+    setInitialExistingIds([]);
+    setUseBlockLayout(false);
+    setBlockEditorBlocks([]);
   };
 
   // Handle dialog close attempt (create mode)
@@ -313,6 +378,12 @@ export function PostFormDialog({
   };
 
   const onSubmit = (data: PostFormData) => {
+    // Manual validation for non-block layout
+    if (!useBlockLayout && data.content.trim().length < 50) {
+      toast.error('Nội dung tối thiểu 50 ký tự');
+      return;
+    }
+
     if (mode === 'create') {
       const selectedTagNames = getSelectedTagNames();
       const allTagNames = [...selectedTagNames, ...customTags];
@@ -340,16 +411,63 @@ export function PostFormDialog({
   };
 
   const submitCreatePost = (data: PostFormData, allTagNames: string[]) => {
+    // Build blocks input for block layout
+    const blocksInput = useBlockLayout
+      ? blockEditorBlocks.map((b, idx) => ({
+          type: b.type,
+          content: b.type === 'TEXT' ? b.content : undefined,
+          sort_order: idx,
+        }))
+      : undefined;
+
     createPostMutation.mutate(
       {
         title: data.title,
-        content: data.content,
+        content: useBlockLayout ? '' : data.content,
         category_id: parseInt(data.categoryId),
         tags: allTagNames,
         status: 'PUBLISHED',
+        use_block_layout: useBlockLayout,
+        blocks: blocksInput,
       },
       {
-        onSuccess: () => {
+        onSuccess: async (createdPost) => {
+          if (useBlockLayout) {
+            // Upload images for each IMAGE block
+            const createdBlocks = createdPost.blocks || [];
+            for (let i = 0; i < blockEditorBlocks.length; i++) {
+              const editorBlock = blockEditorBlocks[i];
+              if (editorBlock.type === 'IMAGE') {
+                const createdBlock = createdBlocks.find((cb) => cb.sort_order === i);
+                const newFiles = (editorBlock as EditorImageBlock).mediaItems
+                  .filter((item): item is Extract<MediaZoneItem, { kind: 'new' }> => item.kind === 'new')
+                  .map((item) => item.file);
+                if (newFiles.length > 0 && createdBlock) {
+                  try {
+                    await uploadMediaMutation.mutateAsync({
+                      postId: createdPost.id,
+                      files: newFiles,
+                      blockId: createdBlock.id,
+                    });
+                  } catch {
+                    // non-fatal
+                  }
+                }
+              }
+            }
+          } else {
+            // Classic layout: upload media after post is created
+            const newFiles = mediaItems
+              .filter((item): item is Extract<MediaZoneItem, { kind: 'new' }> => item.kind === 'new')
+              .map((item) => item.file);
+            if (newFiles.length > 0) {
+              try {
+                await uploadMediaMutation.mutateAsync({ postId: createdPost.id, files: newFiles });
+              } catch {
+                // Media upload failure is non-fatal — post was created successfully
+              }
+            }
+          }
           clearDraft();
           resetForm();
           setInternalOpen(false);
@@ -362,27 +480,88 @@ export function PostFormDialog({
     );
   };
 
-  const submitEditPost = (data: PostFormData) => {
+  const submitEditPost = async (data: PostFormData) => {
     if (!postId) return;
-      
-    updatePostMutation.mutate(
-      {
-        id: postId,
-        data: {
-          title: data.title,
-          content: data.content,
-        },
-      },
-      {
-        onSuccess: () => {
-          onOpenChange?.(false);
-          onSuccess?.();
-        },
-        onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
-        },
+
+    try {
+      if (useBlockLayout) {
+        // Block layout update
+        const blocksInput = blockEditorBlocks.map((b, idx) => ({
+          type: b.type,
+          content: b.type === 'TEXT' ? b.content : undefined,
+          sort_order: idx,
+          // For IMAGE blocks: pass existing media IDs for re-association
+          mediaIds: b.type === 'IMAGE'
+            ? (b as EditorImageBlock).mediaItems
+                .filter((item): item is Extract<MediaZoneItem, { kind: 'existing' }> => item.kind === 'existing')
+                .map((item) => item.id)
+            : undefined,
+        }));
+
+        const updatedPost = await updatePostMutation.mutateAsync({
+          id: postId,
+          data: {
+            title: data.title,
+            content: '',
+            use_block_layout: true,
+            blocks: blocksInput,
+          },
+        });
+
+        // Upload new images for IMAGE blocks
+        const updatedBlocks = updatedPost.blocks || [];
+        for (let i = 0; i < blockEditorBlocks.length; i++) {
+          const editorBlock = blockEditorBlocks[i];
+          if (editorBlock.type === 'IMAGE') {
+            const updatedBlock = updatedBlocks.find((cb) => cb.sort_order === i);
+            const newFiles = (editorBlock as EditorImageBlock).mediaItems
+              .filter((item): item is Extract<MediaZoneItem, { kind: 'new' }> => item.kind === 'new')
+              .map((item) => item.file);
+            if (newFiles.length > 0 && updatedBlock) {
+              await uploadMediaMutation.mutateAsync({
+                postId,
+                files: newFiles,
+                blockId: updatedBlock.id,
+              });
+            }
+          }
+        }
+      } else {
+        // Classic layout update
+        await updatePostMutation.mutateAsync({
+          id: postId,
+          data: {
+            title: data.title,
+            content: data.content,
+            use_block_layout: false,
+          },
+        });
+
+        // Upload new media files
+        const newFiles = mediaItems
+          .filter((item): item is Extract<MediaZoneItem, { kind: 'new' }> => item.kind === 'new')
+          .map((item) => item.file);
+        if (newFiles.length > 0) {
+          await uploadMediaMutation.mutateAsync({ postId, files: newFiles });
+        }
+
+        // Reorder if existing media order changed
+        const currentExistingIds = mediaItems
+          .filter((item): item is Extract<MediaZoneItem, { kind: 'existing' }> => item.kind === 'existing')
+          .map((item) => item.id);
+        if (
+          currentExistingIds.length > 0 &&
+          JSON.stringify(currentExistingIds) !== JSON.stringify(initialExistingIds)
+        ) {
+          await reorderMediaMutation.mutateAsync({ postId, orderedIds: currentExistingIds });
+        }
       }
-    );
+
+      onOpenChange?.(false);
+      onSuccess?.();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    }
   };
 
   const toggleTag = (tagId: number) => {
@@ -507,7 +686,10 @@ export function PostFormDialog({
   const isLoading = mode === 'edit' && postLoading;
   const isEditing = mode === 'edit' && !isLoading;
   const categoryName = isEditing ? categories.find((c: any) => c.id === post?.category_id)?.name : '';
-  const isMutating = mode === 'create' ? createPostMutation.isPending : updatePostMutation.isPending;
+  const isMutating =
+    mode === 'create'
+      ? createPostMutation.isPending || uploadMediaMutation.isPending
+      : updatePostMutation.isPending || uploadMediaMutation.isPending || reorderMediaMutation.isPending;
 
   return (
     <>
@@ -615,23 +797,81 @@ export function PostFormDialog({
                   )}
                 </div>
 
-                {/* Content */}
+                {/* Content / Block Editor */}
+                {!useBlockLayout ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="content">Nội dung</Label>
+                      <MarkdownGuide variant="inline" />
+                    </div>
+                    <Textarea
+                      id="content"
+                      placeholder="Viết nội dung bài viết của bạn... (Hỗ trợ Markdown)"
+                      rows={10}
+                      {...register('content')}
+                      className="resize-none"
+                    />
+                    {errors.content && (
+                      <p className="text-sm text-destructive">{errors.content.message}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Nội dung (Bố cục block)</Label>
+                    <BlockEditor
+                      value={blockEditorBlocks}
+                      onChange={setBlockEditorBlocks}
+                      disabled={isMutating}
+                    />
+                  </div>
+                )}
+
+                {/* Block layout toggle */}
+                <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/20">
+                  <LayoutList className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Bố cục block</p>
+                    <p className="text-xs text-muted-foreground">
+                      Xen kẽ block văn bản và block hình ảnh cuộn ngang
+                    </p>
+                  </div>
+                  <Switch
+                    checked={useBlockLayout}
+                    onCheckedChange={(v) => {
+                      setUseBlockLayout(v);
+                      if (!v) setBlockEditorBlocks([]);
+                    }}
+                    disabled={isMutating}
+                  />
+                </div>
+
+                {/* Media upload — only in classic layout */}
+                {!useBlockLayout && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="content">Nội dung</Label>
-                    <MarkdownGuide variant="inline" />
+                    <Label>
+                      Ảnh đính kèm{' '}
+                      <span className="text-muted-foreground font-normal">(Tùy chọn, tối đa 10)</span>
+                    </Label>
+                    {mediaItems.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {mediaItems.length}/10
+                      </span>
+                    )}
                   </div>
-                  <Textarea
-                    id="content"
-                    placeholder="Viết nội dung bài viết của bạn... (Hỗ trợ Markdown)"
-                    rows={10}
-                    {...register('content')}
-                    className="resize-none"
+                  <MediaUploadZone
+                    items={mediaItems}
+                    onItemsChange={setMediaItems}
+                    onDeleteExisting={(id) => {
+                      if (postId) {
+                        deleteMediaMutation.mutate({ postId, mediaId: id });
+                      }
+                    }}
+                    maxTotal={10}
+                    disabled={isMutating}
                   />
-                  {errors.content && (
-                    <p className="text-sm text-destructive">{errors.content.message}</p>
-                  )}
                 </div>
+                )}
 
                 {/* Tags - Only for Create Mode */}
                 {mode === 'create' && (

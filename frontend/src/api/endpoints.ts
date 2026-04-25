@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `/users/${id}`,
     BY_USERNAME: (username: string) => `/users/username/${username}`,
     PROFILE: '/users/profile',
+    AVATAR_UPLOAD: (id: string | number) => `/users/${id}/avatar/upload`,
   },
   
   // Posts
@@ -32,6 +33,9 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `/posts/${id}`,
     BY_USER: (userId: string | number) => `/users/${userId}/posts`,
     RELATED: (id: string | number) => `/posts/${id}/related`,
+    MEDIA: (postId: string | number) => `/posts/${postId}/media`,
+    MEDIA_BY_ID: (postId: string | number, mediaId: string | number) => `/posts/${postId}/media/${mediaId}`,
+    MEDIA_REORDER: (postId: string | number) => `/posts/${postId}/media/reorder`,
   },
   
   // Comments

@@ -21,7 +21,8 @@ export interface AuthUser {
   email: string;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
+  avatar_preview_url: string | null;
+  avatar_standard_url: string | null;
   bio: string | null;
   date_of_birth: Date | null;
   gender: string | null;
@@ -85,7 +86,8 @@ export async function register(data: RegisterInput & { registrationToken?: strin
       email: true,
       username: true,
       display_name: true,
-      avatar_url: true,
+      avatar_preview_url: true,
+      avatar_standard_url: true,
       bio: true,
       date_of_birth: true,
       gender: true,
@@ -206,7 +208,8 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     email: user.email,
     username: user.username,
     display_name: user.display_name,
-    avatar_url: user.avatar_url,
+    avatar_preview_url: user.avatar_preview_url,
+    avatar_standard_url: user.avatar_standard_url,
     bio: user.bio,
     date_of_birth: user.date_of_birth,
     gender: user.gender,
@@ -306,7 +309,8 @@ export async function getCurrentUser(userId: number): Promise<AuthUser> {
       email: true,
       username: true,
       display_name: true,
-      avatar_url: true,
+      avatar_preview_url: true,
+      avatar_standard_url: true,
       bio: true,
       date_of_birth: true,
       gender: true,
@@ -322,7 +326,7 @@ export async function getCurrentUser(userId: number): Promise<AuthUser> {
     throw new NotFoundError('User not found');
   }
 
-  return user;
+  return user as AuthUser;
 }
 
 /**

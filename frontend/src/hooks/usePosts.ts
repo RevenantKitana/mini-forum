@@ -202,4 +202,48 @@ export function useTogglePostLock() {
   });
 }
 
+/**
+ * Hook to upload media files to a post (UC-02, UC-03)
+ */
+export function useUploadPostMedia() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, files, blockId }: { postId: number | string; files: File[]; blockId?: number }) =>
+      postService.uploadMedia(postId, files, blockId),
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to delete a single post media item (UC-03)
+ */
+export function useDeletePostMedia() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, mediaId }: { postId: number | string; mediaId: number }) =>
+      postService.deleteMedia(postId, mediaId),
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to reorder post media items (UC-03)
+ */
+export function useReorderPostMedia() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, orderedIds }: { postId: number | string; orderedIds: number[] }) =>
+      postService.reorderMedia(postId, orderedIds),
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
+    },
+  });
+}
+
 export type { Post, CreatePostData, UpdatePostData, PostsQueryParams, PaginatedResponse };

@@ -7,10 +7,6 @@
     {
       "name": "admin-client",
       "rootDirectory": "admin-client"
-    },
-    {
-      "name": "backend",
-      "rootDirectory": "backend"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService.js';
+import * as imagekitService from '../services/imagekitService.js';
 import { sendSuccess, sendPaginated } from '../utils/response.js';
 import { UpdateProfileInput, ChangeUsernameInput, ChangePasswordInput, userContentQuerySchema } from '../validations/userValidation.js';
 import { AuthRequest } from '../middlewares/authMiddleware.js';
@@ -105,13 +106,14 @@ export async function changePassword(req: AuthRequest, res: Response, next: Next
 }
 
 /**
- * PATCH /api/v1/users/:id/avatar
- * Update avatar URL
+ * POST /api/v1/users/:id/avatar/upload
+ * Upload a new avatar image (multipart/form-data, field name: "file").
+ * Replaces the previous ImageKit file and updates avatar_preview_url / avatar_standard_url.
  */
-export async function updateAvatar(req: AuthRequest, res: Response, next: NextFunction) {
+export async function uploadAvatar(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const id = parseInt(req.params.id as string, 10);
-    
+
     if (id !== req.user!.userId) {
       return res.status(403).json({
         success: false,
@@ -119,16 +121,39 @@ export async function updateAvatar(req: AuthRequest, res: Response, next: NextFu
       });
     }
 
-    const { avatar_url } = req.body;
-    if (!avatar_url) {
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Avatar URL is required',
+        message: 'No file uploaded. Send an image via multipart/form-data with field name "file".',
       });
     }
 
-    const user = await userService.updateAvatar(id, avatar_url);
-    return sendSuccess(res, user, 'Avatar updated successfully');
+    // Fetch existing fileId so we can delete it after the new upload succeeds
+    const oldFileId = await userService.getAvatarImagekitFileId(id);
+
+    // Upload to ImageKit
+    const fileName = `avatar_${id}_${Date.now()}`;
+    const uploaded = await imagekitService.uploadImage(req.file.buffer, fileName, '/avatars');
+
+    // Build transformed CDN URLs
+    const avatar_preview_url = imagekitService.getTransformedUrl(uploaded.filePath, 'preview');
+    const avatar_standard_url = imagekitService.getTransformedUrl(uploaded.filePath, 'standard');
+
+    // Persist to DB
+    const user = await userService.uploadAvatarToImageKit(id, {
+      avatar_imagekit_file_id: uploaded.fileId,
+      avatar_preview_url,
+      avatar_standard_url,
+    });
+
+    // Delete old ImageKit file (non-blocking; failure should not roll back the update)
+    if (oldFileId) {
+      imagekitService.deleteImage(oldFileId).catch((err: unknown) => {
+        console.warn(`[uploadAvatar] Failed to delete old ImageKit file ${oldFileId}:`, err);
+      });
+    }
+
+    return sendSuccess(res, user, 'Avatar uploaded successfully');
   } catch (error) {
     next(error);
   }

@@ -6,7 +6,8 @@ export interface CommentAuthor {
   id: number;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: string;
   reputation: number;
 }

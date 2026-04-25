@@ -111,35 +111,67 @@ model post_tags {
 }
 
 model posts {
-  id             Int         @id @default(autoincrement())
-  title          String
-  slug           String      @unique
-  content        String
-  excerpt        String?
-  author_id      Int
-  category_id    Int
-  view_count     Int         @default(0)
-  upvote_count   Int         @default(0)
-  downvote_count Int         @default(0)
-  comment_count  Int         @default(0)
-  status         PostStatus  @default(PUBLISHED)
-  is_pinned      Boolean     @default(false)
-  pin_type       PinType?
-  pin_order      Int         @default(0)
-  is_locked      Boolean     @default(false)
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
-  bookmarks      bookmarks[]
-  comments       comments[]
-  post_tags      post_tags[]
-  users          users       @relation(fields: [author_id], references: [id])
-  categories     categories  @relation(fields: [category_id], references: [id])
+  id               Int           @id @default(autoincrement())
+  title            String
+  slug             String        @unique
+  content          String
+  excerpt          String?
+  author_id        Int
+  category_id      Int
+  view_count       Int           @default(0)
+  upvote_count     Int           @default(0)
+  downvote_count   Int           @default(0)
+  comment_count    Int           @default(0)
+  status           PostStatus    @default(PUBLISHED)
+  is_pinned        Boolean       @default(false)
+  pin_type         PinType?
+  pin_order        Int           @default(0)
+  is_locked        Boolean       @default(false)
+  use_block_layout Boolean       @default(false)
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  bookmarks        bookmarks[]
+  comments         comments[]
+  post_media       post_media[]
+  post_blocks      post_blocks[]
+  post_tags        post_tags[]
+  users            users         @relation(fields: [author_id], references: [id])
+  categories       categories    @relation(fields: [category_id], references: [id])
 
   @@index([author_id])
   @@index([category_id])
   @@index([created_at])
   @@index([is_pinned, pin_order])
   @@index([status])
+}
+
+model post_blocks {
+  id         Int       @id @default(autoincrement())
+  post_id    Int
+  type       BlockType
+  content    String?
+  sort_order Int       @default(0)
+  created_at DateTime  @default(now())
+  posts      posts     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@index([post_id])
+  @@index([sort_order])
+}
+
+model post_media {
+  id                   Int      @id @default(autoincrement())
+  post_id              Int
+  imagekit_file_id     String
+  preview_url          String
+  standard_url         String
+  sort_order           Int      @default(0)
+  block_id             Int?
+  created_at           DateTime @default(now())
+  posts                posts    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@index([post_id])
+  @@index([sort_order])
+  @@index([block_id])
 }
 
 model refresh_tokens {
@@ -206,6 +238,9 @@ model users {
   password_hash                            String
   display_name                             String?
   avatar_url                               String?
+  avatar_preview_url                       String?
+  avatar_standard_url                      String?
+  avatar_imagekit_file_id                  String?
   bio                                      String?
   date_of_birth                            DateTime?
   gender                                   String?
@@ -343,6 +378,11 @@ enum Role {
 enum VoteTarget {
   POST
   COMMENT
+}
+
+enum BlockType {
+  TEXT
+  IMAGE
 }
 
 enum OtpPurpose {

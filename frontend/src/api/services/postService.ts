@@ -6,7 +6,8 @@ export interface PostAuthor {
   id: number;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
+  avatar_preview_url?: string | null;
+  avatar_standard_url?: string | null;
   role: string;
   reputation: number;
 }
@@ -27,6 +28,22 @@ export interface PostTag {
   slug: string;
 }
 
+export interface PostMedia {
+  id: number;
+  preview_url: string;
+  standard_url: string;
+  sort_order: number;
+  block_id?: number | null;
+}
+
+export interface PostBlock {
+  id: number;
+  type: 'TEXT' | 'IMAGE';
+  content: string | null;
+  sort_order: number;
+  media: PostMedia[];
+}
+
 export interface Post {
   id: number;
   title: string;
@@ -43,19 +60,32 @@ export interface Post {
   is_pinned: boolean;
   pin_type?: 'GLOBAL' | 'CATEGORY' | null;
   is_locked: boolean;
+  use_block_layout: boolean;
   created_at: string;
   updated_at: string;
   author: PostAuthor;
   category: PostCategory;
   tags: PostTag[];
+  media: PostMedia[];
+  blocks: PostBlock[]; // Phase 3: block layout
+  mediaCount?: number; // Phase 1 UC-01: Total count of media items in post
+}
+
+export interface PostBlockInput {
+  type: 'TEXT' | 'IMAGE';
+  content?: string;
+  sort_order: number;
+  /** For IMAGE blocks in update: existing media IDs to re-associate with this block */
+  mediaIds?: number[];
 }
 
 export interface CreatePostData {
   title: string;
-  content: string;
+  content?: string;
   category_id: number;
   tags?: string[];
   status?: 'DRAFT' | 'PUBLISHED';
+  blocks?: PostBlockInput[];
 }
 
 export interface UpdatePostData {
@@ -63,6 +93,8 @@ export interface UpdatePostData {
   content?: string;
   category_id?: number;
   tags?: string[];
+  use_block_layout?: boolean;
+  blocks?: PostBlockInput[];
 }
 
 export interface PostsQueryParams {
@@ -184,6 +216,8 @@ export const postService = {
         category_id: data.category_id,
         tags: data.tags,
         status: data.status,
+        use_block_layout: data.use_block_layout,
+        blocks: data.blocks,
       }
     );
     return response.data.data;
@@ -198,6 +232,8 @@ export const postService = {
     if (data.content !== undefined) transformedData.content = data.content;
     if (data.category_id !== undefined) transformedData.category_id = data.category_id;
     if (data.tags !== undefined) transformedData.tags = data.tags;
+    if (data.use_block_layout !== undefined) transformedData.use_block_layout = data.use_block_layout;
+    if (data.blocks !== undefined) transformedData.blocks = data.blocks;
 
     const response = await apiClient.put<ApiResponse<Post>>(
       API_ENDPOINTS.POSTS.BY_ID(id),
@@ -240,6 +276,41 @@ export const postService = {
   toggleLock: async (id: number | string): Promise<Post> => {
     const response = await apiClient.patch<ApiResponse<Post>>(
       `${API_ENDPOINTS.POSTS.BY_ID(id)}/lock`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Upload media files to a post (UC-02, UC-03)
+   * @param files Array of image files (max 10 MB each, up to 10 total)
+   * @param blockId Optional block ID to associate media with a specific block
+   */
+  uploadMedia: async (postId: number | string, files: File[], blockId?: number): Promise<PostMedia[]> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    if (blockId !== undefined) formData.append('block_id', String(blockId));
+    const response = await apiClient.post<ApiResponse<PostMedia[]>>(
+      API_ENDPOINTS.POSTS.MEDIA(postId),
+      formData,
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Delete a single post media item (UC-03)
+   */
+  deleteMedia: async (postId: number | string, mediaId: number): Promise<void> => {
+    await apiClient.delete(API_ENDPOINTS.POSTS.MEDIA_BY_ID(postId, mediaId));
+  },
+
+  /**
+   * Reorder post media items (UC-03)
+   * @param orderedIds All existing media IDs in the desired order
+   */
+  reorderMedia: async (postId: number | string, orderedIds: number[]): Promise<PostMedia[]> => {
+    const response = await apiClient.patch<ApiResponse<PostMedia[]>>(
+      API_ENDPOINTS.POSTS.MEDIA_REORDER(postId),
+      { orderedIds },
     );
     return response.data.data;
   },

@@ -1,0 +1,64 @@
+{
+  "name": "mini-forum-backend",
+  "description": "Mini Forum Backend API - Node.js + Express + TypeScript + Prisma",
+  "buildCommand": "npm ci && npm run build",
+  "startCommand": "/app/docker-entrypoint.sh",
+  "envVars": [
+    {
+      "key": "NODE_ENV",
+      "value": "production",
+      "description": "Node environment (must be production)"
+    },
+    {
+      "key": "PORT",
+      "value": "5000",
+      "description": "Server port"
+    },
+    {
+      "key": "DATABASE_URL",
+      "description": "PostgreSQL connection string with SSL (e.g., postgresql://user:pass@host/db?schema=public&sslmode=require)"
+    },
+    {
+      "key": "JWT_SECRET",
+      "description": "JWT signing secret (generate with: openssl rand -base64 32)"
+    },
+    {
+      "key": "JWT_REFRESH_SECRET",
+      "description": "JWT refresh token secret"
+    },
+    {
+      "key": "CORS_ORIGIN",
+      "description": "CORS allowed origins (comma-separated or specific domain)"
+    },
+    {
+      "key": "IMAGEKIT_PRIVATE_KEY",
+      "description": "ImageKit private API key"
+    },
+    {
+      "key": "IMAGEKIT_PUBLIC_KEY",
+      "description": "ImageKit public API key"
+    },
+    {
+      "key": "IMAGEKIT_URL_ENDPOINT",
+      "description": "ImageKit URL endpoint"
+    },
+    {
+      "key": "REDIS_URL",
+      "description": "Redis connection URL (for sessions/cache) - optional if using in-memory store"
+    },
+    {
+      "key": "ADMIN_SECRET",
+      "description": "Secret key for admin operations"
+    },
+    {
+      "key": "EMAIL_SERVICE",
+      "value": "noreply",
+      "description": "Email service type (noreply, smtp, etc.)"
+    },
+    {
+      "key": "LOG_LEVEL",
+      "value": "info",
+      "description": "Log level: error, warn, info, http, debug"
+    }
+  ]
+}

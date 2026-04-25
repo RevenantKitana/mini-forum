@@ -109,16 +109,16 @@ export function useChangePassword() {
 }
 
 /**
- * Hook to update avatar (current user)
+ * Hook to upload avatar via file (Phase 5 — replaces URL-based updateAvatar)
  */
 export function useUpdateAvatar() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: (data: { avatar_url: string }) => {
+    mutationFn: (formData: FormData) => {
       if (!user) throw new Error('User not authenticated');
-      return userService.updateAvatar(user.id, data.avatar_url);
+      return userService.uploadAvatar(user.id, formData);
     },
     onSuccess: () => {
       if (user) {

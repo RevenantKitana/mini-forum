@@ -11,8 +11,9 @@ import { Button } from '@/app/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { ReportModal } from '@/components/common/ReportModal';
-import { 
-  Calendar, 
+import { AvatarPreviewModal } from '@/components/common/AvatarPreviewModal';
+import { getAvatarUrl } from '@/utils/imageHelpers';
+import { Calendar, 
   Edit, 
   MessageSquare,
   FileText,
@@ -43,6 +44,7 @@ export function ProfilePage() {
   
   // Modal states
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [voteFilter, setVoteFilter] = useState<'all' | 'up' | 'down'>('all');
   const [voteTypeFilter, setVoteTypeFilter] = useState<'all' | 'POST' | 'COMMENT'>('all');
   
@@ -193,13 +195,20 @@ export function ProfilePage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-start gap-6">
-            {/* Avatar */}
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} />
-              <AvatarFallback className="text-2xl">
-                {profile.display_name?.[0]?.toUpperCase() || profile.username[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            {/* Avatar - clickable to open preview modal */}
+            <button
+              type="button"
+              className="relative flex-shrink-0 rounded-full cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all duration-200"
+              onClick={() => setShowAvatarModal(true)}
+              aria-label={`Xem ảnh đại diện của ${profile.display_name || profile.username}`}
+            >
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={getAvatarUrl(profile, 'standard') || undefined} alt={profile.display_name} />
+                <AvatarFallback className="text-2xl">
+                  {profile.display_name?.[0]?.toUpperCase() || profile.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
 
             {/* Info */}
             <div className="flex-1">
@@ -547,6 +556,13 @@ export function ProfilePage() {
           targetName={profile.display_name || profile.username}
         />
       )}
+
+      {/* Avatar Preview Modal */}
+      <AvatarPreviewModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        user={profile}
+      />
     </div>
   );
 }

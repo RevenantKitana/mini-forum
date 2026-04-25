@@ -75,7 +75,13 @@ export class ContextGathererService {
               title: true,
               content: true,
               excerpt: true,
+              use_block_layout: true,
               post_tags: { select: { tags: { select: { name: true } } } },
+              post_blocks: {
+                where: { type: 'TEXT' },
+                orderBy: { sort_order: 'asc' },
+                select: { content: true, sort_order: true },
+              },
             },
           }),
           prisma.comments.findMany({
@@ -106,7 +112,17 @@ export class ContextGathererService {
       throw err; // re-throw tagged so RetryQueue classifies it correctly
     }
 
-    const body = (post.content || post.excerpt || '').substring(0, 400);
+    // For block layout posts, extract text from TEXT blocks; fall back to content/excerpt
+    let body: string;
+    if (post.use_block_layout && post.post_blocks?.length > 0) {
+      const blockText = (post.post_blocks as Array<{ content: string | null }>)
+        .map((b) => b.content || '')
+        .filter(Boolean)
+        .join(' ');
+      body = blockText.substring(0, 400);
+    } else {
+      body = (post.content || post.excerpt || '').substring(0, 400);
+    }
     const tags: string[] = (post.post_tags || []).slice(0, 5)
       .map((pt: any) => pt.tags?.name).filter(Boolean);
     const recentComments = rawComments.map((c: any) => ({
@@ -346,6 +362,13 @@ export class ContextGathererService {
           title: true,
           excerpt: true,
           content: true,
+          use_block_layout: true,
+          post_blocks: {
+            where: { type: 'TEXT' },
+            orderBy: { sort_order: 'asc' },
+            select: { content: true },
+            take: 3,
+          },
           users: { select: { display_name: true } },
           categories: { select: { name: true } },
         },
@@ -388,7 +411,13 @@ export class ContextGathererService {
         targetType: 'post',
         targetId: selectedPost.id,
         targetTitle: selectedPost.title,
-        targetContent: (selectedPost.excerpt || selectedPost.content || '').substring(0, 300),
+        targetContent: (() => {
+          if (selectedPost.use_block_layout && selectedPost.post_blocks?.length > 0) {
+            return (selectedPost.post_blocks as Array<{ content: string | null }>)
+              .map((b) => b.content || '').filter(Boolean).join(' ').substring(0, 300);
+          }
+          return (selectedPost.excerpt || selectedPost.content || '').substring(0, 300);
+        })(),
         targetAuthor: selectedPost.users?.display_name || 'Unknown',
         targetCategory: selectedPost.categories?.name || '',
         postReadContext,

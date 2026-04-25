@@ -72,6 +72,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showNoTagsDialog, setShowNoTagsDialog] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<PostFormData | null>(null);
@@ -172,11 +173,26 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    setDraftSavedAt(draft.savedAt);
     if (showToast) {
-      // Silent save
+      toast.success('Đã lưu bản nháp');
     }
     setHasDraft(true);
   }, [getValues, selectedTags, customTags]);
+
+  // Check draft existence on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        const draft: DraftData = JSON.parse(savedDraft);
+        setHasDraft(true);
+        setDraftSavedAt(draft.savedAt);
+      } catch (e) {
+        // ignore malformed draft
+      }
+    }
+  }, []);
 
   // Load draft when dialog opens
   useEffect(() => {
@@ -186,6 +202,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
         try {
           const draft: DraftData = JSON.parse(savedDraft);
           setHasDraft(true);
+          setDraftSavedAt(draft.savedAt);
           // Auto restore draft
           setValue('title', draft.title);
           setValue('content', draft.content);
@@ -217,6 +234,7 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
   const clearDraft = () => {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
     setHasDraft(false);
+    setDraftSavedAt(null);
   };
 
   const resetForm = () => {
@@ -281,10 +299,10 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
     createPostMutation.mutate(
       {
         title: data.title,
-        content: data.content,
         category_id: parseInt(data.categoryId),
         tags: allTagNames,
         status: 'PUBLISHED',
+        blocks: [{ type: 'TEXT' as const, content: data.content, sort_order: 1 }],
       },
       {
         onSuccess: () => {
@@ -395,7 +413,9 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
               <DialogTitle className="text-xl">Tạo bài viết mới</DialogTitle>
               {hasDraft && (
                 <span className="text-xs text-muted-foreground">
-                  Bản nháp được lưu
+                  {draftSavedAt
+                    ? `Lưu lúc ${new Date(draftSavedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Bản nháp được lưu'}
                 </span>
               )}
             </div>
@@ -405,7 +425,16 @@ export function CreatePostDialog({ trigger, className }: CreatePostDialogProps) 
           </DialogHeader>
           
           <ScrollArea className="max-h-[calc(80vh-140px)]">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-6 pb-6">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              onKeyDown={(e) => {
+                if (e.ctrlKey && e.key === 's') {
+                  e.preventDefault();
+                  saveDraft(true);
+                }
+              }}
+              className="space-y-5 px-6 pb-6"
+            >
               {/* Title */}
               <div className="space-y-2">
                 <Label htmlFor="title">Tiêu đề</Label>
