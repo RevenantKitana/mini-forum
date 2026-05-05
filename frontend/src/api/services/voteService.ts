@@ -8,8 +8,8 @@ export interface VoteResult {
 }
 
 export interface VoteStatus {
-  has_voted: boolean;
-  vote_type: 'up' | 'down' | null;
+  hasVoted: boolean;
+  voteType: 'up' | 'down' | null;
 }
 
 export interface VoteHistoryItem {

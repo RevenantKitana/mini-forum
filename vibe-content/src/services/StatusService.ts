@@ -7,6 +7,13 @@ export class StatusService {
     private startedAt: Date,
   ) {}
 
+  /**
+   * Get provider health details for status endpoint
+   */
+  async getProviderHealthDetails() {
+    return await this.generator.getProviderHealthDetails();
+  }
+
   async getStatusPayload() {
     const uptimeSec = Math.floor(process.uptime());
     const hours = Math.floor(uptimeSec / 3600);
@@ -29,6 +36,9 @@ export class StatusService {
       if (item.available) providerSummary[type].available++;
     }
 
+    // Get detailed provider health information
+    const providerHealthDetails = await this.getProviderHealthDetails();
+
     return {
       status: 'ok',
       uptime: `${hours}h ${minutes}m`,
@@ -40,6 +50,7 @@ export class StatusService {
         available: snapshot.providerStatus.available.length,
         unavailable: snapshot.providerStatus.unavailable.length,
         byType: providerSummary,
+        details: providerHealthDetails,
       },
       stats: {
         today: snapshot.todayStats,

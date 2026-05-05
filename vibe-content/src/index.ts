@@ -13,18 +13,18 @@ const generator = new ContentGeneratorService();
 const startedAt = new Date();
 const statusService = new StatusService(generator, startedAt);
 
-// Health check — includes per-provider circuit breaker + availability details
+// Health check — simple check to verify server is running
 app.get('/health', async (_req, res) => {
   try {
-    const providerStatus = await generator.getProviderHealthDetails();
-    const allHealthy = providerStatus.every((p) => p.circuitState === 'CLOSED');
-    res.status(allHealthy ? 200 : 207).json({
-      status: allHealthy ? 'ok' : 'degraded',
+    res.status(200).json({
+      status: 'ok',
       uptime: process.uptime(),
-      providers: providerStatus,
     });
   } catch (err: any) {
-    res.status(503).json({ status: 'error', uptime: process.uptime(), error: err.message });
+    res.status(503).json({
+      status: 'error',
+      uptime: process.uptime(),
+    });
   }
 });
 

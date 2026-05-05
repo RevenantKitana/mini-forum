@@ -3,7 +3,32 @@
 
 ---
 
+## Giới thiệu chương
+
+Dựa trên mô hình dữ liệu đã được xây dựng ở Chương 3 và các luồng thông tin đã phân tích ở Chương 4, Chương 5 đi sâu vào **đặc tả chi tiết từng module chức năng** của hệ thống MINI-FORUM. Mỗi module được mô tả bao gồm: cấu trúc tổ chức code, danh sách API endpoints đầy đủ (phương thức HTTP, đường dẫn, yêu cầu xác thực và phân quyền), business rule trọng yếu, và các quyết định thiết kế kỹ thuật.
+
+Hệ thống MINI-FORUM được tổ chức thành **10 module chức năng** độc lập, mỗi module bao gồm ít nhất một controller, một service và một tập hợp routes. Tổng cộng có **~70 API endpoints** tuân thủ chuẩn RESTful, với cơ chế xác thực và phân quyền thống nhất tại middleware layer.
+
+**Bảng 5.0 — Danh sách module chức năng**
+
+| # | Module | Mô tả chính | Số endpoints |
+|---|--------|------------|:-----------:|
+| 5.1 | Authentication & Authorization | Đăng ký, đăng nhập, quản lý token | 8 |
+| 5.2 | Post Management | CRUD bài viết, Block Layout, trạng thái | 11 |
+| 5.3 | Comment System | Thread 2 cấp, reply, quote | 6 |
+| 5.4 | User Management | Profile, avatar, bookmark, block | 9 |
+| 5.5 | Notification | SSE stream, loại thông báo, soft delete | 5 |
+| 5.6 | Search | Full-text search PostgreSQL, phân trang | 3 |
+| 5.7 | Vote & Bookmark | Idempotent vote toggle, bookmark | 6 |
+| 5.8 | Category & Tag | Phân cấp quyền xem, tag taxonomy | 9 |
+| 5.9 | Media Upload | ImageKit CDN, đa độ phân giải | 4 |
+| 5.10 | Dynamic Config | Tham số hệ thống không cần redeploy | 3 |
+
+---
+
 ## 5.1 Module Authentication & Authorization
+
+Module xác thực là nền tảng bảo mật của toàn bộ hệ thống. Mọi request đến các endpoint được bảo vệ đều phải đi qua `authMiddleware.authenticate()` — một middleware kiểm tra JWT access token, tải thông tin user từ DB và gắn vào `req.user`. Module này đảm bảo ba nguyên tắc: (1) mật khẩu không bao giờ lưu dạng plain text, (2) access token có thời gian sống ngắn, (3) refresh token có thể bị revoke ngay lập tức.
 
 ### 5.1.1 Tổ chức code
 
@@ -92,6 +117,8 @@ Incoming Request
 ---
 
 ## 5.2 Module Post Management
+
+Post Management là module lớn nhất trong hệ thống, xử lý toàn bộ vòng đời của bài viết từ khi tạo đến khi bị xóa. Điểm kỹ thuật đặc biệt của module này là kiến trúc **Block Layout** — cho phép bài viết có cấu trúc nội dung phong phú (văn bản, code, hình ảnh, trích dẫn) thay vì một trường `content` duy nhất. Ngoài ra, `slug` tự động được sinh từ `title` và đảm bảo là unique — được dùng trong URL thay cho `id` để thân thiện với SEO.
 
 ### 5.2.1 Tổ chức code
 
@@ -211,6 +238,8 @@ posts
 
 ## 5.3 Module Comment System
 
+Hệ thống comment của MINI-FORUM hỗ trợ cấu trúc **2 cấp** (root comment và reply), đồng thời cho phép **quote** — người dùng trích dẫn một comment cụ thể trong reply của mình. Giới hạn 2 cấp là quyết định thiết kế có chủ đích để tránh UI phức tạp và giảm thiểu recursive database query. Bảng `comments` thực hiện điều này qua hai khóa ngoại tự tham chiếu: `parent_id` (xác định cấp) và `quoted_comment_id` (xác định comment được trích dẫn).
+
 ### 5.3.1 API Endpoints
 
 **Bảng 5.5 — API Endpoints: Module Comment**
@@ -285,6 +314,8 @@ PUT /comments/:id { content: "nội dung mới" }
 
 ## 5.4 Module User Management
 
+Module quản lý người dùng cung cấp các chức năng liên quan đến hồ sơ cá nhân, ảnh đại diện, và quan hệ xã hội giữa các thành viên. Điểm kỹ thuật đáng chú ý là quy trình upload avatar qua **ImageKit CDN** — ảnh được lưu ở hai độ phân giải (preview nhỏ cho thumbnail và standard cho hiển thị đầy đủ) giúp tối ưu băng thông. Khi cập nhật avatar, file cũ trên ImageKit bị xóa ngay để tránh tốn dung lượng lưu trữ không cần thiết.
+
 ### 5.4.1 API Endpoints
 
 **Bảng 5.6 — API Endpoints: Module User**
@@ -330,6 +361,8 @@ PUT /comments/:id { content: "nội dung mới" }
 ---
 
 ## 5.5 Module Notification
+
+Module thông báo kết hợp hai cơ chế: **lưu trữ bền vững** (persistent storage trong bảng `notifications`) và **đẩy thời gian thực** (SSE stream). Thiết kế này đảm bảo: (1) người dùng đang online nhận thông báo ngay lập tức qua SSE, (2) người dùng offline vẫn thấy thông báo khi quay lại ứng dụng qua HTTP GET. Hai cơ chế hoạt động song song và bổ sung cho nhau — không có thông báo nào bị mất.
 
 ### 5.5.1 Các loại Notification
 
@@ -377,6 +410,8 @@ LIMIT 20
 
 ## 5.6 Module Search
 
+Module tìm kiếm cung cấp khả năng **full-text search** trên nội dung bài viết và bình luận sử dụng tính năng tích hợp sẵn của PostgreSQL. Toàn bộ xử lý tìm kiếm diễn ra trong database — không cần service ngoài. Kết quả được sắp xếp theo điểm liên quan (`ts_rank`) thay vì chỉ theo thời gian, giúp người dùng tìm thấy nội dung phù hợp nhất trước.
+
 ### 5.6.1 Kỹ thuật Full-text Search
 
 MINI-FORUM sử dụng PostgreSQL built-in full-text search thay vì Elasticsearch để giảm chi phí vận hành:
@@ -418,6 +453,8 @@ LIMIT $2 OFFSET $3
 
 ## 5.7 Module Vote & Bookmark
 
+Module Vote và Bookmark xử lý các tương tác đánh giá nội dung. Vote ảnh hưởng đến điểm reputation của tác giả và là cơ sở để sắp xếp nội dung chất lượng cao lên đầu. Bookmark là tính năng cá nhân hóa — người dùng lưu bài viết yêu thích để đọc sau. Vote được thiết kế theo cơ chế **idempotent toggle**: vote cùng chiều lần thứ hai sẽ hủy vote thay vì vote hai lần.
+
 ### 5.7.1 API Endpoints
 
 **Bảng 5.10 — API Endpoints: Vote và Bookmark**
@@ -445,6 +482,8 @@ LIMIT $2 OFFSET $3
 ---
 
 ## 5.8 Module Category & Tag
+
+Category và Tag là hai hệ thống phân loại nội dung bổ sung cho nhau. **Category** có cấu trúc phân cấp (một bài viết thuộc đúng một category) với hệ thống phân quyền xem riêng — một số category chỉ dành cho thành viên đã đăng nhập hoặc moderator. **Tag** là nhãn tự do (một bài có thể gắn nhiều tag) giúp cross-reference nội dung liên quan.
 
 ### 5.8.1 Cấu trúc phân quyền Category
 
@@ -494,6 +533,8 @@ SELECT view_permission FROM categories WHERE slug = 'programming'
 
 ## 5.9 Module Media Upload
 
+Module Media xử lý toàn bộ vòng đời file ảnh trong hệ thống — từ khi người dùng chọn ảnh trên trình duyệt đến khi URL được lưu vào database. Hệ thống sử dụng **ImageKit** như một CDN thông minh: ảnh gốc được upload lên ImageKit, sau đó tạo hai URL transformation để phục vụ hai use case khác nhau (thumbnail nhỏ và ảnh hiển thị đầy đủ). Thiết kế này tận dụng tính năng **on-the-fly image transformation** của ImageKit mà không cần xử lý ảnh ở backend.
+
 ### 5.9.1 Quy trình Upload Media
 
 **Bảng 5.12 — API Endpoints: Media**
@@ -524,6 +565,8 @@ Upload flow:
 
 ## 5.10 Module Config (Dynamic Configuration)
 
+Module Config là hệ thống cấu hình động cho phép Administrator điều chỉnh các tham số vận hành của forum **mà không cần deploy lại ứng dụng**. Thay vì hardcode các giá trị như thời gian chỉnh sửa comment hay hệ số điểm reputation vào mã nguồn, các giá trị này được lưu trong bảng `config` của database. Ứng dụng đọc config từ DB khi cần xử lý, đảm bảo Admin có thể điều chỉnh hành vi hệ thống realtime qua giao diện quản trị.
+
 ### 5.10.1 Cơ chế cấu hình động
 
 MINI-FORUM có hệ thống cấu hình động cho phép Admin thay đổi tham số vận hành không cần deploy lại:
@@ -550,19 +593,29 @@ MINI-FORUM có hệ thống cấu hình động cho phép Admin thay đổi tham
 
 ## Tóm tắt chương 5
 
-Chương 5 đã đặc tả chi tiết **10 module chức năng** của MINI-FORUM:
+Chương 5 đã đặc tả chi tiết **10 module chức năng** cấu thành hệ thống MINI-FORUM. Mỗi module được phân tích từ góc độ: cấu trúc tổ chức code, API endpoints, business rule và quyết định thiết kế kỹ thuật.
 
-1. **Auth Module** — 8 endpoints, dual-token security, OTP flow
-2. **Post Module** — 11 endpoints, Block Layout, State Machine 4 trạng thái
-3. **Comment Module** — Self-referencing 2 cấp, time-limited edit
-4. **User Module** — Profile management, ImageKit avatar
-5. **Notification Module** — 5 event types, SSE stream, soft delete
-6. **Search Module** — PostgreSQL FTS, 3 scope tìm kiếm
-7. **Vote & Bookmark Module** — Idempotent toggle vote, reputation update
-8. **Category & Tag Module** — Permission-aware access, tag usage tracking
-9. **Media Module** — ImageKit CDN, dual-resolution storage
-10. **Config Module** — Dynamic configuration, no-redeploy tuning
+**Bảng 5.15 — Tổng kết đặc tả module**
 
-Tổng cộng: **~70 API endpoints** được tổ chức theo RESTful convention, tất cả đều có authentication/authorization tại middleware layer — không có business logic nào bypass layer bảo mật.
+| Module | Điểm kỹ thuật nổi bật | Business Rule trọng yếu |
+|--------|--------------------|----------------------|
+| Auth | Dual-token JWT + httpOnly cookie; bcrypt salt=10 | Token rotation khi refresh; OTP có TTL |
+| Post | Block Layout JSON; slug tự động unique | Soft delete; chỉ author/mod/admin có thể xóa |
+| Comment | Tự tham chiếu 2 cấp (`parent_id` + `quoted_comment_id`) | Giới hạn cấp 2; edit trong time limit |
+| User | ImageKit dual-resolution avatar; block list | Xóa file cũ trên CDN khi upload avatar mới |
+| Notification | SSE persistent + DB fallback song song | Soft delete (`deleted_at`); không xóa vật lý |
+| Search | PostgreSQL FTS với `ts_rank` relevance scoring | Dictionary `'simple'` cho tiếng Việt |
+| Vote | Idempotent toggle; polymorphic (`target_type`) | Không self-vote; atomic transaction với reputation |
+| Category/Tag | Permission-aware filtering tại query level | Category: 1 bài = 1 category; Tag: nhiều-nhiều |
+| Media | ImageKit on-the-fly transformation | Xóa file CDN đồng bộ với xóa DB record |
+| Config | Dynamic config từ DB; không hardcode | Admin thay đổi realtime không cần redeploy |
 
-Chương tiếp theo sẽ phân tích hệ thống báo cáo và kiểm soát: dashboard thống kê, audit trail và quy trình xử lý báo cáo vi phạm.
+**Tổng cộng: ~70 API endpoints** được bảo vệ nhất quán qua middleware pipeline:
+
+```
+Request → helmet() → cors() → rate-limit → authenticate() → requireRole() → Controller
+```
+
+Không có endpoint nào bypass xác thực nếu business logic yêu cầu. Không có logic phân quyền nào nằm trong Controller — tất cả đều ở middleware layer để đảm bảo tính nhất quán và dễ kiểm toán.
+
+Chương tiếp theo (Chương 6) sẽ trình bày hệ thống báo cáo kiểm soát: dashboard thống kê Admin, audit log trail và quy trình xử lý vi phạm.
