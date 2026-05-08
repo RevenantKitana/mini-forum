@@ -60,7 +60,7 @@
 | 5.3 | Quality Gates — Cổng kiểm soát chất lượng | 37 |
 | 5.4 | Quy trình Code Review | 39 |
 | **6** | **Quản lý nguồn lực** | 41 |
-| 6.1 | Cấu trúc nhóm và phân công vai trò | 41 |
+| 6.1 | Cấu trúc vai trò và phân công trách nhiệm | 41 |
 | 6.2 | Phân bổ thời gian theo module | 42 |
 | 6.3 | Quản lý nợ kỹ thuật (Technical Debt) | 44 |
 | **7** | **Kết quả và bài học kinh nghiệm** | 46 |
@@ -116,7 +116,7 @@
 | Hình 4.1 | Ma trận rủi ro (xác suất × tác động) | 4 |
 | Hình 5.1 | Biểu đồ Velocity theo sprint | 5 |
 | Hình 5.2 | Burndown Chart — Sprint 3 (mẫu) | 5 |
-| Hình 6.1 | Sơ đồ tổ chức nhóm dự án | 6 |
+| Hình 6.1 | Sơ đồ vai trò kiêm nhiệm trong MINI-FORUM | 6 |
 | Hình 6.2 | Biểu đồ phân bổ effort theo module | 6 |
 
 ---

@@ -4,46 +4,46 @@
 
 ## Giới thiệu chương
 
-Quản lý nguồn lực là lĩnh vực cốt lõi trong quản trị dự án phần mềm, bao gồm hai khía cạnh chủ yếu: **nguồn lực con người** (nhân lực, phân công vai trò, trách nhiệm) và **nguồn lực phi con người** (thời gian, công cụ, môi trường phát triển). Chương này phân tích chi tiết cách thức dự án MINI-FORUM tổ chức, phân bổ và tối ưu hóa nguồn lực trong bối cảnh đặc thù của một nhóm nhỏ (1–3 người) với thời gian thực tập 13 tuần có deadline cứng.
+Quản lý nguồn lực là lĩnh vực cốt lõi trong quản trị dự án phần mềm, bao gồm hai khía cạnh chủ yếu: **nguồn lực con người** (nhân lực, phân vai trách nhiệm, cơ chế kiêm nhiệm) và **nguồn lực phi con người** (thời gian, công cụ, môi trường phát triển). Chương này phân tích chi tiết cách thức dự án MINI-FORUM tổ chức, phân bổ và tối ưu hóa nguồn lực trong bối cảnh thực hiện cá nhân (1 người) với thời gian thực tập 13 tuần có deadline cứng.
 
-Theo chuẩn PMBOK 6th Edition, quản lý nguồn lực bao gồm sáu quy trình: lập kế hoạch quản lý nguồn lực, ước tính nguồn lực hoạt động, thu nhận nguồn lực, phát triển nhóm, quản lý nhóm và kiểm soát nguồn lực. Trong bối cảnh nhóm nhỏ với Scrum Agile, các quy trình này được đơn giản hóa và tích hợp trực tiếp vào Sprint Planning, Sprint Review và Retrospective.
+Theo chuẩn PMBOK 6th Edition, quản lý nguồn lực bao gồm sáu quy trình: lập kế hoạch quản lý nguồn lực, ước tính nguồn lực hoạt động, thu nhận nguồn lực, phát triển nhóm, quản lý nhóm và kiểm soát nguồn lực. Trong bối cảnh thực hiện cá nhân với Scrum Agile, các quy trình này được đơn giản hóa và tích hợp trực tiếp vào Sprint Planning, Sprint Review và Retrospective.
 
 Chương trình bày bốn nội dung chính:
-1. **Cấu trúc nhóm và phân công vai trò** — Sơ đồ tổ chức, RACI matrix, luồng giao tiếp và quy trình ra quyết định
+1. **Cấu trúc vai trò và cơ chế kiêm nhiệm** — Sơ đồ vai trò, RACI matrix, luồng giao tiếp và quy trình ra quyết định
 2. **Phân bổ thời gian theo module** — Effort allocation chi tiết, phân tích nguyên nhân, lịch làm việc thực tế
 3. **Quản lý nợ kỹ thuật** — Nhận diện, phân loại, đo lường và chiến lược xử lý Technical Debt trong Scrum
 4. **Quản lý công cụ và môi trường phát triển** — Stack công cụ, cấu hình môi trường, bảo mật secrets
 
 ---
 
-## 6.1 Cấu trúc nhóm và phân công vai trò
+## 6.1 Cấu trúc vai trò và phân công trách nhiệm
 
-### 6.1.1 Tổng quan nhóm dự án
+### 6.1.1 Tổng quan mô hình triển khai
 
-Dự án MINI-FORUM được thực hiện trong bối cảnh thực tập chuyên đề với quy mô nhóm **1–3 thành viên**, trong đó thành viên chính (Lead Developer) đảm nhận đồng thời nhiều vai trò từ Backend, DevOps, AI Integration đến Scrum Master. Đây là mô hình phổ biến trong phát triển startup giai đoạn đầu và dự án nội bộ có ngân sách hạn chế.
+Dự án MINI-FORUM được thực hiện trong bối cảnh thực tập chuyên đề theo mô hình **cá nhân (1 người)**, trong đó tác giả đảm nhận đồng thời nhiều vai trò từ Backend, Frontend, DevOps, AI Integration đến Scrum Master. Đây là mô hình phổ biến trong phát triển sản phẩm giai đoạn đầu và bài toán có ngân sách hạn chế.
 
-Thách thức đặc thù của mô hình nhóm nhỏ so với nhóm lớn truyền thống:
+Thách thức đặc thù của mô hình cá nhân so với đội Scrum chuẩn:
 
-**Bảng 6.1 — So sánh mô hình nhóm lớn và nhóm nhỏ trong Scrum**
+**Bảng 6.1 — So sánh Scrum chuẩn và mô hình cá nhân trong MINI-FORUM**
 
-| Tiêu chí | Nhóm Scrum chuẩn (5–9 người) | Nhóm nhỏ MINI-FORUM (1–3 người) | Cách thích ứng |
+| Tiêu chí | Nhóm Scrum chuẩn (5–9 người) | Mô hình cá nhân MINI-FORUM (1 người) | Cách thích ứng |
 |---------|------------------------------|----------------------------------|---------------|
 | Phân công vai trò | Mỗi người một chuyên môn | Kiêm nhiệm nhiều vai trò | Ưu tiên rõ ràng theo sprint; không làm đồng thời |
 | Daily Standup | Meeting thực sự (15 phút) | Solo/duo — dễ bỏ qua | Thay bằng Daily Log file markdown |
 | Conflict resolution | Có quy trình rõ | Không có conflict nội bộ | Conflict chính là technical: ghi nhận ADR |
 | Knowledge silo | Rủi ro mỗi người biết riêng một phần | Một người biết toàn bộ | Rủi ro khi thành viên duy nhất bị blocked |
-| Sprint capacity | Dự báo theo từng thành viên | Toàn bộ capacity từ 1–2 người | Buffer 10–15% cho unexpected events |
+| Sprint capacity | Dự báo theo từng thành viên | Toàn bộ capacity từ 1 người | Buffer 10–15% cho unexpected events |
 | Handoff overhead | Có — cần communication | Gần như không có | Tiết kiệm thời gian giao tiếp |
 
-### 6.1.2 Sơ đồ tổ chức nhóm dự án
+### 6.1.2 Sơ đồ vai trò kiêm nhiệm
 
-**Hình 6.1 — Sơ đồ tổ chức nhóm dự án MINI-FORUM**
+**Hình 6.1 — Sơ đồ vai trò kiêm nhiệm trong MINI-FORUM**
 
-> *Mô tả hình:* Sơ đồ phân cấp tổ chức dạng cây. Cấp trên cùng là Product Owner (giảng viên hướng dẫn). Cấp thứ hai là Lead Developer kiêm Scrum Master. Cấp thứ ba là Frontend Developer (có thể là cùng người hoặc thành viên thứ hai). Các mũi tên thể hiện luồng thông tin: Product Owner → Lead (Sprint Review, feedback); Lead ↔ Frontend (API contract, integration). Các box bên trong mỗi vai trò liệt kê các trách nhiệm kỹ thuật cụ thể.
+> *Mô tả hình:* Sơ đồ vai trò dạng cây. Cấp trên cùng là Product Owner (giảng viên hướng dẫn). Cấp dưới là tác giả kiêm Lead Developer, Frontend Developer và Scrum Master. Mũi tên thể hiện luồng thông tin: Product Owner → Tác giả (Sprint Review, feedback). Các box bên trong mỗi vai trò liệt kê trách nhiệm kỹ thuật chính.
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║                        CẤU TRÚC NHÓM DỰ ÁN                     ║
+║                      CẤU TRÚC VAI TRÒ DỰ ÁN                     ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                  ║
 ║  ┌────────────────────────────────────────────────────────────┐  ║
@@ -130,7 +130,7 @@ Ma trận RACI xác định rõ ràng ai làm gì và ai chịu trách nhiệm c
 | Xây dựng Product Backlog ban đầu | R, A | C | **A**, C | PO phê duyệt cuối cùng |
 | Sprint Planning (ưu tiên, estimate) | R, A | R | **A** | PO chốt priority |
 | Sprint Review demo | R | R | **A** | PO accept/reject stories |
-| Retrospective | R, A | R | I | Nội bộ nhóm |
+| Retrospective | R, A | R | I | Tự đánh giá theo sprint |
 | Velocity & Burndown tracking | R, A | I | I | Lead cập nhật hàng ngày |
 | Risk management | R, A | C | I | Review cuối mỗi sprint |
 | **THIẾT KẾ HỆ THỐNG** | | | | |
@@ -164,7 +164,7 @@ Ma trận RACI xác định rõ ràng ai làm gì và ai chịu trách nhiệm c
 
 ### 6.1.4 Luồng giao tiếp và quy trình ra quyết định
 
-Trong nhóm nhỏ, giao tiếp diễn ra chủ yếu không đồng bộ để tối ưu thời gian làm việc thực sự. Quy trình ra quyết định được phân tầng theo mức độ tác động:
+Trong mô hình cá nhân, giao tiếp diễn ra chủ yếu không đồng bộ để tối ưu thời gian làm việc thực sự. Quy trình ra quyết định được phân tầng theo mức độ tác động:
 
 **Bảng 6.3 — Phân tầng quyết định theo mức độ tác động**
 
@@ -172,7 +172,7 @@ Trong nhóm nhỏ, giao tiếp diễn ra chủ yếu không đồng bộ để t
 |----------------|:-------------|:--------:|---------|
 | Kỹ thuật cấp thấp (tên biến, cấu trúc hàm) | Lead tự quyết | Ngay lập tức | Không bắt buộc |
 | Kỹ thuật cấp trung (chọn thư viện, pattern) | Lead + Frontend thảo luận | < 2 giờ | Comment trong code hoặc PR |
-| Kiến trúc quan trọng (SSE vs WebSocket) | Toàn nhóm + ADR | < 1 ngày | Architecture Decision Record |
+| Kiến trúc quan trọng (SSE vs WebSocket) | Tác giả + ADR | < 1 ngày | Architecture Decision Record |
 | Scope change (thêm/bớt User Story) | Lead + Product Owner | Sprint Review | Sprint backlog update |
 | Scope change khẩn cấp (blocker) | Lead quyết định, PO confirm | < 4 giờ | Message ghi lại |
 
@@ -570,7 +570,7 @@ Nguyên tắc 4 — Rotation khi có sự cố:
 Chương 6 đã phân tích toàn diện bốn khía cạnh quản lý nguồn lực trong dự án MINI-FORUM:
 
 **[Về nguồn lực con người]**
-Mô hình nhóm nhỏ (1–3 người) đòi hỏi kiêm nhiệm nhiều vai trò và kỷ luật cao về ưu tiên công việc. RACI matrix giúp tránh mơ hồ ngay cả khi team nhỏ — mỗi deliverable phải có đúng một người Accountable. Phân tầng quyết định rõ ràng giảm thiểu thời gian "phân vân" và tăng tốc độ thực thi.
+Mô hình thực hiện cá nhân (1 người) đòi hỏi kiêm nhiệm nhiều vai trò và kỷ luật cao về ưu tiên công việc. RACI matrix giúp tránh mơ hồ ngay cả khi một người đảm nhiệm nhiều mũ vai trò — mỗi deliverable phải có đúng một người Accountable. Phân tầng quyết định rõ ràng giảm thiểu thời gian "phân vân" và tăng tốc độ thực thi.
 
 **[Về phân bổ thời gian]**
 Backend API chiếm 40% effort — hợp lý vì đây là nơi tập trung toàn bộ business logic phức tạp, bảo mật và tích hợp dịch vụ bên ngoài. Phân bổ 15% cho vibe-content (AI) phản ánh overhead cao của tích hợp LLM. Lịch làm việc theo sprint đảm bảo mỗi component được build và test độc lập trước khi integrate.
@@ -581,7 +581,7 @@ Backend API chiếm 40% effort — hợp lý vì đây là nơi tập trung toà
 **[Về công cụ và môi trường]**
 Đầu tư vào công cụ đúng chỗ (TypeScript strict, Prisma Studio, Vitest watch) mang lại ROI cao — tiết kiệm ước tính ~18 ngày developer time trong 60 ngày dự án, tức ~30% năng suất tăng thêm.
 
-> **Bài học chính:** Quản lý nguồn lực hiệu quả trong nhóm nhỏ không có nghĩa là làm nhiều việc cùng lúc, mà là **làm đúng việc đúng thời điểm** — ưu tiên rõ ràng, ghi nhận debt minh bạch, và bảo vệ sprint backlog khỏi scope creep không có kiểm soát.
+> **Bài học chính:** Quản lý nguồn lực hiệu quả trong mô hình cá nhân không có nghĩa là làm nhiều việc cùng lúc, mà là **làm đúng việc đúng thời điểm** — ưu tiên rõ ràng, ghi nhận debt minh bạch, và bảo vệ sprint backlog khỏi scope creep không có kiểm soát.
 
 ---
 

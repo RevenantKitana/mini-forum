@@ -11,7 +11,7 @@
 | Tiêu chí | Giải thích |
 |---|---|
 | **Yêu cầu thay đổi liên tục** | Diễn đàn online có nhiều tính năng phụ thuộc nhau (auth → post → comment → vote); không thể xác định toàn bộ yêu cầu từ đầu |
-| **Team nhỏ** | 1–3 developer, không cần overhead quản lý quy trình nặng như RUP |
+| **Mô hình cá nhân** | 1 developer, giảm overhead quản lý quy trình nặng như RUP |
 | **Cần phản hồi sớm** | Mỗi sprint tạo ra increment chạy được, cho phép test tích hợp liên tục |
 | **Risk management** | Sprint review sau mỗi 2 tuần phát hiện sớm rủi ro kỹ thuật (schema DB, API contract) |
 | **So sánh với Waterfall** | Waterfall không phù hợp vì tích hợp AI (vibe-content) chỉ rõ ràng sau khi có dữ liệu thật từ forum |
@@ -203,12 +203,10 @@ THÁNG 1 (Tuần 1-2)     THÁNG 2 (Tuần 3-6)          THÁNG 3 (Tuần 7-10) 
 
 ---
 
-## 6. Resource & Team
+## 6. Resource & Vai trò kiêm nhiệm
 
-| Vai trò | Trách nhiệm | Sprint chủ yếu |
-|---------|-------------|----------------|
-| Fullstack Developer (Lead) | Backend API, DB schema, deployment | Sprint 0–5 |
-| Frontend Developer | React UI, React Query, form validation | Sprint 2–4 |
-| AI/Integration Developer | vibe-content service, LLM integration | Sprint 5 |
+| Vai trò kiêm nhiệm | Trách nhiệm | Sprint chủ yếu |
+|------------------|-------------|----------------|
+| Tác giả (Fullstack + DevOps + AI Integration) | Backend API, DB schema, React UI, deployment, vibe-content service, LLM integration | Sprint 0–5 |
 
-> **Ghi chú:** Với team 1–3 người, các vai trò thường kiêm nhiệm. Scrum đảm bảo mỗi sprint có deliverable rõ ràng ngay cả khi team nhỏ.
+> **Ghi chú:** Báo cáo được trình bày theo ngữ cảnh thực hiện cá nhân; các vai trò được mô tả theo dạng kiêm nhiệm để phản ánh đúng thực tế triển khai.

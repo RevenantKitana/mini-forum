@@ -155,14 +155,14 @@ Quyết định sai:  Estimate block layout = estimate feature thông thường
 *Ngưỡng kích hoạt Spike Story:*
 - Chưa từng làm tính năng tương tự
 - Cần tích hợp với external service mới
-- Estimate bất đồng > 50% giữa các thành viên
+- Estimate có độ bất định cao (> 50% so với baseline ban đầu)
 - "Nếu làm sai, mất > 1 ngày refactor"
 
 ---
 
 **BÀI HỌC 2: Architecture Decision Record (ADR) cho quyết định kiến trúc**
 
-*Bối cảnh:* Quyết định SSE vs WebSocket cho real-time notifications được đưa ra nhanh trong Sprint Planning S3 mà không có phân tích đầy đủ trade-off. Sau khi implement, nhóm phát hiện giới hạn scale của SSE in-memory (TD-02) và phải ghi nhận như technical debt.
+*Bối cảnh:* Quyết định SSE vs WebSocket cho real-time notifications được đưa ra nhanh trong Sprint Planning S3 mà không có phân tích đầy đủ trade-off. Sau khi implement, tác giả phát hiện giới hạn scale của SSE in-memory (TD-02) và phải ghi nhận như technical debt.
 
 *Phân tích:*
 ```
@@ -201,7 +201,7 @@ Infrastructure:   estimate 0.5 ngày → thực tế 1.5 ngày (sai số 200%)
 
 **BÀI HỌC 4: Sprint Boundaries phải là quy tắc cứng**
 
-*Bối cảnh:* Với team nhỏ không có separation of concerns rõ ràng, ranh giới giữa các sprint dễ bị mờ nhạt. Trong Sprint 2, block layout được thêm vào giữa sprint mà không adjust scope cũ, dẫn đến burndown chậm hơn ideal.
+*Bối cảnh:* Với mô hình cá nhân không có separation of concerns theo vai trò tách biệt, ranh giới giữa các sprint dễ bị mờ nhạt. Trong Sprint 2, block layout được thêm vào giữa sprint mà không adjust scope cũ, dẫn đến burndown chậm hơn ideal.
 
 *Hậu quả khi vi phạm Sprint Boundary:*
 ```
@@ -224,7 +224,7 @@ Hệ quả:  • Burndown lệch khỏi ideal → mất visibility
 ```
 Chi phí viết test TRƯỚC khi merge:   0.5 ngày developer time
 Chi phí phát hiện bug ở Sprint 3:    1.5 ngày (debug + fix + retest + re-deploy)
-Chi phí gián đoạn Sprint 3:          Team context switch, velocity drop
+Chi phí gián đoạn Sprint 3:          Context switch cá nhân, velocity drop
 Tổng chi phí không tuân DoD:         3× chi phí tuân DoD ban đầu
 ```
 

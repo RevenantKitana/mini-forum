@@ -14,7 +14,7 @@ Kiểm soát tiến độ và chất lượng là hai trụ cột không thể t
 
 **Velocity** trong Scrum được đo bằng tổng Story Points (SP) hoàn thành trong một sprint (đạt đủ Definition of Done). Chỉ số này giúp:
 - Dự báo sprint kế tiếp có thể nhận bao nhiêu SP
-- Phát hiện sớm nếu nhóm đang overcommit hoặc undercommit
+- Phát hiện sớm nếu kế hoạch sprint đang overcommit hoặc undercommit
 - Nhận diện nguyên nhân của velocity drop (blocker, scope creep, technical debt)
 
 **Quy ước:** Story Points cho task overhead (setup, review, planning) không được tính vào velocity — chỉ tính SP từ User Stories trong Product Backlog.
@@ -107,7 +107,7 @@ Burndown Chart thể hiện lượng công việc còn lại (Story Points remai
 | Pattern | Hình dạng đường thực tế | Ý nghĩa | Hành động |
 |---------|---|---|---|
 | **On track** | Bám sát đường lý tưởng | Tiến độ đúng kế hoạch | Duy trì |
-| **Burndown nhanh** | Dưới đường lý tưởng | Team faster than expected | Pull thêm story từ backlog |
+| **Burndown nhanh** | Dưới đường lý tưởng | Tiến độ nhanh hơn dự kiến | Pull thêm story từ backlog |
 | **Burndown chậm** | Trên đường lý tưởng | Có blockers hoặc underestimate | Scrum Master can thiệp, re-estimate |
 | **Flat line** | Ngang, không giảm | Work bị blocked hoàn toàn | Daily standup urgent: identify blocker |
 | **Cliff drop cuối** | Đột ngột giảm mạnh cuối sprint | Rush, bỏ qua quality gates | Review DoD compliance |
@@ -338,9 +338,9 @@ export const validate = (schema: z.ZodSchema) => (req, res, next) => {
 
 ## 5.4 Quy trình Code Review
 
-### 5.4.1 Code Review với team nhỏ
+### 5.4.1 Code Review trong mô hình cá nhân
 
-Với team 1–2 người, traditional peer review không khả thi cho mọi commit. Nhóm áp dụng **structured self-review** kết hợp với automated tools, đảm bảo chất lượng tương đương mà không cần reviewer thứ hai cho mỗi thay đổi.
+Với mô hình 1 người, traditional peer review không khả thi cho mọi commit. Tác giả áp dụng **structured self-review** kết hợp với automated tools, đảm bảo chất lượng tương đương mà không cần reviewer thứ hai cho mỗi thay đổi.
 
 **Hình 5.5 — Quy trình Code Review (Self-Review + Automated)**
 
