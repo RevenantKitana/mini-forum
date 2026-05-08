@@ -46,18 +46,46 @@ Nội dung báo cáo được tổ chức theo 7 chương, tuân thủ phương 
 
 ---
 
-## MỤC LỤC
+## MỤC LỤC CHI TIẾT
 
-| Chương | Tên chương | Trang |
-|--------|-----------|-------|
-| **Chương 1** | [Tổng quan hệ thống thông tin](./01_chuong_1_tong_quan.md) | 4 |
-| **Chương 2** | [Phân tích nghiệp vụ](./02_chuong_2_phan_tich_nghiep_vu.md) | 9 |
-| **Chương 3** | [Mô hình hóa dữ liệu](./03_chuong_3_mo_hinh_hoa_du_lieu.md) | 18 |
-| **Chương 4** | [Luồng thông tin trong hệ thống](./04_chuong_4_luong_thong_tin.md) | 28 |
-| **Chương 5** | [Đặc tả chức năng chi tiết](./05_chuong_5_dac_ta_chuc_nang.md) | 36 |
-| **Chương 6** | [Hệ thống báo cáo và kiểm soát](./06_chuong_6_bao_cao_kiem_soat.md) | 46 |
-| **Chương 7** | [Đánh giá và kết luận](./07_chuong_7_danh_gia_ket_luan.md) | 52 |
-| **Phụ lục** | [Phụ lục kỹ thuật](./07_chuong_7_danh_gia_ket_luan.md#phụ-lục) | 57 |
+| Chương | Mục cấp 1 | Trang |
+|--------|----------|-------|
+| **1** | 1.1 [Đặt vấn đề và lý do chọn đề tài](./01_chuong_1_tong_quan.md#11-đặt-vấn-đề-và-lý-do-chọn-đề-tài) | 4 |
+| | 1.2 [Khái niệm Hệ thống Thông tin Quản lý](./01_chuong_1_tong_quan.md#12-khái-niệm-hệ-thống-thông-tin-quản-lý) | 6 |
+| | 1.3 [Giới thiệu dự án MINI-FORUM](./01_chuong_1_tong_quan.md#13-giới-thiệu-dự-án-mini-forum) | 8 |
+| **2** | 2.1 [Các tác nhân (Actors)](./02_chuong_2_phan_tich_nghiep_vu.md#21-các-tác-nhân-actors) | 9 |
+| | 2.2 [Các use case (Trường hợp sử dụng)](./02_chuong_2_phan_tich_nghiep_vu.md#22-các-use-case) | 12 |
+| | 2.3 [Quy trình nghiệp vụ chính](./02_chuong_2_phan_tich_nghiep_vu.md#23-quy-trình-nghiệp-vụ-chính) | 16 |
+| **3** | 3.1 [Entity-Relationship Diagram (ERD)](./03_chuong_3_mo_hinh_hoa_du_lieu.md#31-entity-relationship-diagram-erd) | 18 |
+| | 3.2 [Mô tả Entity Core Group](./03_chuong_3_mo_hinh_hoa_du_lieu.md#32-mô-tả-entity-core-group) | 21 |
+| | 3.3 [Mô tả Entity Content Group](./03_chuong_3_mo_hinh_hoa_du_lieu.md#33-mô-tả-entity-content-group) | 24 |
+| | 3.4 [Chiến lược Block Layout cho nội dung phong phú](./03_chuong_3_mo_hinh_hoa_du_lieu.md#34-chiến-lược-block-layout) | 26 |
+| | 3.5 [Data Dictionary — Enums và Kiểu dữ liệu](./03_chuong_3_mo_hinh_hoa_du_lieu.md#35-data-dictionary) | 27 |
+| **4** | 4.1 [DFD Mức 0 — Context Diagram](./04_chuong_4_luong_thong_tin.md#41-dfd-mức-0--context-diagram) | 28 |
+| | 4.2 [DFD Mức 1 — Các quy trình xử lý chính](./04_chuong_4_luong_thong_tin.md#42-dfd-mức-1--các-quy-trình-xử-lý-chính) | 30 |
+| | 4.3 [Luồng Vote và Cập nhật Reputation](./04_chuong_4_luong_thong_tin.md#43-luồng-vote-và-cập-nhật-reputation) | 32 |
+| | 4.4 [Kiến trúc SSE — Real-time Notification](./04_chuong_4_luong_thong_tin.md#44-kiến-trúc-sse--real-time-notification) | 33 |
+| | 4.5 [Luồng xử lý báo cáo vi phạm (Report Workflow)](./04_chuong_4_luong_thong_tin.md#45-luồng-xử-lý-báo-cáo-vi-phạm) | 34 |
+| | 4.6 [Luồng Full-Text Search](./04_chuong_4_luong_thong_tin.md#46-luồng-full-text-search) | 35 |
+| **5** | 5.1 [Module Authentication & Authorization](./05_chuong_5_dac_ta_chuc_nang.md#51-module-authentication--authorization) | 36 |
+| | 5.2 [Module Post Management](./05_chuong_5_dac_ta_chuc_nang.md#52-module-post-management) | 38 |
+| | 5.3 [Module Comment System](./05_chuong_5_dac_ta_chuc_nang.md#53-module-comment-system) | 40 |
+| | 5.4 [Module User Management](./05_chuong_5_dac_ta_chuc_nang.md#54-module-user-management) | 41 |
+| | 5.5 [Module Notification System](./05_chuong_5_dac_ta_chuc_nang.md#55-module-notification-system) | 42 |
+| | 5.6 [Module Search](./05_chuong_5_dac_ta_chuc_nang.md#56-module-search) | 43 |
+| | 5.7 [Module Vote & Bookmark](./05_chuong_5_dac_ta_chuc_nang.md#57-module-vote--bookmark) | 44 |
+| | 5.8 [Module Category & Tag](./05_chuong_5_dac_ta_chuc_nang.md#58-module-category--tag) | 45 |
+| | 5.9 [Module Media Upload](./05_chuong_5_dac_ta_chuc_nang.md#59-module-media-upload) | 45 |
+| | 5.10 [Module Dynamic Config](./05_chuong_5_dac_ta_chuc_nang.md#510-module-dynamic-config) | 46 |
+| **6** | 6.1 [Tổng quan hệ thống kiểm soát](./06_chuong_6_bao_cao_kiem_soat.md#61-tổng-quan-hệ-thống-kiểm-soát) | 46 |
+| | 6.2 [Tầng 1 — Preventive Controls: Kiểm soát ngăn ngừa](./06_chuong_6_bao_cao_kiem_soat.md#62-tầng-1--preventive-controls) | 49 |
+| | 6.3 [Tầng 2 — Detective Controls: Kiểm soát phát hiện](./06_chuong_6_bao_cao_kiem_soat.md#63-tầng-2--detective-controls) | 50 |
+| | 6.4 [Tầng 3 — Corrective Controls: Kiểm soát khắc phục](./06_chuong_6_bao_cao_kiem_soat.md#64-tầng-3--corrective-controls) | 52 |
+| **7** | 7.1 [Đánh giá thiết kế dữ liệu](./07_chuong_7_danh_gia_ket_luan.md#71-đánh-giá-thiết-kế-dữ-liệu) | 52 |
+| | 7.2 [Đánh giá kiến trúc hệ thống](./07_chuong_7_danh_gia_ket_luan.md#72-đánh-giá-kiến-trúc-hệ-thống) | 55 |
+| | 7.3 [Đánh giá tiến độ phát triển](./07_chuong_7_danh_gia_ket_luan.md#73-đánh-giá-tiến-độ-phát-triển) | 57 |
+| | 7.4 [Kết luận](./07_chuong_7_danh_gia_ket_luan.md#74-kết-luận) | 58 |
+| | 7.5 [Phụ lục kỹ thuật](./07_chuong_7_danh_gia_ket_luan.md#75-phụ-lục-kỹ-thuật) | 60 |
 
 ---
 

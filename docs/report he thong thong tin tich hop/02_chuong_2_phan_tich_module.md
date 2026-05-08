@@ -91,7 +91,7 @@ backend/src/
     └── userController.ts         ← Xem/cập nhật hồ sơ, thay đổi avatar
     services/
     ├── userService.ts            ← Business logic người dùng, tìm kiếm user
-    └── imagekitService.ts        ← Tích hợp ImageKit CDN: upload, xóa, signed URL
+    └── imagekitService.ts        ← Tích hợp ImageKit CDN: upload, xóa, URL transform
 
     ════════════════════════════════════════════════════════
     CROSS-CUTTING CONCERNS (Middleware dùng chung)

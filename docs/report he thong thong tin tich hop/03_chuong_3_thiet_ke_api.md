@@ -134,20 +134,23 @@ backend/src/routes/
 
 ### 3.2.1 Auth Routes — `/api/v1/auth`
 
-Quản lý toàn bộ vòng đời xác thực: đăng ký, đăng nhập, làm mới token, đặt lại mật khẩu qua OTP.
+Quản lý toàn bộ vòng đời xác thực: kiểm tra định danh, đăng ký, đăng nhập, làm mới token, và luồng OTP tách riêng cho đăng ký/đặt lại mật khẩu.
 
 **Bảng 3.3 — Auth API Endpoints**
 
 | Method | Endpoint | Mô tả | Middleware |
 |--------|----------|-------|-----------|
-| POST | `/auth/register` | Đăng ký tài khoản mới | `validate(registerSchema)` |
+| GET | `/auth/check-email` | Kiểm tra email đã tồn tại hay chưa | — |
+| GET | `/auth/check-username` | Kiểm tra username đã tồn tại hay chưa | — |
+| POST | `/auth/register` | Đăng ký tài khoản mới | `registerLimiter`, `validate(registerSchema)` |
 | POST | `/auth/login` | Đăng nhập, nhận JWT pair | `authLimiter`, `validate(loginSchema)` |
-| POST | `/auth/logout` | Đăng xuất, xóa refresh token khỏi DB | `authMiddleware` |
+| POST | `/auth/logout` | Đăng xuất, xóa refresh token/cookie hiện tại | — |
 | POST | `/auth/refresh` | Làm mới access token từ refresh cookie | — |
-| POST | `/auth/forgot-password` | Gửi OTP 6 số về email | `otpSendLimiter` |
-| POST | `/auth/verify-otp` | Xác minh OTP, nhận `registrationToken` | `otpVerifyLimiter` |
-| POST | `/auth/reset-password` | Đặt lại mật khẩu sau xác minh OTP | `authLimiter` |
-| GET  | `/auth/me` | Lấy thông tin user đang đăng nhập | `authMiddleware` |
+| POST | `/auth/send-otp-register` hoặc `/auth/send-otp-reset` | Gửi OTP 6 số cho đăng ký hoặc reset mật khẩu | `otpSendLimiter` |
+| POST | `/auth/verify-otp-register` hoặc `/auth/verify-otp-reset` | Xác minh OTP, nhận `registrationToken` hoặc `resetToken` | `otpVerifyLimiter` |
+| POST | `/auth/reset-password` | Đặt lại mật khẩu sau xác minh OTP | `resetPasswordLimiter`, `validate(resetPasswordSchema)` |
+| POST | `/auth/logout-all` | Đăng xuất toàn bộ phiên đăng nhập | `authenticate` |
+| GET  | `/auth/me` | Lấy thông tin user đang đăng nhập | `authenticate` |
 
 ### 3.2.2 Post Routes — `/api/v1/posts`
 
@@ -189,14 +192,14 @@ Quản lý profile và hoạt động cá nhân của từng người dùng.
 
 | Method | Endpoint | Mô tả | Auth |
 |--------|----------|-------|------|
-| GET | `/users/me` | Profile của mình (full data) | Bắt buộc |
-| PATCH | `/users/me` | Cập nhật display_name, bio, date_of_birth, gender | Bắt buộc |
-| POST | `/users/me/avatar` | Upload avatar (multipart/form-data → ImageKit) | Bắt buộc |
-| DELETE | `/users/me/avatar` | Xóa avatar, trở về default | Bắt buộc |
-| GET | `/users/:username` | Profile công khai của người dùng khác | Không bắt buộc |
-| GET | `/users/:username/posts` | Danh sách bài viết của user đó | Không bắt buộc |
-| GET | `/users/me/bookmarks` | Danh sách bài viết đã bookmark | Bắt buộc |
-| GET | `/users/me/votes` | Lịch sử vote (upvote/downvote) | Bắt buộc |
+| GET | `/users/username/:username` | Profile công khai theo username | Không bắt buộc |
+| GET | `/users/:id` | Profile theo user id | Không bắt buộc |
+| GET | `/users/:id/posts` | Danh sách bài viết của người dùng | Không bắt buộc |
+| GET | `/users/:id/comments` | Danh sách bình luận của người dùng | Không bắt buộc |
+| PUT | `/users/:id` | Cập nhật display_name, bio, date_of_birth, gender | Bắt buộc |
+| PATCH | `/users/:id/username` | Đổi username với validate riêng | Bắt buộc |
+| PATCH | `/users/:id/password` | Đổi mật khẩu khi đã đăng nhập | Bắt buộc |
+| POST | `/users/:id/avatar/upload` | Upload avatar (multipart/form-data → ImageKit) | Bắt buộc |
 
 ### 3.2.5 Admin Routes — `/api/v1/admin`
 
@@ -393,7 +396,7 @@ MINI-FORUM gồm 4 service hoạt động độc lập nhưng giao tiếp chặt
 | `vibe-content` | PostgreSQL | Prisma/TCP | `DATABASE_URL` | **Read only** | Thu thập context để ra quyết định AI |
 | `backend` | PostgreSQL | Prisma/TCP | `DATABASE_URL` | Read/Write | Toàn bộ data access |
 | `backend` | Brevo API | HTTPS/REST | API Key header | Outbound | Gửi email OTP và xác nhận đăng ký |
-| `backend` | ImageKit | HTTPS/REST | API Key + Signed URL | Outbound | Upload và delete ảnh người dùng |
+| `backend` | ImageKit | HTTPS/REST | Private API Key (server-side) | Outbound | Upload, transform URL và delete ảnh người dùng |
 | `frontend` | `backend` (SSE) | HTTP/SSE | JWT trong query param | **Server push** | Nhận notification real-time |
 
 ### 3.4.3 Real-time Notifications qua Server-Sent Events (SSE)
@@ -597,8 +600,8 @@ app.use(errorMiddleware);
 | `createContentLimiter` | 1 phút | 5 req / IP | POST /posts, POST /comments |
 | `voteLimiter` | 1 phút | 30 req / IP | POST /posts/:id/vote, /comments/:id/vote |
 | `searchLimiter` | 1 phút | 30 req / IP | GET /search |
-| `otpSendLimiter` | 5 phút | 3 req / IP | POST /auth/forgot-password |
-| `otpVerifyLimiter` | 10 phút | 10 req / IP | POST /auth/verify-otp |
+| `otpSendLimiter` | 5 phút | 3 req / IP | POST /auth/send-otp-register hoặc /auth/send-otp-reset |
+| `otpVerifyLimiter` | 10 phút | 10 req / IP | POST /auth/verify-otp-register hoặc /auth/verify-otp-reset |
 
 ---
 

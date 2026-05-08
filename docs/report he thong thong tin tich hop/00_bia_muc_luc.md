@@ -110,7 +110,7 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 
 ---
 
-## MỤC LỤC
+## MỤC LỤC HỆ THỐNG THÔNG TIN QUẢN LÝ
 
 **CHƯƠNG 1 — TỔNG QUAN KIẾN TRÚC HỆ THỐNG**
 - 1.1 Bối cảnh và lý do chọn kiến trúc Monorepo Multi-service
@@ -197,3 +197,43 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 | Hình 5.1 | Kiến trúc bảo mật 5 lớp | 5 |
 | Hình 6.1 | Docker Multi-stage Build Process | 6 |
 | Hình 6.2 | Sơ đồ triển khai đa nền tảng | 6 |
+
+---
+
+## DANH MỤC TỪ VIẾT TẮT
+
+### Danh mục từ viết tắt (Abbreviations & Acronyms)
+
+| Từ viết tắt | Ý nghĩa | Ngữ cảnh sử dụng |
+|------------|---------|-----------------|
+| **AI** | Artificial Intelligence — Trí tuệ nhân tạo | Vibe-content service, LLM integration |
+| **API** | Application Programming Interface — Giao diện lập trình ứng dụng | Giao tiếp giữa các service, Frontend ↔ Backend |
+| **CORS** | Cross-Origin Resource Sharing — Chia sẻ tài nguyên ngang origin | Security middleware, browser request |
+| **CRUD** | Create, Read, Update, Delete — 4 thao tác dữ liệu cơ bản | Các operation trên resource (posts, users, comments) |
+| **CSP** | Content-Security-Policy — Chính sách bảo mật nội dung | HTTP security header, chống XSS |
+| **CI/CD** | Continuous Integration / Continuous Deployment — Tích hợp liên tục / Triển khai liên tục | Pipeline GitHub Actions, tự động build & deploy |
+| **DB** | Database — Cơ sở dữ liệu | PostgreSQL database, data persistence |
+| **Dev** | Development — Môi trường phát triển | Máy local, cổng 5000, 5173, 5174 |
+| **ERD** | Entity-Relationship Diagram — Sơ đồ thực thể-quan hệ | Chapter 1, database schema design |
+| **ES2020** | ECMAScript 2020 — Phiên bản JavaScript | TypeScript transpile target |
+| **FTS** | Full-Text Search — Tìm kiếm toàn văn bản | PostgreSQL search, GIN index |
+| **GIN** | Generalized Inverted Index — Chỉ mục đảo ngược | PostgreSQL indexing strategy cho FTS |
+| **HSTS** | HTTP Strict-Transport-Security — Bảo mật chuyên dụng | HTTP header, buộc HTTPS |
+| **HTTP/HTTPS** | Hypertext Transfer Protocol / Secure | REST API, network communication |
+| **MIME** | Multipurpose Internet Mail Extensions | Content-Type header validation |
+| **JWT** | JSON Web Token — Token xác thực | Authentication, access token, refresh token |
+| **LLM** | Large Language Model — Mô hình ngôn ngữ lớn | Gemini, Groq, Cerebras, Nvidia providers |
+| **MIS** | Management Information System — Hệ thống thông tin quản lý | Báo cáo context, architecture classification |
+| **ORM** | Object-Relational Mapping — Ánh xạ đối tượng-quan hệ | Prisma ORM, database query abstraction |
+| **OTP** | One-Time Password — Mật khẩu dùng một lần | Email verification, password reset |
+| **OWASP** | Open Web Application Security Project — Dự án bảo mật ứng dụng web mở | Security best practices, Top 10 vulnerabilities |
+| **Prod** | Production — Môi trường sản xuất | Render.com, Vercel, production deployment |
+| **RBAC** | Role-Based Access Control — Kiểm soát truy cập theo vai trò | Authorization, user roles (MEMBER, MODERATOR, ADMIN) |
+| **REST** | Representational State Transfer — Phong cách kiến trúc API | API design principle, HTTP verbs |
+| **SQLi** | SQL Injection — Lỗ hổng tiêm SQL | Security threat, Prisma parameterized queries ngăn chặn |
+| **SSE** | Server-Sent Events — Sự kiện từ server | Real-time notifications, one-way communication |
+| **TLS** | Transport Layer Security — Bảo mật tầng transport | HTTPS encryption, SSL certificate |
+| **TTL** | Time To Live — Thời gian tồn tại | JWT token expiration, cache expiration |
+| **UGC** | User Generated Content — Nội dung do người dùng tạo | Forum posts, comments, community contributions |
+| **URL** | Uniform Resource Locator — Địa chỉ tài nguyên | API endpoint path, HTTP routing |
+| **XSS** | Cross-Site Scripting — Tấn công script ngang site | Security vulnerability, CSP mitigation |

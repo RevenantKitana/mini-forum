@@ -357,8 +357,8 @@ if (!config.jwt.accessSecret) {
 }
 ```
 
-**ImageKit — Server-side Signed URL:**
-Upload ảnh không cho phép client trực tiếp kết nối ImageKit API. Client gửi file lên Backend → Backend upload lên ImageKit với private key → trả về URL cho client. Private key không bao giờ ra client.
+**ImageKit — Server-side Upload + URL Transform:**
+Upload ảnh không cho phép client trực tiếp kết nối ImageKit API. Client gửi file lên Backend → Backend upload bằng private key → sinh URL preview/standard qua transform helper và trả về cho client. Private key không bao giờ ra client.
 
 ### 5.3.4 Audit Trail
 
