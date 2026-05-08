@@ -3,69 +3,9 @@
 
 ---
 
-## 2.1 Các tác nhân (Actors)
+## 2.1 Các tác nhân (Actors) và phân quyền
 
-### 2.1.1 Định nghĩa và phân cấp tác nhân
-
-Trong phân tích hệ thống thông tin, **tác nhân** (Actor) là bất kỳ thực thể nào nằm ngoài ranh giới hệ thống, tương tác với hệ thống để trao đổi thông tin. Tác nhân có thể là người dùng trực tiếp, hệ thống bên ngoài hoặc thiết bị phần cứng.
-
-Hệ thống MINI-FORUM có **5 tác nhân người dùng** với phân cấp quyền hạn tuyến tính từ thấp đến cao. Phân cấp này được triển khai trực tiếp trong Prisma schema qua enum `Role`:
-
-```prisma
-// backend/prisma/schema.prisma
-enum Role {
-  MEMBER      // Thành viên thông thường
-  MODERATOR   // Kiểm duyệt viên
-  ADMIN       // Quản trị viên cấp cao
-  BOT         // Tài khoản AI tự động
-}
-```
-
-> **Lưu ý thiết kế:** `Guest` (khách chưa đăng nhập) không phải là Role trong database. Đây là trạng thái "unauthenticated" được xử lý tại middleware layer — khi không có JWT token hợp lệ trong header.
-
-**Sơ đồ phân cấp quyền hạn:**
-
-```
-╔══════════════════════════════════════════════════════╗
-║         PHÂN CẤP QUYỀN HẠN MINI-FORUM               ║
-╠══════════════════════════════════════════════════════╣
-║                                                      ║
-║  ┌──────────────────────────────────────────────┐   ║
-║  │              ADMIN (Cao nhất)                │   ║
-║  │  Full system access + audit log + settings   │   ║
-║  │  ┌──────────────────────────────────────┐    │   ║
-║  │  │     MODERATOR                        │    │   ║
-║  │  │  Moderation + reports + dashboard    │    │   ║
-║  │  │  ┌──────────────────────────────┐    │    │   ║
-║  │  │  │      MEMBER                  │    │    │   ║
-║  │  │  │  Post, comment, vote, ...    │    │    │   ║
-║  │  │  │  ┌────────────────────┐      │    │    │   ║
-║  │  │  │  │      GUEST         │      │    │    │   ║
-║  │  │  │  │  View public only  │      │    │    │   ║
-║  │  │  │  └────────────────────┘      │    │    │   ║
-║  │  │  └──────────────────────────────┘    │    │   ║
-║  │  └──────────────────────────────────────┘    │   ║
-║  └──────────────────────────────────────────────┘   ║
-║                                                      ║
-║         BOT: Lateral role — tạo content tự động     ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**Hình 2.1 — Phân cấp quyền hạn các tác nhân MINI-FORUM**
-
-### 2.1.2 Mô tả chi tiết các tác nhân
-
-**Bảng 2.1 — Danh sách Actor và đặc điểm**
-
-| Actor | Nguồn gốc | Mô tả chi tiết | Quyền hạn tiêu biểu |
-|-------|:--------:|----------------|:-------------------:|
-| **Guest** | Không có tài khoản (unauthenticated) | Người dùng truy cập ẩn danh, chưa đăng nhập. Chỉ thấy nội dung công khai (`view_permission = ALL`) | Xem bài viết công khai, tìm kiếm |
-| **Member** | `Role.MEMBER` (default sau đăng ký) | Thành viên đã xác thực OTP email. Đây là actor chủ lực của hệ thống — họ tạo ra toàn bộ UGC | Đăng bài, bình luận, vote, bookmark, báo cáo |
-| **Moderator** | `Role.MODERATOR` (được Admin bổ nhiệm) | Kiểm duyệt viên tin cậy được Admin nâng cấp. Có thể quản lý nội dung nhưng không quản lý hệ thống | Ẩn/xóa bài viết, xử lý báo cáo, khóa thread, xem dashboard |
-| **Admin** | `Role.ADMIN` (cấp cao nhất) | Quản trị viên toàn quyền. Chịu trách nhiệm toàn bộ cấu hình và vận hành hệ thống | Full access: user management, config, audit log, tất cả Mod actions |
-| **Bot** | `Role.BOT` (tài khoản đặc biệt) | Tài khoản AI agent được vibe-content service sử dụng để tự động đăng bài và bình luận | Tạo bài viết và comment tự động; KHÔNG vote, KHÔNG bookmark |
-
-### 2.1.3 Ma trận phân quyền chi tiết
+Hệ thống có 5 tác nhân: **Guest** (unauthenticated, xem công khai), **Member** (xác thực OTP, tạo UGC), **Moderator** (quản lý nội dung), **Admin** (toàn quyền hệ thống), **Bot** (tài khoản AI). Phân quyền theo cấp bậc tuyến tính: `ALL < MEMBER < MODERATOR < ADMIN`. Guest không có trong database enum; là trạng thái middleware khi không có JWT token.
 
 **Bảng 2.2 — Ma trận phân quyền đầy đủ theo chức năng**
 
@@ -99,105 +39,9 @@ enum Role {
 
 ---
 
-## 2.2 Use Case Diagram
+## 2.2 Use Cases
 
-### 2.2.1 Tổng quan 28 Use Cases
-
-Hệ thống MINI-FORUM có **28 Use Case** được tổ chức thành **4 nhóm chức năng** theo phạm vi nghiệp vụ:
-
-**Bảng 2.3 — Danh sách đầy đủ 28 Use Case**
-
-| Nhóm | Mã UC | Tên Use Case | Actor chính | Độ ưu tiên |
-|------|:----:|-------------|:-----------:|:----------:|
-| **Quản lý người dùng** | UC-01 | Đăng ký tài khoản | Guest | Cao |
-| | UC-02 | Xác thực OTP qua email | Guest | Cao |
-| | UC-03 | Đăng nhập hệ thống | Member/Admin/Bot | Cao |
-| | UC-04 | Cập nhật thông tin cá nhân | Member | Trung bình |
-| | UC-05 | Đổi mật khẩu | Member | Trung bình |
-| | UC-06 | Quên mật khẩu — reset qua email | Guest | Trung bình |
-| | UC-07 | Chặn người dùng | Member | Thấp |
-| | UC-08 | Upload avatar lên CDN | Member | Trung bình |
-| **Quản lý nội dung** | UC-09 | Tạo bài viết | Member | Cao |
-| | UC-10 | Chỉnh sửa bài viết | Member/Admin | Cao |
-| | UC-11 | Xóa bài viết | Member/Mod/Admin | Cao |
-| | UC-12 | Tạo bình luận | Member | Cao |
-| | UC-13 | Reply bình luận | Member | Cao |
-| | UC-14 | Quote bình luận | Member | Trung bình |
-| | UC-15 | Chỉnh sửa bình luận (giới hạn thời gian) | Member | Trung bình |
-| **Tương tác cộng đồng** | UC-16 | Vote upvote/downvote bài viết | Member | Cao |
-| | UC-17 | Vote upvote/downvote bình luận | Member | Cao |
-| | UC-18 | Bookmark bài viết | Member | Trung bình |
-| | UC-19 | Tìm kiếm toàn văn bản (FTS) | Member/Guest | Cao |
-| | UC-20 | Nhận thông báo real-time (SSE) | Member | Cao |
-| **Quản trị hệ thống** | UC-21 | Quản lý danh mục (CRUD category) | Admin | Cao |
-| | UC-22 | Quản lý thẻ tag (CRUD tag) | Admin | Trung bình |
-| | UC-23 | Báo cáo nội dung vi phạm | Member | Cao |
-| | UC-24 | Xử lý báo cáo vi phạm | Moderator/Admin | Cao |
-| | UC-25 | Xem và tìm kiếm audit log | Admin | Trung bình |
-| | UC-26 | Xem dashboard thống kê | Admin/Moderator | Cao |
-| | UC-27 | Ghim bài viết (global/category) | Admin | Thấp |
-| | UC-28 | Khóa thread (không cho bình luận) | Admin/Moderator | Trung bình |
-
-### 2.2.2 Use Case Diagram — Nhóm Quản lý người dùng
-
-**Hình 2.2 — Use Case Diagram: Nhóm Quản lý người dùng**
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        HỆ THỐNG MINI-FORUM                           │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │               NHÓM: QUẢN LÝ NGƯỜI DÙNG                        │  │
-│  │                                                                │  │
-│  │                                                                │  │
-│  │   (UC-01) Đăng ký tài khoản  ◄────────────────── Guest        │  │
-│  │                │                                              │  │
-│  │                │ «include»                                     │  │
-│  │                ▼                                               │  │
-│  │   (UC-02) Xác thực OTP       ◄────────────────── Guest        │  │
-│  │                ▲                                               │  │
-│  │                │ «include»                                     │  │
-│  │   (UC-06) Reset mật khẩu     ◄────────────────── Guest        │  │
-│  │                                                                │  │
-│  │   (UC-03) Đăng nhập          ◄────────────┬────── Member      │  │
-│  │                              ◄────────────┼────── Admin       │  │
-│  │                              ◄────────────┘────── Bot         │  │
-│  │                                                                │  │
-│  │   (UC-04) Cập nhật profile   ◄────────────────── Member       │  │
-│  │   (UC-05) Đổi mật khẩu      ◄────────────────── Member       │  │
-│  │   (UC-07) Chặn người dùng   ◄────────────────── Member       │  │
-│  │   (UC-08) Upload avatar      ◄────────────────── Member       │  │
-│  │               │ «include»                                      │  │
-│  │               ▼                                                │  │
-│  │         [ImageKit CDN]                                         │  │
-│  │                                                                │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-**Quan hệ Include/Extend:**
-- UC-01 `«include»` UC-02: Đăng ký bắt buộc phải xác thực OTP.
-- UC-06 `«include»` UC-02: Reset mật khẩu cũng cần xác thực OTP để xác nhận danh tính.
-- UC-08 `«include»` [ImageKit CDN]: Upload avatar bắt buộc thông qua ImageKit API.
-
-### 2.2.3 Use Case Diagram — Nhóm Quản lý nội dung
-
-**Hình 2.3 — Use Case Diagram: Nhóm Quản lý nội dung**
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │              NHÓM: QUẢN LÝ NỘI DUNG                           │  │
-│  │                                                                │  │
-│  │   (UC-09) Tạo bài viết    ◄──────────────────── Member        │  │
-│  │               │ «extend»   ◄──────────────────── Bot          │  │
-│  │               ▼                                                │  │
-│  │         [Block Layout]                                         │  │
-│  │                                                                │  │
-│  │   (UC-10) Sửa bài viết   ◄──────────────┬───── Member(tg)    │  │
-│  │                          ◄──────────────┘───── Admin          │  │
-│  │                                                                │  │
-│  │   (UC-11) Xóa bài viết   ◄──────────┬────────── Member(tg)   │  │
-│  │                          ◄──────────┼────────── Moderator     │  │
+Hệ thống có 28 Use Cases tổ chức thành 4 nhóm: Quản lý người dùng (UC-01 đến UC-08, 8 UC), Quản lý nội dung (UC-09 đến UC-15, 7 UC), Tương tác cộng đồng (UC-16 đến UC-20, 5 UC), Quản trị hệ thống (UC-21 đến UC-28, 8 UC).
 │  │                          ◄──────────┘────────── Admin         │  │
 │  │                                                                │  │
 │  │   (UC-12) Tạo bình luận  ◄───────────────────── Member        │  │

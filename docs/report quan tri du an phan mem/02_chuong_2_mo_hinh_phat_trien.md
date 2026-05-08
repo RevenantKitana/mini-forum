@@ -2,64 +2,11 @@
 
 ---
 
-## 2.1 So sánh các mô hình phát triển phần mềm
+## 2.1 Lựa chọn phương pháp phát triển
 
-### 2.1.1 Tổng quan về các mô hình phát triển phần mềm
+Ba phương pháp được đánh giá trên 8 tiêu chí: **Waterfall** (thiếu linh hoạt, không thể demo giữa kỳ), **Kanban** (không có Sprint Goal rõ ràng cho báo cáo tiến độ), **Scrum** (phù hợp nhất). Scrum cung cấp: (1) sprint 2 tuần có deliverable demo, (2) phản ứng linh hoạt với yêu cầu thay đổi, (3) velocity tracking để báo cáo tiến độ cụ thể, (4) phát hiện rủi ro sớm qua Sprint Review.
 
-Lựa chọn mô hình phát triển phần mềm (Software Development Methodology) là một trong những quyết định quan trọng nhất trong giai đoạn khởi động dự án, bởi nó chi phối toàn bộ cách tổ chức công việc, phân bổ nguồn lực, quản lý rủi ro và phản ứng trước sự thay đổi yêu cầu trong suốt vòng đời dự án.
-
-Trước khi khởi động dự án MINI-FORUM, tác giả đã tiến hành đánh giá có hệ thống ba mô hình phổ biến nhất: **Waterfall** (thác nước), **Kanban** và **Scrum**. Việc đánh giá dựa trên bộ tiêu chí phù hợp với đặc thù của dự án: mô hình thực hiện cá nhân (1 người), thời gian cố định 3 tháng, yêu cầu có thể thay đổi trong quá trình phát triển, và cần demo tiến độ định kỳ cho giảng viên hướng dẫn.
-
-### 2.1.2 Đặc điểm từng mô hình
-
-**Mô hình Waterfall (Thác nước):**
-
-Waterfall là mô hình phát triển tuần tự truyền thống, trong đó dự án tiến hành qua các pha cố định: Yêu cầu → Phân tích → Thiết kế → Lập trình → Kiểm thử → Triển khai → Bảo trì. Mỗi pha phải hoàn thành trước khi pha tiếp theo bắt đầu. Mô hình này phù hợp với các dự án có yêu cầu cố định từ đầu, ít thay đổi, và cần tài liệu hóa đầy đủ (ví dụ: hệ thống phần mềm nhúng, hệ thống y tế có quy định nghiêm ngặt).
-
-**Mô hình Kanban:**
-
-Kanban (xuất phát từ Toyota Production System) là hệ thống quản lý luồng công việc trực quan thông qua bảng Kanban với các cột (To Do → In Progress → Done) và giới hạn WIP (Work In Progress). Kanban không quy định iteration có độ dài cố định, phù hợp với công việc vận hành liên tục (support, maintenance). Tuy nhiên, Kanban thiếu cấu trúc Sprint Goal và Retrospective, khiến khó đo lường tiến độ tổng thể.
-
-**Mô hình Scrum:**
-
-Scrum (Schwaber & Sutherland, 1993) là một framework Agile cung cấp cấu trúc vòng lặp rõ ràng (Sprint), các vai trò xác định (Product Owner, Scrum Master, Development Team), và một bộ ceremonies (Sprint Planning, Daily Standup, Sprint Review, Retrospective). Scrum đặc biệt phù hợp với các dự án có yêu cầu không chắc chắn, cần phản hồi liên tục, và mô hình cá nhân có kỷ luật tự tổ chức.
-
-### 2.1.3 Bảng so sánh chi tiết
-
-**Bảng 2.1 — So sánh ba mô hình phát triển phần mềm theo 8 tiêu chí**
-
-| Tiêu chí đánh giá | Waterfall | Kanban | **Scrum** |
-|------------------|-----------|--------|-----------|
-| **Phản ứng với thay đổi yêu cầu** | ❌ Rất kém — thay đổi sau pha Thiết kế gây tốn kém và delay toàn bộ lịch trình | ✅ Linh hoạt tuyệt đối — thêm task bất cứ lúc nào | ✅ **Linh hoạt có kiểm soát** — thay đổi được tích hợp vào Sprint kế tiếp, không làm vỡ Sprint hiện tại |
-| **Phù hợp mô hình cá nhân (1 người)** | ⚠️ Overhead tài liệu thiết kế quá cao so với quy mô cá nhân | ✅ Phù hợp — ít overhead | ✅ **Phù hợp** — ceremonies nhẹ, có thể điều chỉnh cho 1 người |
-| **Deliverable định kỳ có thể demo** | ❌ Chỉ có sản phẩm hoàn chỉnh ở cuối dự án; không thể demo giữa kỳ | ⚠️ Liên tục nhưng không có Sprint Goal rõ ràng | ✅ **Mỗi 2 tuần** có Working Software Increment có thể demo cho PO |
-| **Phát hiện và xử lý rủi ro** | ❌ Rủi ro tích lũy đến cuối dự án mới lộ ra; chi phí fix cao | ⚠️ Không có cơ chế chủ động kiểm tra rủi ro | ✅ **Sprint Review** phát hiện rủi ro sớm; có thể điều chỉnh sau mỗi 2 tuần |
-| **Quản lý tích hợp phức tạp (AI Service)** | ❌ Yêu cầu thiết kế AI từ Sprint 0 khi chưa có dữ liệu thật — rủi ro cao | ⚠️ Không có cơ chế ưu tiên rõ ràng khi tích hợp module mới | ✅ **Có thể dời AI sang Sprint 5** khi forum core đã có dữ liệu thật — giảm rủi ro tích hợp |
-| **Theo dõi và báo cáo tiến độ** | ✅ Milestone rõ ràng theo pha — dễ báo cáo theo giai đoạn | ⚠️ WIP Limit nhưng không có deadline Sprint cứng — khó báo cáo % hoàn thành | ✅ **Velocity tracking** theo Story Points từng Sprint — số liệu cụ thể để báo cáo |
-| **Phù hợp bối cảnh thực tập** | ⚠️ Không demo được giữa kỳ; toàn bộ công việc mới thấy ở cuối | ⚠️ Không có Sprint Goal để báo cáo tiến độ theo từng mốc | ✅ **Sprint Goal rõ ràng** — dễ trình bày tiến độ theo từng 2 tuần với giảng viên |
-| **Hỗ trợ cải tiến quy trình liên tục** | ❌ Không có ceremony retrospective | ⚠️ Có thể retrospective nhưng không có cấu trúc bắt buộc | ✅ **Sprint Retrospective** bắt buộc sau mỗi Sprint — cải tiến quy trình liên tục |
-
-**Kết luận đánh giá:** Scrum vượt trội trong 6/8 tiêu chí với điều kiện đặc thù của dự án MINI-FORUM. Waterfall bị loại do yêu cầu có thể thay đổi và cần demo định kỳ. Kanban bị loại do thiếu cấu trúc Sprint Goal — không phù hợp để báo cáo tiến độ theo mốc thời gian với giảng viên.
-
-### 2.1.4 Phân tích lý do lựa chọn Scrum — Các quyết định thực tế
-
-Quyết định chọn Scrum không chỉ là lý thuyết mà còn được xác nhận bởi ba tình huống thực tế xảy ra trong quá trình dự án:
-
-**Tình huống 1 — Yêu cầu Block Layout xuất hiện sau Sprint 1:**
-
-Tính năng `post_blocks` — cho phép bài viết chứa nhiều loại nội dung (TEXT, IMAGE, CODE, QUOTE) theo thứ tự tùy chỉnh — **không có trong backlog ban đầu**. Tính năng này được đề xuất sau khi demo Sprint 1 vì trình soạn thảo chỉ hỗ trợ văn bản thuần không đáp ứng nhu cầu của diễn đàn kỹ thuật (cần đăng code snippet và hình ảnh minh họa trong cùng một bài).
-
-→ Scrum cho phép đưa story mới vào Sprint 2 Backlog thông qua quy trình Backlog Refinement, mà **không cần thiết kế lại toàn bộ schema** như Waterfall yêu cầu.
-
-**Tình huống 2 — AI Service cần dữ liệu forum có sẵn:**
-
-`vibe-content` — AI bot sinh nội dung — chỉ có thể hoạt động hiệu quả khi hệ thống đã có cấu trúc categories, tags, và ít nhất một số tài khoản người dùng thật. Nếu implement AI từ Sprint 0–1 (như Waterfall yêu cầu trong pha thiết kế tích hợp), AI bot sẽ không biết generate bài viết cho category nào, với persona nào.
-
-→ Scrum cho phép dời `vibe-content` sang Sprint 5 (sau khi forum core hoàn chỉnh Sprint 1–4), **giảm rủi ro tích hợp đáng kể**.
-
-**Tình huống 3 — Phát hiện giới hạn của SSE sớm:**
-
-SSE (Server-Sent Events) cho thông báo real-time là một quyết định kiến trúc có rủi ro về scalability (mỗi connection là một HTTP connection liên tục, in-memory). Bằng cách implement trong Sprint 3 và demo kết quả ngay Sprint Review, tác giả xác định được giới hạn của SSE và ghi nhận **upgrade path sang WebSocket** trong tài liệu trước khi bàn giao, thay vì phát hiện vấn đề sau khi deploy lên production.
+Thực tế: Block Layout thêm Sprint 2 không cần refactor; AI Service dời Sprint 5 khi forum core hoàn chỉnh; SSE scalability issue phát hiện Sprint 3 qua demo. Scrum đã chứng minh hiệu quả thực tế cho bối cảnh này.
 
 ---
 

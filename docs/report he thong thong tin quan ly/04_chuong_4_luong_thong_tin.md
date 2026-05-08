@@ -3,24 +3,11 @@
 
 ---
 
-Chương 3 đã xây dựng mô hình tĩnh của dữ liệu — cấu trúc các entity và quan hệ giữa chúng. Chương này chuyển sang góc độ **động**: phân tích cách thông tin **di chuyển** qua hệ thống từ khi người dùng gửi yêu cầu đến khi nhận phản hồi. Phân tích luồng thông tin là công cụ thiết yếu để phát hiện điểm nghẽn (bottleneck), xác định điểm kiểm soát bảo mật và hiểu phạm vi tác động của từng hành động.
-
-Công cụ phân tích được sử dụng trong chương này là **DFD (Data Flow Diagram)** theo ký pháp Yourdon-DeMarco, kết hợp với **sequence diagram** dạng ASCII để mô tả các giao tiếp giữa các thành phần. Nội dung bao gồm 8 luồng thông tin quan trọng nhất của MINI-FORUM, từ luồng cấp hệ thống (DFD Mức 0) đến các luồng chức năng cụ thể (xác thực, vote, thông báo, báo cáo vi phạm, AI content, tìm kiếm).
-
----
-
 ## 4.1 DFD Mức 0 — Context Diagram
 
-### 4.1.1 Tổng quan luồng thông tin cấp hệ thống
+DFD (Data Flow Diagram) ký pháp Yourdon-DeMarco phân tích cách thông tin di chuyển từ khi người dùng gửi yêu cầu đến khi nhận phản hồi. Context Diagram (DFD Mức 0) mô tả MINI-FORUM như **hộp đen duy nhất** với 5 tác nhân ngoại vi chính: **Member** (người dùng đã xác thực), **Guest** (ẩn danh, chỉ đọc), **Admin**, **Bot (vibe-content)**, **External Services** (Brevo email, ImageKit CDN).
 
-DFD Mức 0 (Context Diagram) là cấp cao nhất trong phân tích luồng dữ liệu — mô tả toàn bộ MINI-FORUM như một **hộp đen duy nhất** với các tác nhân bên ngoài (External Entities) tương tác thông qua các luồng dữ liệu vào/ra. Ở cấp này, ta chưa quan tâm đến nội bộ hệ thống xử lý gì — chỉ xác định **ai tương tác** và **thông tin gì chảy vào/ra**.
-
-MINI-FORUM có **5 tác nhân ngoại vi** chính:
-1. **Member** — Người dùng đã đăng ký và xác thực email
-2. **Guest** — Người dùng chưa đăng nhập (chỉ đọc nội dung công khai)
-3. **Admin** — Người quản trị hệ thống (có quyền cao nhất)
-4. **Bot (vibe-content)** — Service sinh nội dung tự động bằng AI
-5. **External Services** — Brevo (email), ImageKit (CDN ảnh)
+Luồng thông tin: Member → API requests (auth, CRUD posts/comments, vote, bookmark, report) → phản hồi (JWT, SSE notifications, query results); Admin → quản lý user/category/tag/config, truy vấn audit log; Bot → AI-sinh content via REST API; External Services → email, media CDN.
 
 **Hình 4.1 — DFD Mức 0 (Context Diagram)**
 

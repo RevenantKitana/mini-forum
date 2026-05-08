@@ -2,31 +2,11 @@
 
 ---
 
-## 1.1 Mô tả dự án
+## 1.1 Dự án MINI-FORUM — Nên tảng diễn đàn Full-stack
 
-### 1.1.1 Giới thiệu chung
+MINI-FORUM là ứng dụng diễn đàn full-stack production-ready xây dựng trong khuôn khổ thực tập 3 tháng (27/01/2026 – 27/04/2026). Kiến trúc monorepo 4 service: **backend** (Express/Node.js, 14 modules, 21 services), **frontend** (React, 14 pages), **admin-client** (React, dashboard quản trị), **vibe-content** (AI bot, multi-LLM fallback). Cơ sở dữ liệu PostgreSQL với 19 models, hơn 50 API endpoints.
 
-MINI-FORUM là ứng dụng diễn đàn trực tuyến full-stack được thiết kế và phát triển từ đầu trong khuôn khổ thực tập chuyên đề kéo dài 3 tháng (27/01/2026 – 27/04/2026). Đây là một dự án phần mềm có quy mô vừa, hướng tới việc cung cấp nền tảng thảo luận cộng đồng hiện đại, nơi người dùng có thể đăng bài viết với định dạng nội dung phong phú (block layout), tương tác qua hệ thống bình luận lồng nhau đa cấp (nested comments), bình chọn và đánh giá chất lượng nội dung thông qua cơ chế upvote/downvote, cũng như nhận thông báo hoạt động theo thời gian thực.
-
-Dự án được xây dựng theo kiến trúc **monorepo** với bốn thành phần riêng biệt, mỗi thành phần giải quyết một miền vấn đề độc lập và có thể triển khai độc lập lên các nền tảng đám mây. Toàn bộ hệ thống được đóng gói bằng Docker, áp dụng TypeScript strict mode trên cả frontend lẫn backend, và sử dụng Prisma ORM để quản lý tầng dữ liệu với cơ sở dữ liệu PostgreSQL.
-
-Điểm khác biệt nổi bật của MINI-FORUM so với các hệ thống diễn đàn thông thường là việc tích hợp service sinh nội dung AI tự động (`vibe-content`) — một microservice độc lập có khả năng sử dụng nhiều nhà cung cấp Mô hình Ngôn ngữ Lớn (LLM — Large Language Model) theo cơ chế fallback tự động (Gemini → Groq → Cerebras → Nvidia). Service này đảm nhận vai trò giải quyết vấn đề **cold-start** — một thách thức kinh điển của mọi nền tảng cộng đồng mới: làm thế nào để khi người dùng đầu tiên đăng ký, họ không thấy một diễn đàn trống rỗng.
-
-Về bối cảnh dự án, MINI-FORUM được phát triển như một hệ thống thực tế có thể triển khai sản xuất, không chỉ là bài tập học thuật. Mọi quyết định kỹ thuật đều cân nhắc đến tính ổn định, bảo mật (OWASP Top 10), khả năng bảo trì và khả năng mở rộng theo chiều ngang trong tương lai.
-
-### 1.1.2 Bối cảnh và lý do hình thành dự án
-
-Nhu cầu xây dựng MINI-FORUM xuất phát từ ba quan sát thực tế:
-
-**Thứ nhất**, các diễn đàn hiện có trên thị trường (Reddit, Discourse, NodeBB) hoặc quá phức tạp về mặt vận hành, hoặc không cung cấp khả năng tùy biến sâu về logic nghiệp vụ. Một tổ chức muốn có diễn đàn nội bộ với quy tắc kiểm duyệt riêng cần một giải pháp có thể kiểm soát toàn bộ codebase.
-
-**Thứ hai**, các hệ thống CMS truyền thống không hỗ trợ tốt trải nghiệm tương tác cộng đồng (vote, nested comments, real-time notifications) vốn là yêu cầu cốt lõi của một diễn đàn kỹ thuật.
-
-**Thứ ba**, thực tập sinh cần một dự án đủ phức tạp để rèn luyện kỹ năng full-stack toàn diện: thiết kế database quan hệ, REST API với xác thực và phân quyền, frontend reactive, tích hợp dịch vụ bên thứ ba (email, CDN, AI) và quy trình CI/CD.
-
-### 1.1.3 Kiến trúc tổng thể hệ thống
-
-Hệ thống MINI-FORUM được tổ chức theo mô hình monorepo với bốn thành phần độc lập, mỗi thành phần có `package.json`, `Dockerfile` và cấu hình triển khai riêng. Các thành phần giao tiếp với nhau thông qua giao thức HTTP/REST — không có message broker hay event bus trong phiên bản hiện tại.
+Định hướng: Xây dựng MIS hoàn chỉnh cho cộng đồng trực tuyến—nền tảng không chỉ là nơi chia sẻ nội dung mà là hệ thống quản lý thông tin toàn diện với RBAC 4 cấp, moderation workflow, audit trail, SSE notifications, và AI content seeding.
 
 **Hình 1.1 — Kiến trúc tổng thể hệ thống MINI-FORUM**
 

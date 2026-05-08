@@ -3,48 +3,9 @@
 
 ---
 
-Mô hình hóa dữ liệu là bước trung tâm trong quá trình phân tích và thiết kế hệ thống thông tin. Sau khi xác định được các nghiệp vụ và use case ở chương trước, chương này chuyển hóa chúng thành cấu trúc lưu trữ dữ liệu cụ thể — nền tảng để các luồng xử lý thông tin hoạt động chính xác và hiệu quả.
-
-Chương 3 được tổ chức theo ba tầng phân tích: (1) **ERD tổng thể** — cái nhìn bao quát về các entity và quan hệ; (2) **Mô tả chi tiết từng entity** — thuộc tính, ràng buộc và business rule; (3) **Data Dictionary** — bảng tra cứu đầy đủ các kiểu dữ liệu, enum và trạng thái. Ngoài ra, chương trình bày hai quyết định thiết kế đặc thù của MINI-FORUM: chiến lược **denormalization** có mục đích và kiến trúc **Block Layout** cho nội dung bài viết phong phú.
-
----
-
 ## 3.1 Entity-Relationship Diagram (ERD)
 
-### 3.1.1 Tổng quan các thực thể
-
-Hệ thống MINI-FORUM được xây dựng trên nền tảng PostgreSQL với Prisma ORM, quản lý toàn bộ 17 Model được phân chia thành 4 nhóm chức năng chính:
-
-- **Nhóm cốt lõi (Core):** `users`, `posts`, `comments`, `categories` — bộ tứ entity trung tâm, hình thành xương sống nghiệp vụ diễn đàn
-- **Nhóm nội dung (Content):** `post_blocks`, `post_media`, `post_tags`, `tags` — quản lý nội dung phong phú đa dạng
-- **Nhóm tương tác (Interaction):** `votes`, `bookmarks`, `reports`, `user_blocks` — các hành động người dùng thực hiện với nội dung
-- **Nhóm hệ thống (System):** `notifications`, `audit_logs`, `refresh_tokens`, `otp_tokens`, `user_content_context` — hạ tầng xác thực, an toàn và AI
-
-Tất cả 17 model đều xoay quanh trục trung tâm là entity `users` — mọi hành động trong hệ thống đều gắn với một tài khoản người dùng cụ thể.
-
-**Bảng 3.1 — Danh sách 17 Model trong Prisma Schema**
-
-| STT | Model | Kiểu quan hệ | Vai trò nghiệp vụ | Nhóm |
-|-----|-------|-------------|-----------------|------|
-| 1 | `users` | Root entity | Tài khoản người dùng, xác thực | Core |
-| 2 | `posts` | Nhiều → 1 (users, categories) | Bài viết diễn đàn | Core |
-| 3 | `comments` | Nhiều → 1 (users, posts); Self-ref | Bình luận (lồng 2 cấp) | Core |
-| 4 | `categories` | 1 → Nhiều (posts) | Danh mục phân loại bài viết | Core |
-| 5 | `tags` | N:M với posts (qua post_tags) | Thẻ phân loại | Content |
-| 6 | `post_tags` | Junction table (posts ↔ tags) | Quan hệ N:M bài viết-thẻ | Content |
-| 7 | `post_blocks` | Nhiều → 1 (posts) | Nội dung dạng block (TEXT/IMAGE/CODE/QUOTE) | Content |
-| 8 | `post_media` | Nhiều → 1 (posts, post_blocks) | File media trong bài viết | Content |
-| 9 | `votes` | Nhiều → 1 (users); Polymorphic | Vote upvote/downvote | Interaction |
-| 10 | `bookmarks` | Nhiều → 1 (users, posts) | Bookmark bài viết | Interaction |
-| 11 | `reports` | Nhiều → 1 (users); Polymorphic | Báo cáo nội dung vi phạm | Interaction |
-| 12 | `user_blocks` | Nhiều → 1 (users×2) | Chặn người dùng | Interaction |
-| 13 | `notifications` | Nhiều → 1 (users) | Thông báo người dùng | System |
-| 14 | `audit_logs` | Nhiều → 1 (users) | Nhật ký hành động quản trị | System |
-| 15 | `refresh_tokens` | Nhiều → 1 (users) | JWT refresh token management | System |
-| 16 | `otp_tokens` | Nhiều → 1 (users) | OTP cho email verification | System |
-| 17 | `user_content_context` | 1 → 1 (users) | Context tracking cho AI bot | System |
-
-### 3.1.2 ERD Tổng thể
+MINI-FORUM sử dụng PostgreSQL với Prisma ORM để quản lý 17 Model được phân chia thành 4 nhóm: **Core** (users, posts, comments, categories), **Content** (post_blocks, post_media, post_tags, tags), **Interaction** (votes, bookmarks, reports, user_blocks), **System** (notifications, audit_logs, refresh_tokens, otp_tokens, user_content_context). Tất cả entity xoay quanh trục trung tâm là `users` — mọi hành động đều gắn với một tài khoản người dùng.
 
 ERD tổng thể dưới đây mô tả toàn bộ 17 entity và các quan hệ chính giữa chúng. Để đảm bảo tính rõ ràng, các entity nhóm System (refresh_tokens, otp_tokens) được ẩn bớt chi tiết thuộc tính do chức năng phụ trợ. Mũi tên `──►` ký hiệu **FK** (khóa ngoại), `◄──►` ký hiệu **N:M junction**, số `1` và `N` ghi trên đường nối biểu thị **cardinality**.
 

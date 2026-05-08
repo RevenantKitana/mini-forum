@@ -2,61 +2,11 @@
 
 ---
 
-## 1.1 Bối cảnh và lý do lựa chọn kiến trúc Monorepo Multi-service
+## 1.1 Kiến trúc Monorepo Multi-service
 
-### 1.1.1 Bối cảnh dự án
+MINI-FORUM áp dụng **Monorepo Multi-service**: nhiều dịch vụ độc lập trong một repository chia sẻ tooling (TypeScript, Prisma, ESLint). Ưu điểm: (1) tái sử dụng schema database dễ dàng, (2) phát triển và triển khai nhanh (mỗi service có Dockerfile riêng), (3) phù hợp với quy mô cá nhân 3 tháng (không overhead của Microservices thuần), (4) tính linh hoạt (thêm service mới chỉ cần tạo thư mục).
 
-MINI-FORUM là một ứng dụng diễn đàn trực tuyến full-stack được xây dựng trong khuôn khổ thực tập kỹ thuật phần mềm, với thời gian triển khai ba tháng (từ ngày 27/01/2026 đến ngày 27/04/2026). Mục tiêu của dự án là xây dựng một nền tảng cộng đồng hoàn chỉnh, đáp ứng các yêu cầu nghiệp vụ thực tế bao gồm: quản lý bài viết đa định dạng, tổ chức danh mục và nhãn phân loại, hệ thống bình luận lồng nhau (nested comments), cơ chế vote và bookmark, thông báo thời gian thực, phân quyền người dùng theo vai trò, kiểm duyệt nội dung, và tích hợp trí tuệ nhân tạo để tự động sinh nội dung.
-
-Quy mô kỹ thuật của dự án bao gồm bốn dịch vụ riêng biệt, một cơ sở dữ liệu PostgreSQL với 19 model, hơn 50 API endpoint, và một dịch vụ AI autonomous có khả năng tương tác với diễn đàn theo lịch định kỳ. Tính phức tạp này đặt ra yêu cầu quan trọng về lựa chọn kiến trúc tổ chức codebase: kiến trúc nào cho phép phát triển nhanh, dễ mở rộng, nhưng không tạo ra overhead vận hành quá lớn cho mô hình thực hiện cá nhân?
-
-Trước khi bắt đầu giai đoạn thiết kế, tác giả đã tiến hành đánh giá ba mô hình kiến trúc phổ biến trong lĩnh vực phát triển ứng dụng web hiện đại:
-
-1. **Kiến trúc Monolith**: Toàn bộ business logic, API và giao diện người dùng đặt trong một ứng dụng và một repository duy nhất.
-2. **Kiến trúc Monorepo Multi-service** *(phương án được lựa chọn)*: Nhiều dịch vụ độc lập về mặt runtime nhưng được quản lý trong cùng một repository, chia sẻ tooling và cấu hình.
-3. **Kiến trúc Microservices thuần**: Mỗi dịch vụ là một repository và đơn vị triển khai hoàn toàn độc lập, giao tiếp qua API gateway hoặc message bus.
-
-### 1.1.2 Phân tích và so sánh các phương án kiến trúc
-
-Để đưa ra quyết định khách quan, tác giả đánh giá ba kiến trúc dựa trên bảy tiêu chí liên quan trực tiếp đến phạm vi, quy mô và thời gian của dự án:
-
-**Bảng 1.1 — So sánh ba kiến trúc trên 7 tiêu chí đánh giá**
-
-| Tiêu chí đánh giá | Monolith | **Monorepo Multi-service** | Microservices thuần |
-|---|:---:|:---:|:---:|
-| Độ phức tạp thiết lập ban đầu | Thấp | **Trung bình** | Cao |
-| Khả năng chia sẻ code / types | Dễ | **Có (shared types, configs)** | Khó (cần package registry) |
-| Scale từng thành phần độc lập | Không | **Có (Docker/container)** | Có |
-| Phù hợp với mô hình cá nhân (1 người) | Có | **Có** | Không |
-| Cô lập cơ sở dữ liệu | Không | **Không hoàn toàn** | Có |
-| Dễ thêm service mới về sau | Khó (refactor lớn) | **Dễ (thêm thư mục)** | Trung bình |
-| Overhead vận hành | Thấp | **Trung bình** | Cao |
-
-*Nguồn: Đánh giá tổng hợp dựa trên tài liệu kỹ thuật và thực tiễn triển khai dự án*
-
-Phân tích chi tiết từng phương án:
-
-**Kiến trúc Monolith** phù hợp với các ứng dụng có phạm vi hẹp và không có nhu cầu tách biệt dịch vụ. Tuy nhiên, khi dịch vụ AI (`vibe-content`) cần được triển khai và vận hành độc lập so với API chính — do tần suất cập nhật, tài nguyên tính toán và lịch trình thực thi khác nhau — kiến trúc Monolith sẽ buộc phải đặt tất cả trong cùng một tiến trình, gây khó khăn trong quản lý và debug.
-
-**Kiến trúc Microservices thuần** cung cấp độ cô lập cao nhất nhưng yêu cầu hạ tầng phức tạp: API gateway, service discovery, distributed tracing, và quy trình CI/CD riêng biệt cho từng service. Với mô hình thực hiện cá nhân trong thời hạn 3 tháng, overhead này sẽ chiếm phần lớn thời gian phát triển, làm giảm khả năng tập trung vào logic nghiệp vụ.
-
-**Kiến trúc Monorepo Multi-service** là điểm cân bằng tối ưu: mỗi service có thể triển khai và vận hành độc lập, nhưng chia sẻ cùng một repository để đồng bộ tooling, dễ theo dõi thay đổi liên quan giữa các service, và giảm overhead quản lý.
-
-### 1.1.3 Lý do quyết định lựa chọn Monorepo Multi-service
-
-Quyết định lựa chọn kiến trúc Monorepo Multi-service dựa trên ba lý do kỹ thuật cụ thể:
-
-**Lý do 1 — Tính linh hoạt mở rộng theo yêu cầu thực tế:**
-
-Dịch vụ `vibe-content` (sinh nội dung bằng AI) không có trong kế hoạch ban đầu và chỉ được thêm vào ở Sprint 5, sau khi forum core đã hoàn thiện. Với kiến trúc Monorepo, việc bổ sung một service mới chỉ đòi hỏi tạo thêm một thư mục con với `package.json` riêng, tái sử dụng Prisma schema sẵn có, và cấu hình deploy độc lập. Không cần refactor codebase hiện có, không cần tạo repository mới, không ảnh hưởng đến hoạt động của các service khác.
-
-**Lý do 2 — Chia sẻ kiến trúc và tooling đồng nhất:**
-
-Tất cả service trong dự án đều sử dụng TypeScript, Prisma ORM, ESLint và cấu hình tương tự. Trong môi trường Monorepo, dịch vụ `vibe-content` có thể kế thừa trực tiếp `schema.prisma` từ `backend/prisma/` thông qua biến môi trường `DATABASE_URL` chung, tránh việc định nghĩa lại các model hoặc duy trì hai phiên bản schema song song — một nguồn lỗi phổ biến trong kiến trúc đa repository.
-
-**Lý do 3 — Phù hợp với phạm vi và thời gian dự án:**
-
-Trong điều kiện thời gian 3 tháng với quy mô cá nhân, việc quản lý nhiều repository độc lập sẽ tạo ra overhead không cần thiết: phối hợp versioning, quản lý quyền truy cập, theo dõi cross-repository dependencies. Monorepo cho phép toàn bộ thay đổi — dù là ở backend, frontend hay AI service — đều được commit, review và deploy trong cùng một luồng làm việc thống nhất.
+So với Monolith: Monorepo cho phép phát triển độc lập từng service (VD: vibe-content có chu kỳ cập nhật khác); so với Microservices: Monorepo giảm overhead quản lý repository và CI/CD. Kiến trúc này được chứng minh là phù hợp khi feature AI Service phải thêm vào Sprint 5 mà không cần refactor.
 
 ---
 
