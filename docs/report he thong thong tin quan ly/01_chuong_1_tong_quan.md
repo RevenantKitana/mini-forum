@@ -22,11 +22,39 @@ MINI-FORUM thuộc nhóm **Community MIS** (khác với Enterprise MIS): dữ li
 **Phạm vi hệ thống:** Quản lý thành viên (auth/profile), nội dung (bài viết/bình luận lồng nhau), tương tác (vote/bookmark/search), kiểm duyệt (moderation/audit log), thông báo real-time (SSE), quản lý media (CDN), AI seeding. **Ngoài phạm vi:** Hệ thống thanh toán, BI/Advanced Analytics, mobile apps, video streaming.
 
 **Kiến trúc tổng thể:** 4 service trong monorepo (backend Express, frontend React, admin-client React, vibe-content Node.js) giao tiếp qua HTTP REST, chia sẻ PostgreSQL database và Prisma schema. Mô hình IPO: Input từ 5 tác nhân (Guest/Member/Moderator/Admin/Bot) → Processing qua 14 route modules + 21 services → Output qua RBAC, SSE, email, dashboard.
-        │      of Truth)          │   │  Port: 3001             │
-        │                         │   │  LLM: Gemini/Groq/      │
-        │  19 Models / 10 Enums   │   │  Cerebras/Nvidia        │
-        │  Foreign keys enforced  │   └─────────────────────────┘
-        └─────────────────────────┘
+
+**Hình 1.2 — Kiến trúc tổng thể hệ thống (4 service)**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 KIẾN TRÚC TỔNG THỂ HỆ THỐNG MINI-FORUM                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────┐  ┌──────────────────────┐  ┌─────────────────────────┐
+│ frontend             │  │ admin-client         │  │ vibe-content            │
+│ React 18 + Vite      │  │ React 18 + Vite      │  │ Node.js + TypeScript    │
+│ Port: 5173           │  │ Port: 5174           │  │ Port: 3001              │
+│ UI cho member/guest  │  │ Dashboard quản trị    │  │ Bot seeding nội dung    │
+└──────────┬───────────┘  └──────────┬───────────┘  │ LLM: Gemini/Groq/       │
+          │                         │              │ Cerebras/Nvidia         │
+          └──────────────┬──────────┴──────────────┴──────────────┐
+                       │ HTTP REST / JSON                       │
+                       ▼                                        │
+               ┌──────────────────────────────────────┐           │
+               │ backend                              │◄──────────┘
+               │ Express + TypeScript                 │
+               │ Port: 3000                           │
+               │ 14 route modules + 21 services       │
+               │ Auth / Content / Moderation / SSE    │
+               └──────────────────┬───────────────────┘
+                                │ Prisma ORM
+                                ▼
+               ┌──────────────────────────────────────┐
+               │ PostgreSQL + Prisma Schema           │
+               │ Single Source of Truth               │
+               │ 19 Models / 10 Enums                 │
+               │ Foreign keys enforced                │
+               └──────────────────────────────────────┘
 ```
 
 **Bảng 1.4 — Nguyên tắc giao tiếp giữa các dịch vụ**

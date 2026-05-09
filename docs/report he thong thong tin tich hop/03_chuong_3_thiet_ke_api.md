@@ -116,20 +116,20 @@ Tất cả route được đăng ký tập trung trong `backend/src/routes/index
 backend/src/routes/
 │
 ├── index.ts               ← Aggregator: mount tất cả route vào Express
-├── authRoutes.ts          ← /api/v1/auth/*          (8 endpoints)
-├── postRoutes.ts          ← /api/v1/posts/*          (11 endpoints)
-├── commentRoutes.ts       ← /api/v1/comments/*       (3 endpoints)
-├── userRoutes.ts          ← /api/v1/users/*          (8 endpoints)
-├── adminRoutes.ts         ← /api/v1/admin/*          (7 endpoints)
-├── categoryRoutes.ts      ← /api/v1/categories/*     (5 endpoints)
-├── tagRoutes.ts           ← /api/v1/tags/*           (4 endpoints)
-├── searchRoutes.ts        ← /api/v1/search           (1 endpoint)
-├── notificationRoutes.ts  ← /api/v1/notifications/*  (4 endpoints)
-├── configRoutes.ts        ← /api/v1/config/*         (2 endpoints)
-├── blockReportRoutes.ts   ← /api/v1/blocks/*         (3 endpoints)
-│                            /api/v1/reports/*        (3 endpoints)
-├── bookmarkRoutes.ts      ← /api/v1/bookmarks/*      (2 endpoints)
-└── voteRoutes.ts          ← /api/v1/votes/*          (2 endpoints)
+├── authRoutes.ts          ← /api/v1/auth/*         ←  (8 endpoints)
+├── postRoutes.ts          ← /api/v1/posts/*          ← (11 endpoints)
+├── commentRoutes.ts       ← /api/v1/comments/*      ←  (3 endpoints)
+├── userRoutes.ts          ← /api/v1/users/*          ← (8 endpoints)
+├── adminRoutes.ts         ← /api/v1/admin/*          ← (7 endpoints)
+├── categoryRoutes.ts      ← /api/v1/categories/*    ←  (5 endpoints)
+├── tagRoutes.ts           ← /api/v1/tags/*           ← (4 endpoints)
+├── searchRoutes.ts        ← /api/v1/search           ← (1 endpoint)
+├── notificationRoutes.ts  ← /api/v1/notifications/*  ← (4 endpoints)
+├── configRoutes.ts        ← /api/v1/config/*         ← (2 endpoints)
+├── blockReportRoutes.ts   ← /api/v1/blocks/*         ← (3 endpoints)
+│                            /api/v1/reports/*       ←  (3 endpoints)
+├── bookmarkRoutes.ts      ← /api/v1/bookmarks/*    ←   (2 endpoints)
+└── voteRoutes.ts          ← /api/v1/votes/*         ←  (2 endpoints)
 ```
 
 ### 3.2.1 Auth Routes — `/api/v1/auth`

@@ -186,7 +186,7 @@ Nếu phụ thuộc vào một provider duy nhất, toàn bộ vibe-content sẽ
                     └─────────────────────────────────┘
 ```
 
-### 4.2.3 Bảng so sánh LLM Providers
+### 4.2.3 So sánh LLM Providers
 
 **Bảng 4.2 — LLM Providers và đặc điểm trong codebase**
 
