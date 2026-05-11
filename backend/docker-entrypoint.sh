@@ -13,9 +13,11 @@ echo "🔄 Waiting for database..."
 sleep 5
 
 echo "🔄 Testing database connection..."
-timeout 30 npx prisma db execute --stdin --file /dev/null <<< "SELECT 1;" 2>&1 || {
+timeout 30 npx prisma db execute --stdin --file - > /dev/null 2>&1 <<EOF || {
   echo "⚠️  Database connection test skipped, proceeding anyway..."
 }
+SELECT 1;
+EOF
 
 echo "🔄 Running Prisma migrations (timeout: 120s)..."
 timeout 120 npx prisma migrate deploy --schema=prisma/schema.prisma 2>&1 || MIGRATION_EXIT=$?
