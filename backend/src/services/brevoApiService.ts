@@ -4,7 +4,6 @@
  */
 
 import config from '../config/index.js';
-import { createRequire } from 'module';
 
 // Type definitions for sib-api-v3-sdk
 interface TransactionalEmailPayload {
@@ -22,20 +21,18 @@ interface SendOtpEmailOptions {
   expiresInMinutes: number;
 }
 
-// Lazy-loaded require for better Jest compatibility
+// Lazy-loaded module for better ESM/Jest compatibility
 let sibApiV3Sdk: any;
 
-function getSibApiV3Sdk(): any {
+async function getSibApiV3Sdk(): Promise<any> {
   if (!sibApiV3Sdk) {
-    // Create require function only when needed
     try {
-      // Use dynamic import for better ESM/Jest compatibility
-      // Fall back to createRequire if needed
-      const requireFunc = createRequire(process.cwd());
-      sibApiV3Sdk = requireFunc('sib-api-v3-sdk');
-    } catch {
-      // In case of Jest environment issues, try a direct approach
-      throw new Error('Failed to load sib-api-v3-sdk. Make sure it is installed.');
+      // Use dynamic import for better ESM and Jest compatibility
+      sibApiV3Sdk = await import('sib-api-v3-sdk');
+    } catch (error) {
+      throw new Error(
+        `Failed to load sib-api-v3-sdk. Make sure it is installed. Error: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
   return sibApiV3Sdk;
@@ -53,10 +50,10 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
     );
   }
 
-  // Use CommonJS require for better compatibility with sib-api-v3-sdk
+  // Load module dynamically for better ESM compatibility
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SibApiV3Sdk: any = getSibApiV3Sdk();
+    const SibApiV3Sdk: any = await getSibApiV3Sdk();
 
     // Set up the API client
     const defaultClient = SibApiV3Sdk.ApiClient.instance;

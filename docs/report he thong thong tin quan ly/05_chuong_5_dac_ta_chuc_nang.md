@@ -51,7 +51,6 @@ Middleware pipeline: request → helmet (security headers) → cors → rate-lim
 
 Post Management là module lớn nhất trong hệ thống, xử lý toàn bộ vòng đời của bài viết từ khi tạo đến khi bị xóa. Điểm kỹ thuật đặc biệt của module này là kiến trúc **Block Layout** — cho phép bài viết có cấu trúc nội dung phong phú (văn bản, code, hình ảnh, trích dẫn) thay vì một trường `content` duy nhất. Ngoài ra, `slug` tự động được sinh từ `title` và đảm bảo là unique — được dùng trong URL thay cho `id` để thân thiện với SEO.
 
-### 5.2.1 Tổ chức code
 
 ```
 backend/src/
@@ -212,9 +211,7 @@ POST #42: "Hướng dẫn React Hooks"
            "Bạn có thể giải thích thêm không?"
            author: user_E, created_at: T4
 
-⚠️ KHÔNG CÓ CẤP 3: Reply của Reply không được phép
-   Lý do: Tránh UI phức tạp + giảm recursive query
-```
+ 
 
 ### 5.3.3 Business Rule: Comment Edit Time Limit
 

@@ -10,10 +10,10 @@ MIGRATION_EXIT=$?
 if [ $MIGRATION_EXIT -ne 0 ]; then
   if echo "$MIGRATION_OUTPUT" | grep -q "P3005"; then
     echo "⚠️  Database schema already exists. Baseling migrations..."
-    npx prisma migrate resolve --applied 20260210050735_init
-    npx prisma migrate resolve --applied 20260304043512_
-    npx prisma migrate resolve --applied 20260326052535_add_bot_role
-    npx prisma migrate resolve --applied 20260326095131_add_user_content_context
+    npx prisma migrate resolve --applied 20260420000000_init
+    npx prisma migrate resolve --applied 20260420042859_sfw_forum
+    npx prisma migrate resolve --applied 20260423112433_add_imagekit_media
+    npx prisma migrate resolve --applied 20260424000000_add_post_blocks
     echo "✅ Migrations baselined successfully"
   else
     echo "❌ Migration failed:"

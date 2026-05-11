@@ -618,19 +618,3 @@ API: PATCH /posts/:id/blocks/reorder
 
 ---
 
-## Tóm tắt chương 3
-
-Chương 3 đã mô hình hóa toàn diện cấu trúc dữ liệu của hệ thống MINI-FORUM thông qua ba lớp phân tích:
-
-**Lớp cấu trúc (ERD):** 17 Model trong Prisma Schema, được tổ chức thành 4 nhóm chức năng. ERD tổng thể thể hiện rõ entity trung tâm (`users`) và các quan hệ đơn hướng, hai chiều, tự tham chiếu.
-
-**Lớp chi tiết (Entity Description):** 5 entity cốt lõi được đặc tả đầy đủ — mỗi thuộc tính đều có ràng buộc toàn vẹn và ý nghĩa nghiệp vụ. Hai quyết định thiết kế nổi bật: giới hạn comment 2 cấp (tránh recursive query) và mô hình phân quyền 3 chiều trong categories.
-
-**Lớp ngữ nghĩa (Data Dictionary):** 12 Enum mã hóa mọi tập giá trị cố định. Hai State Machine (PostStatus, ReportStatus) làm rõ vòng đời dữ liệu và phân quyền transition.
-
-**Quyết định kiến trúc:**
-- **Denormalization có mục đích:** 6 counter fields giúp tránh aggregate query tại những điểm truy cập cao tần, đảm bảo consistency qua Prisma `$transaction`
-- **Polymorphic association:** votes và reports sử dụng `(target_type, target_id)` — đơn giản, dễ mở rộng, với đánh đổi là mất DB-level FK constraint
-- **Block Layout:** Hai chế độ lưu nội dung (simple/block) cùng tồn tại, đảm bảo backward compatibility trong khi mở rộng khả năng biểu đạt nội dung
-
-Nền tảng dữ liệu được thiết kế ở chương này là cơ sở trực tiếp cho các luồng thông tin được phân tích tại chương tiếp theo.

@@ -70,7 +70,6 @@ Sử dụng PostgreSQL native enums thay vì VARCHAR — type-safe và efficient
 
 ### 7.1.4 Các điểm cần cải thiện
 
-**Bảng 7.3 — Điểm cần cải thiện trong thiết kế dữ liệu**
 
 | Vấn đề | Mô tả chi tiết | Giải pháp đề xuất |
 |--------|--------------|-----------------|
@@ -168,101 +167,6 @@ Client ──► Backend
 
 ---
 
-## 7.3 Phân tích theo giai đoạn phát triển
-
-### 7.3.1 Mapping Sprint với luồng thông tin được xây dựng
-
-**Bảng 7.5 — Phân tích luồng thông tin theo Sprint**
-
-| Sprint | Thời gian | Luồng thông tin được xây dựng | Kết quả cụ thể |
-|--------|:--------:|------------------------------|---------------|
-| **Sprint 0** | Tuần 1–2 | Thiết kế ERD 17 entity, Prisma schema v1, migrations khởi tạo | Database schema + migration #001; type definitions |
-| **Sprint 1** | Tuần 3–4 | Auth flow: form → Zod validate → bcrypt → JWT → httpOnly cookie | 8 auth endpoints; OTP email qua Brevo; refresh token rotation |
-| **Sprint 2** | Tuần 5–7 | CRUD Post/Comment, Category taxonomy, permission-aware access | 21 endpoints; block layout; permission matrix cho 3 loại quyền |
-| **Sprint 3** | Tuần 8–9 | Vote → Reputation pipeline; SSE notification | Vote system; reputation scoring; real-time push notification |
-| **Sprint 4** | Tuần 10–11 | Audit trail; Report workflow; Admin Dashboard | admin-client hoàn chỉnh; 15 AuditAction; 4-state report workflow |
-| **Sprint 5** | Tuần 12–13 | AI content flow: prompt → LLM → validate → post via Bot API | vibe-content service; multi-LLM support (OpenAI + Gemini) |
-
-### 7.3.2 Tỷ lệ hoàn thành Use Case
-
-**Bảng 7.6 — Đánh giá hoàn thành theo nhóm Use Case**
-
-| Nhóm Use Case | Tổng UC | Hoàn thành | Tỷ lệ | Ghi chú |
-|-------------|:-------:|:-----------:|:-----:|---------|
-| Quản lý người dùng (UC-01 → UC-08) | 8 | 8 | 100% | Bao gồm OTP, avatar, block |
-| Quản lý nội dung (UC-09 → UC-15) | 7 | 7 | 100% | Block layout, tag, media upload |
-| Tương tác cộng đồng (UC-16 → UC-20) | 5 | 5 | 100% | Vote, bookmark, notification, search |
-| Quản trị hệ thống (UC-21 → UC-28) | 8 | 8 | 100% | Admin dashboard, audit log, config |
-| **Tổng cộng** | **28** | **28** | **100%** | Đúng tiến độ 13 tuần |
-
-### 7.3.3 Phân tích tích lũy độ phức tạp
-
-**Hình 7.2 — Tích lũy độ phức tạp theo Sprint**
-
-```
-Số endpoint hoạt động theo thời gian:
-
-Sprint 0:  0  endpoints  ████████ (schema & setup)
-Sprint 1:  8  endpoints  ████████████████
-Sprint 2: 29  endpoints  ████████████████████████████████████████
-Sprint 3: 44  endpoints  ████████████████████████████████████████████████████
-Sprint 4: 63  endpoints  █████████████████████████████████████████████...
-Sprint 5: 82  endpoints  ██████████████████████████████████████████████████...
-
-        0    10    20    30    40    50    60    70    80
-        │────│────│────│────│────│────│────│────│────│
-```
-
-Tốc độ phát triển trung bình: **~6 endpoints/tuần** trong 13 tuần, với Sprint 2 có độ phức tạp cao nhất do xây dựng đồng thời CRUD core, permission system và block layout.
-
----
-
-## 7.4 Đánh giá theo tiêu chí chất lượng MIS
-
-### 7.4.1 Đánh giá theo 5 tiêu chí MIS của Laudon & Laudon
-
-**Bảng 7.7 — Đánh giá MINI-FORUM theo tiêu chí chất lượng MIS**
-
-| Tiêu chí | Định nghĩa | Thực hiện trong MINI-FORUM | Điểm |
-|---------|-----------|--------------------------|:----:|
-| **Timeliness** (Kịp thời) | Thông tin đến đúng lúc, không trễ | SSE push notification real-time (< 1s); Dashboard cập nhật mỗi tải trang | ★★★★☆ |
-| **Accuracy** (Chính xác) | Dữ liệu không lỗi, nhất quán | Zod validation; atomic transactions cho counters; PostgreSQL UNIQUE constraints | ★★★★★ |
-| **Relevance** (Phù hợp) | Thông tin phù hợp với từng đối tượng | Permission-based content filtering; notification chỉ gửi cho người liên quan trực tiếp | ★★★★☆ |
-| **Completeness** (Đầy đủ) | Cung cấp đủ thông tin cần thiết | 28 UC bao quát đầy đủ vòng đời; audit log với old/new value; 82 API endpoints | ★★★★☆ |
-| **Accessibility** (Khả năng truy cập) | Dễ dàng truy cập thông tin | RESTful API với filter/sort/pagination; admin-client UI trực quan; SSE cho real-time | ★★★★☆ |
-
-**Điểm trung bình: 4.2/5** — Đạt mức "Tốt", điểm cải thiện còn lại chủ yếu ở Timeliness (cần Prometheus cho historical metrics) và Accessibility (cần mobile app).
-
-### 7.4.2 Đánh giá bảo mật theo OWASP Top 10
-
-**Bảng 7.8 — MINI-FORUM so với OWASP Top 10 2021**
-
-| Mã | Rủi ro OWASP | Biện pháp trong MINI-FORUM | Mức độ |
-|----|------------|--------------------------|:------:|
-| A01 | Broken Access Control | JWT + RBAC 5 role; permission-aware categories; middleware chain | ✅ Đầy đủ |
-| A02 | Cryptographic Failures | bcrypt password hash (cost factor 12); JWT signed với secret key; HTTPS enforced | ✅ Đầy đủ |
-| A03 | Injection | Prisma ORM với parameterized queries (không có raw SQL); Zod input validation | ✅ Đầy đủ |
-| A04 | Insecure Design | Separation of concerns; fail-fast validation; immutable audit trail | ✅ Đầy đủ |
-| A05 | Security Misconfiguration | Helmet.js security headers; CORS whitelist; environment variables cho secrets | ✅ Đầy đủ |
-| A06 | Vulnerable Components | Phụ thuộc npm được quản lý; versions cụ thể trong package.json | ⚠️ Cần audit định kỳ |
-| A07 | Auth Failures | Access token TTL 15 phút; refresh token rotation; force logout khi ban | ✅ Đầy đủ |
-| A08 | Software/Data Integrity | Migration-versioned schema; immutable audit logs; npm lock file | ✅ Đầy đủ |
-| A09 | Logging/Monitoring Failures | Audit trail đầy đủ; operational metrics; structured logging | ✅ Đầy đủ |
-| A10 | SSRF | External API calls qua configured services chỉ (ImageKit, Brevo) | ✅ Đầy đủ |
-
-### 7.4.3 Đánh giá theo mô hình FURPS+
-
-**Bảng 7.9 — Đánh giá MINI-FORUM theo FURPS+**
-
-| Tiêu chí FURPS+ | Nội dung đánh giá | Điểm mạnh | Điểm cần cải thiện |
-|----------------|-----------------|---------|-------------------|
-| **Functionality** | Tính năng hệ thống | 28 UC hoàn chỉnh; 82 endpoints | GraphQL cho mobile efficiency |
-| **Usability** | Khả năng sử dụng | UI admin-client trực quan; Radix UI accessible | Cần hướng dẫn onboarding inline |
-| **Reliability** | Độ tin cậy | Zod validation; soft delete; retry logic | Cần circuit breaker cho external services |
-| **Performance** | Hiệu suất | Index strategy; denormalized counters | Redis cache; async job queue |
-| **Supportability** | Khả năng bảo trì | TypeScript strong typing; layered architecture | Cần thêm integration tests |
-
----
 
 ## 7.5 Kết luận
 

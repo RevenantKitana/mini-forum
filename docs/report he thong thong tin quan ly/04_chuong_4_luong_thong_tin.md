@@ -123,56 +123,7 @@ Luồng đăng nhập có 5 bước kiểm tra tuần tự theo nguyên tắc **
 
 **Hình 4.3 — DFD Mức 1: Authentication Flow (Đăng nhập)**
 
-```
-  ┌─────────┐  POST /auth/login   ┌──────────────────────────────────────┐
-  │  User   │────────────────────►│  1.0  Validate format (Zod)          │
-  └─────────┘  {email, password}  │  - email: valid email format         │──► 400 Bad Request
-                                   │  - password: 6-128 chars             │
-                                   └──────────────┬───────────────────────┘
-                                                  │ Format OK
-                                                  ▼
-                                   ┌──────────────────────────────────────┐
-                                   │  2.0  Tra cứu tài khoản             │
-                                   │  SELECT id, email, password_hash,    │──► 401 Unauthorized
-                                   │    role, is_active, is_verified      │   "Thông tin đăng nhập
-                                   │  FROM users WHERE email = $1         │    không chính xác"
-                                   │  [Không tiết lộ: user tồn tại hay   │
-                                   │   không — dùng chung 401]            │
-                                   └──────────────┬───────────────────────┘
-                                                  │ User found
-                                                  ▼
-                                   ┌──────────────────────────────────────┐
-                                   │  3.0  Xác minh mật khẩu             │
-                                   │  bcrypt.compare(password, hash)      │──► 401 (same message)
-                                   │  [Time-constant comparison —         │
-                                   │   tránh timing attack]               │
-                                   └──────────────┬───────────────────────┘
-                                                  │ Password OK
-                                                  ▼
-                                   ┌──────────────────────────────────────┐
-                                   │  4.0  Kiểm tra trạng thái tài khoản │
-                                   │  - is_verified = true ?              │──► 403 "Chưa xác thực email"
-                                   │  - is_active = true ?                │──► 403 "Tài khoản bị vô hiệu"
-                                   └──────────────┬───────────────────────┘
-                                                  │ Account active + verified
-                                                  ▼
-                                   ┌──────────────────────────────────────┐
-                                   │  5.0  Tạo và lưu tokens              │
-                                   │  - JWT access token (HS256, 15 min)  │
-                                   │    payload: { userId, role, iat, exp}│
-                                   │  - Refresh token (UUID v4, 7 days)   │
-                                   │    INSERT refresh_tokens table        │
-                                   │  - UPDATE users.last_active_at       │
-                                   │  - INSERT audit_logs (LOGIN)         │
-                                   └──────────────┬───────────────────────┘
-                                                  │
-                                                  ▼
-                                   Response 200 OK:
-                                   { accessToken: "eyJhbGc..." }
-                                   Set-Cookie: refreshToken=<uuid>;
-                                     HttpOnly; Secure; SameSite=Strict;
-                                     Path=/auth/refresh; Max-Age=604800
-```
+ 
 
 > **Nguyên tắc bảo mật quan trọng:** Bước 2 và bước 3 đều trả về HTTP 401 với cùng một thông báo lỗi chung. Điều này ngăn kẻ tấn công dùng thông báo lỗi để suy ra email nào đã đăng ký trong hệ thống (user enumeration attack).
 
@@ -683,29 +634,3 @@ MINI-FORUM sử dụng tính năng **Full-Text Search (FTS) tích hợp sẵn tr
 > **Về chỉ mục:** PostgreSQL GIN index trên cột `tsvector` cho phép FTS query chạy rất nhanh mà không cần scan toàn bảng. Nếu sau này cần tìm kiếm nâng cao (fuzzy search, ranking phức tạp hơn), có thể nâng cấp lên Elasticsearch mà không cần thay đổi API interface.
 
 ---
-
-## Tóm tắt chương 4
-
-Chương 4 đã mô tả và phân tích **tám luồng thông tin chủ yếu** của hệ thống MINI-FORUM, từ mức độ tổng quan (Context Diagram) đến mức độ chi tiết (sequence diagram cho từng quy trình). Mỗi luồng đều được đặt trong ngữ cảnh nghiệp vụ cụ thể và phân tích các quyết định thiết kế.
-
-**Bảng 4.8 — Tổng kết các luồng thông tin**
-
-| # | Luồng | Công nghệ / Pattern | Điểm nổi bật |
-|---|-------|-------------------|-------------|
-| 4.1 | Context Diagram | DFD Level 0 | 4 tác nhân: Guest, Member, Admin, Third-party Services |
-| 4.2 | Đăng nhập (Login) | DFD Level 1 | 5 bước validation với fail-fast; chống user enumeration |
-| 4.3 | Dual-Token Auth | JWT + Refresh Rotation | Access token 15 phút + httpOnly cookie; rotation chống token theft |
-| 4.4 | Vote → Reputation | Atomic Transaction | 6 case logic trong 1 transaction; UPVOTE_DELTA cấu hình động |
-| 4.5 | SSE Notification | Server-Sent Events | One-way push; tự động reconnect; fallback vào DB nếu offline |
-| 4.6 | Report Vi phạm | Triage Workflow | PENDING → REVIEWING → RESOLVED/DISMISSED; bắt buộc audit trail |
-| 4.7 | AI Content (Bot) | LLM Integration | Bot tương tác qua API như Member bình thường; hỗ trợ nhiều LLM |
-| 4.8 | Full-Text Search | PostgreSQL FTS | GIN index; ts_rank relevance scoring; permission-aware results |
-
-Xuyên suốt các luồng, hệ thống tuân thủ nhất quán nguyên tắc thiết kế:
-
-- **Validate trước, xử lý sau** — mọi input đều qua Zod schema validation trước khi chạm vào business logic
-- **Atomic hoặc không làm gì** — các thao tác ảnh hưởng nhiều bảng đều bọc trong `prisma.$transaction()`
-- **Không tiết lộ thông tin nội bộ** — response lỗi luôn generic, không để lộ cấu trúc DB hay logic
-- **Audit trail không thể bỏ qua** — mọi hành động của Moderator/Admin đều ghi `audit_logs`
-
-Chương tiếp theo (Chương 5) sẽ đặc tả chi tiết từng module chức năng với API endpoints đầy đủ, business rule và middleware pipeline tương ứng.
