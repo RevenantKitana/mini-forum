@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# Validate that DATABASE_URL is set before proceeding
+if [ -z "$DATABASE_URL" ]; then
+  echo "❌ Error: DATABASE_URL environment variable is not set"
+  exit 1
+fi
+
 echo "🔄 Waiting for database..."
 sleep 3
 

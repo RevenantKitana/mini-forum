@@ -54,6 +54,7 @@ COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 COPY package.json ./
 COPY prisma ./prisma
+COPY prisma.config.js ./
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
