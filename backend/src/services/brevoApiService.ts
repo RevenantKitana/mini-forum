@@ -53,7 +53,10 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
   // Load module dynamically for better ESM compatibility
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SibApiV3Sdk: any = await getSibApiV3Sdk();
+    const rawSdk: any = await getSibApiV3Sdk();
+    // sib-api-v3-sdk is a CJS module; when imported via dynamic import() in an
+    // ESM context its exports are wrapped under `.default`.
+    const SibApiV3Sdk: any = rawSdk.default ?? rawSdk;
 
     // Log initialization attempt
     console.log('[Brevo] Initializing SDK for email sending to:', to);
