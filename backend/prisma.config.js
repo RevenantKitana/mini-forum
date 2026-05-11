@@ -13,7 +13,7 @@
  * See: https://www.prisma.io/docs/orm/prisma-schema/overview/databases
  */
 
-module.exports = {
+export default {
   datasources: {
     db: {
       // Use DIRECT_URL for direct connections (migrations, admin operations)
