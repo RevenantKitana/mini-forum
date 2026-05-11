@@ -16,27 +16,74 @@
     },
     {
       "key": "DATABASE_URL",
-      "description": "PostgreSQL connection string with SSL (e.g., postgresql://user:pass@host/db?schema=public&sslmode=require)"
+      "description": "PostgreSQL connection string with SSL and connection pooling (e.g., postgresql://user:pass@host/db?schema=public&sslmode=require&connect_timeout=10&pool_size=5)"
     },
     {
-      "key": "JWT_SECRET",
-      "description": "JWT signing secret (generate with: openssl rand -base64 32)"
+      "key": "JWT_ACCESS_SECRET",
+      "description": "JWT access token secret (generate with: openssl rand -base64 32)"
     },
     {
       "key": "JWT_REFRESH_SECRET",
-      "description": "JWT refresh token secret"
+      "description": "JWT refresh token secret (generate with: openssl rand -base64 32)"
     },
     {
-      "key": "CORS_ORIGIN",
-      "description": "CORS allowed origins (comma-separated or specific domain)"
+      "key": "JWT_ACCESS_EXPIRES_IN",
+      "value": "15m",
+      "description": "JWT access token expiration time"
     },
     {
-      "key": "IMAGEKIT_PRIVATE_KEY",
-      "description": "ImageKit private API key"
+      "key": "JWT_REFRESH_EXPIRES_IN",
+      "value": "7d",
+      "description": "JWT refresh token expiration time"
+    },
+    {
+      "key": "FRONTEND_URL",
+      "description": "Frontend URL for CORS (comma-separated if multiple)"
+    },
+    {
+      "key": "COMMENT_EDIT_TIME_LIMIT",
+      "value": "5",
+      "description": "Time limit in minutes for editing comments"
+    },
+    {
+      "key": "BREVO_API_KEY",
+      "description": "Brevo (Sendinblue) API key for email service"
+    },
+    {
+      "key": "BREVO_FROM_EMAIL",
+      "description": "Brevo sender email address"
+    },
+    {
+      "key": "BREVO_FROM_NAME",
+      "description": "Brevo sender display name"
+    },
+    {
+      "key": "OTP_LENGTH",
+      "value": "6",
+      "description": "OTP code length"
+    },
+    {
+      "key": "OTP_EXPIRATION_MINUTES",
+      "value": "10",
+      "description": "OTP expiration time in minutes"
+    },
+    {
+      "key": "OTP_MAX_ATTEMPTS",
+      "value": "5",
+      "description": "Maximum OTP verification attempts"
+    },
+    {
+      "key": "OTP_RESEND_DELAY_SECONDS",
+      "value": "60",
+      "description": "Delay before allowing OTP resend in seconds"
     },
     {
       "key": "IMAGEKIT_PUBLIC_KEY",
       "description": "ImageKit public API key"
+    },
+    {
+      "key": "IMAGEKIT_PRIVATE_KEY",
+      "description": "ImageKit private API key"
     },
     {
       "key": "IMAGEKIT_URL_ENDPOINT",
