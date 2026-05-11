@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-postgresql';
 import { logger } from '../utils/logger.js';
 
 const SLOW_QUERY_THRESHOLD_MS = 500;
@@ -10,12 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-  });
-  
   const client = new PrismaClient({
-    adapter,
     log: [
       { emit: 'event', level: 'query' },
       { emit: 'event', level: 'error' },
