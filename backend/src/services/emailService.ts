@@ -21,18 +21,24 @@ export async function sendOtpEmail(options: SendOtpEmailOptions): Promise<void> 
 
   // In test environment, skip actual email delivery to avoid noisy SDK errors in CI logs
   if (process.env.NODE_ENV === 'test') {
+    console.log('[Email Service] Test environment - skipping email delivery');
     return;
   }
 
   if (!config.brevo.apiKey) {
-    throw new Error(
-      'Brevo API key not configured. Please set BREVO_API_KEY environment variable.'
-    );
+    const error = 'Brevo API key not configured. Please set BREVO_API_KEY environment variable.';
+    console.error('[Email Service]', error);
+    throw new Error(error);
   }
 
   try {
+    console.log(`[Email Service] Sending ${purpose} OTP email to ${to}`);
     await sendOtpEmailViaApi(options);
+    console.log(`[Email Service] Successfully sent ${purpose} OTP email to ${to}`);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Email Service] Failed to send ${purpose} OTP email to ${to}:`, errorMessage);
+    
     if (error instanceof Error) {
       throw new Error(`Failed to send OTP email via Brevo API: ${error.message}`);
     }

@@ -55,13 +55,28 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SibApiV3Sdk: any = await getSibApiV3Sdk();
 
-    // Set up the API client
-    const defaultClient = SibApiV3Sdk.ApiClient.instance;
-    const apiKey = defaultClient.authentications['api-key'];
-    apiKey.apiKey = config.brevo.apiKey;
+    // Log initialization attempt
+    console.log('[Brevo] Initializing SDK for email sending to:', to);
 
-    // Create transactional email API instance
-    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    // Set up the API client - create new instance instead of using .instance
+    const apiClient = new SibApiV3Sdk.ApiClient();
+    
+    if (!apiClient) {
+      throw new Error('Failed to create Brevo API client instance');
+    }
+
+    // Set authentication on the client
+    const apiKey = apiClient.authentications['api-key'];
+    if (!apiKey) {
+      throw new Error('Brevo API client authentication object not found');
+    }
+
+    apiKey.apiKey = config.brevo.apiKey;
+    
+    console.log('[Brevo] API client initialized successfully');
+
+    // Create transactional email API instance with configured client
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi(apiClient);
 
     // Prepare email content
     const subject = purpose === 'register'
@@ -83,13 +98,21 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
       },
     };
 
+    console.log('[Brevo] Sending email with payload:', { to, subject });
+
     // Send the email via API
     const response = await apiInstance.sendTransacEmail(emailPayload);
     
     if (!response || !response.messageId) {
+      console.error('[Brevo] Invalid response from API:', response);
       throw new Error('Failed to get message ID from Brevo API response');
     }
+
+    console.log('[Brevo] Email sent successfully. Message ID:', response.messageId);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Brevo] Error sending email:', errorMessage);
+    
     if (error instanceof Error) {
       throw new Error(`Failed to send email via Brevo API: ${error.message}`);
     }
