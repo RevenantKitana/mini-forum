@@ -35,7 +35,6 @@
   "license": "ISC",
   "dependencies": {
     "@imagekit/nodejs": "^7.5.0",
-    "@prisma/adapter-postgresql": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/cookie-parser": "^1.4.10",
     "bcrypt": "^6.0.0",
