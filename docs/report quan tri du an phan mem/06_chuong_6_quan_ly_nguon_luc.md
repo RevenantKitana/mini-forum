@@ -2,27 +2,11 @@
 
 ---
 
-## Giới thiệu chương
-
-Quản lý nguồn lực là lĩnh vực cốt lõi trong quản trị dự án phần mềm, bao gồm hai khía cạnh chủ yếu: **nguồn lực con người** (nhân lực, phân vai trách nhiệm, cơ chế kiêm nhiệm) và **nguồn lực phi con người** (thời gian, công cụ, môi trường phát triển). Chương này phân tích chi tiết cách thức dự án MINI-FORUM tổ chức, phân bổ và tối ưu hóa nguồn lực trong bối cảnh thực hiện cá nhân (1 người) với thời gian thực tập 13 tuần có deadline cứng.
-
-Theo chuẩn PMBOK 6th Edition, quản lý nguồn lực bao gồm sáu quy trình: lập kế hoạch quản lý nguồn lực, ước tính nguồn lực hoạt động, thu nhận nguồn lực, phát triển nhóm, quản lý nhóm và kiểm soát nguồn lực. Trong bối cảnh thực hiện cá nhân với Scrum Agile, các quy trình này được đơn giản hóa và tích hợp trực tiếp vào Sprint Planning, Sprint Review và Retrospective.
-
-Chương trình bày bốn nội dung chính:
-1. **Cấu trúc vai trò và cơ chế kiêm nhiệm** — Sơ đồ vai trò, RACI matrix, luồng giao tiếp và quy trình ra quyết định
-2. **Phân bổ thời gian theo module** — Effort allocation chi tiết, phân tích nguyên nhân, lịch làm việc thực tế
-3. **Quản lý nợ kỹ thuật** — Nhận diện, phân loại, đo lường và chiến lược xử lý Technical Debt trong Scrum
-4. **Quản lý công cụ và môi trường phát triển** — Stack công cụ, cấu hình môi trường, bảo mật secrets
-
----
-
 ## 6.1 Cấu trúc vai trò và phân công trách nhiệm
 
 ### 6.1.1 Tổng quan mô hình triển khai
 
-Dự án MINI-FORUM được thực hiện trong bối cảnh thực tập chuyên đề theo mô hình **cá nhân (1 người)**, trong đó tác giả đảm nhận đồng thời nhiều vai trò từ Backend, Frontend, DevOps, AI Integration đến Scrum Master. Đây là mô hình phổ biến trong phát triển sản phẩm giai đoạn đầu và bài toán có ngân sách hạn chế.
-
-Thách thức đặc thù của mô hình cá nhân so với đội Scrum chuẩn:
+Dự án MINI-FORUM được thực hiện theo mô hình **cá nhân (1 người)**, trong đó tác giả kiêm nhiệm đồng thời nhiều vai trò từ Backend, Frontend, DevOps, AI Integration đến Scrum Master.
 
 **Bảng 6.1 — So sánh Scrum chuẩn và mô hình cá nhân trong MINI-FORUM**
 
@@ -35,92 +19,13 @@ Thách thức đặc thù của mô hình cá nhân so với đội Scrum chuẩ
 | Sprint capacity | Dự báo theo từng thành viên | Toàn bộ capacity từ 1 người | Buffer 10–15% cho unexpected events |
 | Handoff overhead | Có — cần communication | Gần như không có | Tiết kiệm thời gian giao tiếp |
 
-### 6.1.2 Sơ đồ vai trò kiêm nhiệm
+### 6.1.2 Vai trò kiêm nhiệm
 
-**Hình 6.1 — Sơ đồ vai trò kiêm nhiệm trong MINI-FORUM**
-
-> *Mô tả hình:* Sơ đồ vai trò dạng cây. Cấp trên cùng là Product Owner (giảng viên hướng dẫn). Cấp dưới là tác giả kiêm Lead Developer, Frontend Developer và Scrum Master. Mũi tên thể hiện luồng thông tin: Product Owner → Tác giả (Sprint Review, feedback). Các box bên trong mỗi vai trò liệt kê trách nhiệm kỹ thuật chính.
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║                      CẤU TRÚC VAI TRÒ DỰ ÁN                     ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ┌────────────────────────────────────────────────────────────┐  ║
-║  │                     PRODUCT OWNER                         │  ║
-║  │              Giảng viên hướng dẫn / Stakeholder            │  ║
-║  │                                                            │  ║
-║  │  Quyền hạn: Phê duyệt Product Backlog, ưu tiên MoSCoW     │  ║
-║  │  Tham gia:  Sprint Review (cuối mỗi sprint, 30 phút)      │  ║
-║  │  Phản hồi:  Acceptance/rejection của User Stories         │  ║
-║  └───────────────────────────┬────────────────────────────────┘  ║
-║                              │                                   ║
-║                    Sprint Review + Feedback                      ║
-║                    Phê duyệt Product Backlog                     ║
-║                              │                                   ║
-║                              ▼                                   ║
-║  ┌────────────────────────────────────────────────────────────┐  ║
-║  │           LEAD DEVELOPER  /  SCRUM MASTER (kiêm nhiệm)     │  ║
-║  │                                                            │  ║
-║  │  BACKEND (40% tổng effort):                                │  ║
-║  │    • Express.js REST API (14 controllers, 21 services)     │  ║
-║  │    • Prisma ORM + PostgreSQL (19 models, 8 migrations)     │  ║
-║  │    • JWT/OTP Authentication, RBAC middleware               │  ║
-║  │    • Zod validation schemas (boundary protection)         │  ║
-║  │    • SSE real-time notifications                           │  ║
-║  │    • Full-text search (tsvector + GIN index)               │  ║
-║  │                                                            │  ║
-║  │  DEVOPS (bao gồm trong effort):                            │  ║
-║  │    • Docker multi-stage builds                             │  ║
-║  │    • Deployment config: Render.com, Vercel                 │  ║
-║  │    • DB migration management, environment setup            │  ║
-║  │    • Maintenance scripts (backup, cleanup, migrate)        │  ║
-║  │                                                            │  ║
-║  │  AI INTEGRATION (vibe-content — 15% effort):               │  ║
-║  │    • Multi-LLM orchestration (Gemini→Groq→Cerebras→Nvidia) │  ║
-║  │    • Personality system, prompt engineering                │  ║
-║  │    • Cron scheduler (mỗi giờ), rate limiting               │  ║
-║  │                                                            │  ║
-║  │  SCRUM MASTER (kiêm nhiệm):                                │  ║
-║  │    • Sprint planning & Sprint Review facilitation          │  ║
-║  │    • Velocity tracking, Burndown chart cập nhật            │  ║
-║  │    • Risk register review mỗi sprint                       │  ║
-║  │    • Remove impediments, escalate khi cần                  │  ║
-║  └───────────────────────────┬────────────────────────────────┘  ║
-║                              │                                   ║
-║                   Phối hợp API contract                          ║
-║                   Code review, integration                       ║
-║                              │                                   ║
-║                              ▼                                   ║
-║  ┌────────────────────────────────────────────────────────────┐  ║
-║  │                   FRONTEND DEVELOPER                       │  ║
-║  │                                                            │  ║
-║  │  USER FRONTEND (frontend/ — 20% effort):                   │  ║
-║  │    • React 18, Vite 5, TailwindCSS 3                       │  ║
-║  │    • TanStack React Query v5 (async state management)      │  ║
-║  │    • 14 trang: Home, PostDetail, Categories, Search, ...   │  ║
-║  │    • SSE client (real-time notifications)                  │  ║
-║  │    • Dark mode, responsive design                          │  ║
-║  │    • Block layout editor (TEXT/IMAGE/CODE/QUOTE)           │  ║
-║  │                                                            │  ║
-║  │  ADMIN PANEL (admin-client/ — 15% effort):                 │  ║
-║  │    • Radix UI + shadcn/ui component library                │  ║
-║  │    • 12 trang quản trị: Dashboard, Users, Posts, ...       │  ║
-║  │    • Data tables với sorting, filtering, pagination        │  ║
-║  │    • KPI charts, Operational dashboard                     │  ║
-║  └────────────────────────────────────────────────────────────┘  ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+Tác giả kiêm nhiệm 4 vai trò chính: **Lead Developer** (Backend API — 40% effort), **Frontend Developer** (React app — 20%, Admin panel — 15%), **DevOps** (Docker/deploy), **AI Integration** (vibe-content — 15%), kết hợp với **QA** (test/coverage — 10%) và **Scrum Master** (planning/docs — 10%). Product Owner là giảng viên hướng dẫn, tham gia Sprint Review cuối mỗi sprint.
 
 ### 6.1.3 Ma trận trách nhiệm RACI đầy đủ
 
-Ma trận RACI xác định rõ ràng ai làm gì và ai chịu trách nhiệm cho từng hoạt động trong dự án. Đây là công cụ quan trọng để tránh sự mơ hồ trong phân công, đặc biệt khi có nhiều vai trò kiêm nhiệm.
-
-**Quy ước RACI:**
-- **R** = Responsible — Người trực tiếp thực hiện công việc
-- **A** = Accountable — Người chịu trách nhiệm cuối cùng về kết quả (chỉ 1 người/task)
-- **C** = Consulted — Người được hỏi ý kiến trước khi quyết định
-- **I** = Informed — Người được thông báo về kết quả
+Ma trận RACI xác định rõ ai làm gì và ai chịu trách nhiệm cho từng hoạt động. **R** = Responsible, **A** = Accountable, **C** = Consulted, **I** = Informed.
 
 **Bảng 6.2 — Ma trận RACI đầy đủ**
 

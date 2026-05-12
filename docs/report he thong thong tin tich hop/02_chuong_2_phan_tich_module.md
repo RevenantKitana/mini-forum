@@ -368,15 +368,11 @@ Qua API, toàn bộ business logic của backend được kích hoạt: Zod vali
 
 ```
 frontend/src/
-│
 ├── main.tsx                   ← Entry point: mount React app, providers
-│
 ├── App.tsx                    ← Root component: cấu hình React Router, layout
-│
 ├── routes/                    ← Route guard wrappers
 │   ├── ProtectedRoute.tsx     ← Redirect về /login nếu user chưa đăng nhập
 │   └── GuestRoute.tsx         ← Redirect về / nếu user đã đăng nhập
-│
 ├── pages/                     ← 14 trang (1:1 với route URL)
 │   ├── HomePage.tsx           ← Feed bài viết, lọc theo category/tag, sắp xếp
 │   ├── PostDetailPage.tsx     ← Nội dung bài viết + toàn bộ thread bình luận
@@ -392,7 +388,6 @@ frontend/src/
 │   ├── RegisterPage.tsx       ← Form đăng ký tài khoản mới
 │   ├── ForgotPasswordPage.tsx ← Quy trình đặt lại mật khẩu qua OTP
 │   └── EditPostPage.tsx       ← Block-based editor để chỉnh sửa bài viết
-│
 ├── components/                ← Shared components tái sử dụng
 │   ├── layout/
 │   │   ├── Navbar.tsx         ← Thanh điều hướng: logo, auth state, notification bell
@@ -411,7 +406,6 @@ frontend/src/
 │       ├── Spinner.tsx        ← Loading indicator
 │       ├── ErrorBoundary.tsx  ← React error boundary
 │       └── Avatar.tsx         ← Hiển thị avatar với fallback
-│
 ├── api/                       ← API client layer
 │   ├── axiosInstance.ts       ← Axios instance với interceptors:
 │   │                             - Tự động inject Authorization header
@@ -424,15 +418,12 @@ frontend/src/
 │       ├── bookmarkService.ts ← hooks cho bookmark
 │       ├── searchService.ts   ← hooks cho search
 │       └── ...                ← Mỗi domain có file hooks riêng
-│
 ├── contexts/
 │   └── AuthContext.tsx        ← Global auth state: user, token, logout()
-│
 ├── hooks/                     ← Custom React hooks domain-specific
 │   ├── useDebounce.ts         ← Debounce input để giảm API call
 │   ├── useInfiniteScroll.ts   ← Infinite scroll với Intersection Observer
 │   └── useSSE.ts              ← Kết nối và nhận Server-Sent Events
-│
 ├── types/                     ← TypeScript interfaces phản chiếu API response
 ├── utils/                     ← Pure helper functions
 └── constants/                 ← App-wide constants (routes, labels)

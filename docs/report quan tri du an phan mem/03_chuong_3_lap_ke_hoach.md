@@ -2,23 +2,11 @@
 
 ---
 
-## Giới thiệu chương
-
-Lập kế hoạch là giai đoạn then chốt quyết định sự thành bại của dự án phần mềm. Chương này trình bày toàn bộ quy trình lập kế hoạch dự án MINI-FORUM theo ba trụ cột chính: **phân rã công việc (WBS)**, **quản lý Product Backlog với ưu tiên MoSCoW**, và **lịch trình triển khai theo Sprint**. Mỗi phần được trình bày kèm bảng biểu và sơ đồ minh họa nhằm đảm bảo tính minh bạch và khả năng theo dõi của dự án.
-
----
-
 ## 3.1 Work Breakdown Structure (WBS)
 
-### 3.1.1 Nguyên tắc xây dựng WBS
+### 3.1.1 Cấu trúc WBS
 
-Work Breakdown Structure (WBS) của dự án MINI-FORUM được xây dựng theo nguyên tắc **phân rã từ trên xuống (top-down decomposition)** với ba cấp độ: *Thành phần hệ thống → Module → Task cụ thể*. Mục tiêu là đảm bảo mọi công việc đều có thể giao cho một người cụ thể, ước tính thời gian và kiểm tra hoàn thành.
-
-Các nguyên tắc chỉ đạo khi xây dựng WBS bao gồm:
-- **Nguyên tắc 100%:** Tổng công việc các node con phải bao phủ toàn bộ công việc của node cha, không thừa, không thiếu.
-- **Nguyên tắc phân rã đến mức có thể hành động:** Mỗi work package ở cấp cuối cùng phải đủ nhỏ để ước tính thời gian với độ sai lệch ≤ 20%.
-- **Nguyên tắc đặt tên bằng danh từ:** Các node trong WBS là sản phẩm/kết quả (deliverable), không phải hành động.
-- **Nguyên tắc độc lập:** Các work package không có sự phụ thuộc lẫn nhau trong cùng một level để tránh ảnh hưởng domino.
+WBS được xây dựng theo nguyên tắc **phân rã từ trên xuống** với 3 cấp: *Thành phần hệ thống → Module → Task*. Mọi work package cấp lá phải đủ nhỏ để ước tính số ngày với sai lệch ≤20%. Nguyên tắc 100%: tổng công việc node con = node cha.
 
 ### 3.1.2 Cấu trúc WBS đầy đủ
 
@@ -149,11 +137,9 @@ MINI-FORUM (Tổng: ~13 tuần)
         └── 7.3.3 migrateAvatarUrls.ts, migratePostsToBlocks.ts
 ```
 
-### 3.1.3 WBS Dictionary — Từ điển công việc
+### 3.1.3 WBS Dictionary — 7 thành phần chính
 
-WBS Dictionary là tài liệu bổ sung cho sơ đồ WBS, cung cấp mô tả chi tiết về phạm vi, tiêu chí hoàn thành và ước tính công sức cho từng work package cấp cao nhất. Đây là tài liệu kiểm soát phạm vi quan trọng nhất trong dự án, giúp ngăn ngừa hiểu lầm và scope creep.
-
-**Bảng 3.1b — WBS Dictionary: 7 thành phần chính**
+WBS Dictionary cung cấp mô tả phạm vi, tiêu chí hoàn thành và ước tính cho từng work package. Đây là tài liệu kiểm soát phạm vi chính, ngăn ngừa scope creep.
 
 | WBS ID | Tên thành phần | Mô tả phạm vi | Deliverable chính | Ước tính (ngày) | % Effort |
 |--------|---------------|--------------|------------------|-----------------|---------|
@@ -187,17 +173,9 @@ Việc xác định phụ thuộc giữa các thành phần WBS rất quan trọ
 
 ### 3.2.1 Phương pháp ưu tiên
 
-Toàn bộ User Stories được ưu tiên theo phương pháp **MoSCoW** (Must have / Should have / Could have / Won't have), kết hợp với **Story Points** ước tính bằng kỹ thuật Planning Poker theo dãy Fibonacci: 1, 2, 3, 5, 8, 13, 21.
+**MoSCoW** phân loại Must / Should / Could / Won’t, kết hợp **Story Points** theo dãy Fibonacci (1, 2, 3, 5, 8, 13, 21) ước tính bằng Planning Poker.
 
-**Phương pháp MoSCoW** phân loại yêu cầu thành bốn nhóm theo mức độ thiết yếu:
-- **Must Have:** Tính năng bắt buộc — thiếu thì sản phẩm không đáp ứng mục tiêu cốt lõi. Chiếm khoảng 60% tổng scope.
-- **Should Have:** Tính năng quan trọng — nên có nhưng có giải pháp tạm thay thế. Thêm vào nếu còn time/budget.
-- **Could Have:** Tính năng mong muốn — chỉ implement khi tất cả Must/Should đã xong.
-- **Won't Have (this time):** Nằm ngoài phạm vi kỳ thực tập, ghi nhận cho phiên bản tương lai.
-
-**Story Points** theo dãy Fibonacci phản ánh tính phi tuyến tính của độ phức tạp phần mềm.
-
-**Bảng 3.2a — Quy ước Story Points áp dụng trong dự án**
+**Bảng 3.2a — Quy ước Story Points**
 
 | Story Points | Độ phức tạp | Thời gian tương đương | Ví dụ điển hình |
 |:---:|---|:---:|---|
@@ -319,17 +297,11 @@ Milestones:     M0   M1              M2        M3        M4        M5
 | **M4** | Tuần 10 (04/04) | Admin panel RBAC pass; Audit log ghi đúng mọi action | Ban user → audit log ghi `SUSPEND_USER` kèm IP; Report workflow pass |
 | **M5** | Tuần 12 (18/04) | AI bot sinh bài tự động; test coverage > 60%; Docker build sạch | Bot tạo 3 bài + 5 comment trong test run; Vitest 15 tests pass; Docker image < 300MB |
 
-### 3.3.2 Phân tích lịch trình và điểm quan trọng
+### 3.3.2 Nhận xét lịch trình
 
-**Các yếu tố lịch trình đáng chú ý:**
-
-1. **Sprint S0 và S1 chạy song song với nhau một phần:** Kiến trúc hệ thống (S0) được thiết kế trong khi một phần database schema đã được thiết lập. Điều này tạo fast feedback loop — thay đổi kiến trúc ngay khi thiết kế DB phát hiện vấn đề.
-
-2. **Testing bắt đầu từ W11 nhưng test *từng module* được viết trong sprint tương ứng:** Vitest unit tests cho auth module được viết trong S1 (T1-08), không chờ đến giai đoạn testing riêng. W11–W13 tập trung vào integration tests và coverage improvement.
-
-3. **Buffer Week (W13):** Một tuần dự phòng cố ý được dự trữ để xử lý các vấn đề phát sinh khi deploy production. Thực tế, buffer này được dùng để hoàn thiện documentation và fix các edge-case bugs phát hiện trong UAT.
-
-4. **Critical Path:** Chuỗi công việc dài nhất không thể rút ngắn: `Database Schema → Auth API → Forum Core API → Frontend Integration → Testing → Deployment`. Bất kỳ delay nào trong chuỗi này đều delay toàn bộ dự án.
+- **Testing viết song song**: Vitest unit tests cho từng module viết ngay trong sprint tương ứng, không chờ W11–13.
+- **Buffer W13**: Dùng để hoàn thiện documentation và fix edge-case bugs sau UAT.
+- **Critical Path**: `Database Schema → Auth API → Forum Core → Frontend → Testing → Deploy` — delay bất kỳ bước nào làm trễ toàn bộ dự án.
 
 **Bảng 3.3a — Lịch trình sprint theo tuần**
 
@@ -411,10 +383,7 @@ Mỗi Sprint trong dự án MINI-FORUM được tổ chức theo cấu trúc chu
 - ✅ `prisma migrate status` → "All migrations have been applied"
 - ✅ 5 bảng đầu (`users`, `posts`, `comments`, `categories`, `tags`) tồn tại trong PostgreSQL
 
-**Retrospective Sprint 0:**
-- **Went well:** Thiết kế ERD v1 sớm giúp phát hiện các quan hệ phức tạp (nhiều-nhiều posts-tags) ngay từ đầu.
-- **To improve:** Cần dành thêm 0.5 ngày cho TypeScript strict mode — nhiều lỗi type ban đầu khi bật `noImplicitAny`.
-- **Action:** Thêm task "TypeScript type audit" vào đầu mỗi sprint tiếp theo.
+**Retrospective Sprint 0:** ERD v1 sớm giúp phát hiện quan hệ phức tạp (posts-tags mànhào-nhiều). Action: thêm "TypeScript type audit" đầu mỗi sprint tiếp theo.
 
 ---
 
@@ -485,10 +454,7 @@ Mỗi Sprint trong dự án MINI-FORUM được tổ chức theo cấu trúc chu
 - ✅ `POST /auth/refresh` → 200 OK, new tokens với rotation
 - ✅ `POST /auth/logout` → 200 OK, refresh token invalidated
 
-**Retrospective Sprint 1:**
-- **Went well:** JWT rotation pattern hoạt động đúng; TypeScript strict mode bắt được 3 potential null-reference bugs trước runtime.
-- **To improve:** Estimate email service quá tự tin — external API integration cần buffer 50%.
-- **Action:** Trong Sprint 2 trở đi, mọi task tích hợp external service đều cộng thêm 50% buffer.
+**Retrospective Sprint 1:** Estimate external API quá tự tin — cộng 50% buffer cho mọi task tích hợp từ S2+.
 
 ---
 
@@ -498,41 +464,7 @@ Mỗi Sprint trong dự án MINI-FORUM được tổ chức theo cấu trúc chu
 
 **User Stories thực hiện:** US-03 (13 SP) + US-04 (8 SP) = 21 SP core
 
-**Hình 3.5 — Kiến trúc Block Layout System (Sprint 2)**
-
-```
-POST (posts table)
-├── id, title, slug, author_id, category_id
-├── status: DRAFT | PUBLISHED | HIDDEN
-└── created_at, updated_at
-
-     ▼ 1:N relationship
-
-POST_BLOCKS (post_blocks table)
-├── id, post_id
-├── block_type: TEXT | IMAGE | CODE | QUOTE
-├── sort_order: 1, 2, 3, ...  (drag-and-drop)
-├── content: TEXT  ──▶  { text: "Nội dung văn bản..." }
-│   IMAGE ─▶  { url: "...", caption: "..." }
-│   CODE  ─▶  { language: "typescript", code: "..." }
-│   QUOTE ─▶  { source: "...", text: "..." }
-└── created_at
-
-Frontend Block Editor:
-┌─────────────────────────────────────────────────┐
-│  [+ Thêm Block]  [TEXT] [IMAGE] [CODE] [QUOTE]  │
-├─────────────────────────────────────────────────┤
-│  ≡  Block 1: TEXT    [✏ Edit] [🗑 Delete] [↕]   │
-│     "Đây là đoạn văn bản..."                    │
-├─────────────────────────────────────────────────┤
-│  ≡  Block 2: CODE    [✏ Edit] [🗑 Delete] [↕]   │
-│     Language: TypeScript                         │
-│     const x: number = 42;                       │
-├─────────────────────────────────────────────────┤
-│  ≡  Block 3: IMAGE   [✏ Edit] [🗑 Delete] [↕]   │
-│     [Hình ảnh đã upload lên ImageKit]           │
-└─────────────────────────────────────────────────┘
-```
+Block Layout: mỗi bài viết gồm nhiều block `post_blocks` có `sort_order` — 4 loại: TEXT (markdown), IMAGE (ImageKit URL), CODE (syntax highlight), QUOTE. Frontend block editor cho phép thêm/sắp xếp/xóa block.
 
 **Bảng 3.6 — Sprint 2: Task Breakdown**
 
@@ -555,10 +487,7 @@ Frontend Block Editor:
 - ✅ Bình luận lồng nhau 2 cấp, quote bình luận
 - ✅ Category filtering trên HomePage
 
-**Retrospective Sprint 2:**
-- **Went well:** Thiết kế `post_blocks` với `sort_order` rất linh hoạt, dễ extend sau này.
-- **To improve:** Scope creep không được identify sớm — cần Sprint Planning kỹ hơn để chốt scope trước khi bắt đầu.
-- **Action:** Freeze scope sau ngày thứ 2 của mỗi sprint. Yêu cầu mới → backlog sprint tiếp theo.
+**Retrospective Sprint 2:** Scope creep (block layout) chưa được identify sớm. Action: freeze scope sau ngày 2 mỗi sprint, yêu cầu mới → backlog sprint tiếp.
 
 ---
 
@@ -591,46 +520,17 @@ Frontend Block Editor:
 - ✅ Vote + reputation update là atomic transaction (PostgreSQL)
 - ✅ Report workflow: PENDING → RESOLVED/DISMISSED
 
-**Retrospective Sprint 3:**
-- **Went well:** PostgreSQL full-text search với GIN index rất nhanh, vượt mục tiêu 200ms.
-- **To improve:** SSE không scale — cần ghi nhận rõ limitation trong docs ngay khi phát hiện.
-- **Action:** Mọi known limitation phải được document trong DEPLOYMENT.md trong sprint đó, không để lại.
+**Retrospective Sprint 3:** PostgreSQL GIN index vượt mục tiêu latency. SSE limitation phải document ngay trong DEPLOYMENT.md khi phát hiện.
 
 ---
 
 ### Sprint 4 (22/03 – 04/04/2026) — Admin Panel & Media
 
-**Sprint Goal:** *"Admin panel đầy đủ chức năng quản trị RBAC, audit log ghi nhận mọi hành động."*
+**Sprint Goal:** *"Admin panel đầy đủ RBAC, audit log ghi nhận mọi hành động."*
 
 **User Stories thực hiện:** US-08 (8 SP) + US-09 (8 SP) + US-10 (5 SP) = 21 SP core
 
-**Hình 3.6 — Kiến trúc RBAC và Audit Log (Sprint 4)**
-
-```
-REQUEST                 MIDDLEWARE STACK              CONTROLLER
-──────────────────────────────────────────────────────────────────
-
-Admin request  ──▶  authMiddleware  ──▶  roleMiddleware  ──▶  adminController
-               │    (verify JWT)        (check ADMIN/     │    (business logic)
-               │                         MODERATOR role)  │
-               │    ◀── 401 Unauthorized ──┘               │
-               │                                           │
-               │                                      auditMiddleware
-               │                                      (log the action)
-               │                                           │
-               │                                           ▼
-               │                                    audit_logs table
-               │                                    ┌──────────────┐
-               │                                    │ admin_id     │
-               │                                    │ action_type  │
-               │                                    │ target_type  │
-               │                                    │ target_id    │
-               │                                    │ old_value    │
-               │                                    │ new_value    │
-               │                                    │ ip_address   │
-               └────────────────────────────────────│ created_at   │
-                                                    └──────────────┘
-```
+Kiến trúc RBAC: `authMiddleware` (verify JWT) → `roleMiddleware` (check ADMIN/MODERATOR) → `adminController` → `auditMiddleware` (tự động ghi `audit_logs`: admin_id, action_type, target_id, old/new value, IP).
 
 **Bảng 3.8 — Sprint 4: Task Breakdown**
 
@@ -653,52 +553,17 @@ Admin request  ──▶  authMiddleware  ──▶  roleMiddleware  ──▶  
 - ✅ Admin panel accessible cho ADMIN và MODERATOR role; blocked với USER role
 - ✅ Metrics endpoint `/api/admin/metrics` trả về response time percentiles
 
-**Retrospective Sprint 4:**
-- **Went well:** Sprint 4 là sprint chính xác nhất — không có chênh lệch estimate. Bài học từ S1, S2 đã được áp dụng hiệu quả.
-- **To improve:** Admin-client và backend cần deploy cùng lúc — manual coordination dễ lỗi.
-- **Action:** Tạo deployment checklist trong Sprint 5.
+**Retrospective Sprint 4:** Sprint chính xác nhất — 0 lệch. Bài học từ S1–S2 đã được áp dụng hiệu quả.
 
 ---
 
 ### Sprint 5 (05/04 – 18/04/2026) — AI Bot + Testing + Deploy
 
-**Sprint Goal:** *"Bot AI sinh nội dung tự động mỗi giờ; test coverage > 60%; Docker image production-ready."*
+**Sprint Goal:** *"Bot AI sinh nội dung tự động mỗi giờ; test coverage > 60%; Docker production-ready."*
 
-**User Stories thực hiện:** US-11 (21 SP) = 21 SP core
+**User Stories:** US-11 (21 SP)
 
-**Hình 3.7 — Kiến trúc Multi-LLM Fallback (Sprint 5 — vibe-content)**
-
-```
-Scheduler (mỗi giờ)
-        │
-        ▼
-ContextGathererService ──▶ Lấy posts/comments gần nhất từ backend API
-        │
-        ▼
-ActionSelectorService ──▶ Quyết định: đăng bài / bình luận / vote
-        │
-        ▼
-PromptBuilderService ──▶ Xây dựng prompt context-aware theo personality bot
-        │
-        ▼
-ContentGeneratorService
-   │
-   ├──▶ [1] Google Gemini API ──▶ Thành công (~75%) ──▶ Content
-   │         │ Thất bại (timeout/rate-limit)
-   ├──▶ [2] Groq API (Llama) ──▶ Thành công (~20%) ──▶ Content
-   │         │ Thất bại
-   ├──▶ [3] Cerebras API ──▶ Thành công (~4%) ──▶ Content
-   │         │ Thất bại
-   └──▶ [4] Nvidia NIM API ──▶ Thành công (~1%) ──▶ Content
-              │ Tất cả thất bại
-              └──▶ Skip cycle, log error
-        │
-        ▼
-ValidationService ──▶ Kiểm tra chất lượng (độ dài, không spam, đúng ngôn ngữ)
-        │
-        ▼
-APIExecutorService ──▶ Gọi backend API để đăng bài/comment
-```
+Kiến trúc `vibe-content`: Scheduler (mỗi giờ) → ContextGathererService → ActionSelectorService → PromptBuilderService → ContentGeneratorService (Gemini → Groq → Cerebras → Nvidia fallback) → ValidationService → APIExecutorService.
 
 **Bảng 3.9 — Sprint 5: Task Breakdown**
 
@@ -727,10 +592,7 @@ APIExecutorService ──▶ Gọi backend API để đăng bài/comment
 - ✅ Deploy Render.com: backend + vibe-content hoạt động
 - ✅ Deploy Vercel: frontend + admin-client hoạt động
 
-**Retrospective Sprint 5:**
-- **Went well:** Multi-LLM fallback hoạt động hoàn hảo — không bị gián đoạn ngay cả khi một provider down.
-- **To improve:** Documentation nên được viết song song với development, không để dồn vào cuối sprint.
-- **Action (cho dự án tương lai):** Mỗi task cần kèm theo acceptance criteria dưới dạng documentation ngay khi implement.
+**Retrospective Sprint 5:** Multi-LLM fallback hoạt động ổn định. Documentation nên viết song song với development, không dồn vào cuối sprint.
 
 ---
 
@@ -748,21 +610,7 @@ APIExecutorService ──▶ Gọi backend API để đăng bài/comment
 | S5 (AI+Test) | 30 | 30 | 100% | 10.5 | 10.5 | 0% |
 | **Tổng** | **162** | **158** | **97.5%** | **61.5** | **64** | **+4.1%** |
 
-> **Nhận xét:** Accuracy estimate cải thiện rõ rệt từ S1–S2 (93–94%) lên S3–S5 (100%). Sai lệch thực tế chỉ +4.1% tổng thời gian — nằm trong ngưỡng chấp nhận được (< 10%) của phương pháp Scrum. Buffer week (W13) hấp thụ toàn bộ phần dư.
-
----
-
-## 3.5 Kết luận chương
-
-Chương 3 đã trình bày toàn bộ quy trình lập kế hoạch dự án MINI-FORUM theo phương pháp Scrum Agile, bao gồm:
-
-1. **WBS 3 cấp** với 7 thành phần hệ thống, 25+ module và 70+ task cụ thể — đảm bảo 100% scope được phân rã đến mức có thể thực thi và kiểm tra.
-
-2. **Product Backlog 11 User Stories** (102 SP) được ưu tiên theo MoSCoW, phân bổ hợp lý qua 5 sprint với velocity trung bình 31.6 SP/sprint.
-
-3. **Gantt Chart 13 tuần** với 6 milestone rõ ràng, tiêu chí xác nhận cụ thể — tất cả 6 milestone đều đạt đúng hoặc sớm hơn kế hoạch.
-
-4. **Sprint Planning chi tiết** cho S0–S5 với task breakdown, estimate, actual và retrospective — giúp nhóm liên tục cải thiện accuracy từ 93% lên 100%.
+> **Nhận xét:** Accuracy ước tính cải thiện rõ từ S1–S2 (93–94%) lên S3–S5 (100%). Sai lệch thực tế +4.1% — trong ngưỡng chấp nhận (≤10%). Buffer W13 hấp thụ toàn bộ phần dư.
 
 ---
 

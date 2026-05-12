@@ -106,31 +106,11 @@ Sau 13 tuần phát triển theo mô hình Scrum (6 Sprint × 2 tuần + 1 tuầ
 
 ### 1.2.1 Mục tiêu dự án
 
-Dự án MINI-FORUM được xây dựng hướng tới hai nhóm mục tiêu song song: mục tiêu kinh doanh và mục tiêu kỹ thuật, có sự giao thoa và hỗ trợ lẫn nhau.
+**Mục tiêu kinh doanh:** (1) Cung cấp nền tảng diễn đàn độc lập, self-host được bằng Docker Compose. (2) Trang bị hệ thống moderation hoàn chỉnh (báo cáo vi phạm, ban user, audit log). (3) Giải quyết cold-start bằng AI bot sinh nội dung seed ban đầu.
 
-**Nhóm mục tiêu kinh doanh:**
-
-1. **Cung cấp nền tảng diễn đàn độc lập, có thể triển khai ngay** — Hệ thống phải hoạt động đầy đủ sau khi cài đặt, không phụ thuộc vào dịch vụ của bên thứ ba (ngoại trừ email service và CDN tùy chọn). Tổ chức có thể self-host hoàn toàn bằng Docker Compose.
-
-2. **Trang bị hệ thống kiểm duyệt nội dung (moderation) hoàn chỉnh** — Quản trị viên cần có công cụ xử lý báo cáo vi phạm, khóa/mở tài khoản, xóa/ẩn bài viết và bình luận, đồng thời theo dõi mọi hành động quản trị thông qua audit log để đảm bảo trách nhiệm giải trình.
-
-3. **Giải quyết vấn đề cold-start bằng AI** — Thay vì chờ cộng đồng tự hình thành (có thể mất nhiều tháng), hệ thống sử dụng AI bot để tạo nội dung seed ban đầu có chất lượng, giả lập hoạt động cộng đồng trong giai đoạn khởi động.
-
-**Nhóm mục tiêu kỹ thuật:**
-
-1. Xây dựng REST API hoàn chỉnh với xác thực hai lớp: **JWT** (access token 15 phút + refresh token 7 ngày) kết hợp **OTP email** 6 chữ số hết hạn sau 10 phút, và phân quyền RBAC ba cấp (MEMBER, MODERATOR, ADMIN).
-
-2. Triển khai hệ thống thông báo thời gian thực qua **Server-Sent Events (SSE)** — giải pháp nhẹ hơn WebSocket, phù hợp với mô hình thông báo một chiều từ server xuống client.
-
-3. Implement tìm kiếm **full-text search** tận dụng khả năng `tsvector/tsquery` của PostgreSQL, tránh phụ thuộc vào Elasticsearch cho quy mô MVP.
-
-4. Đóng gói toàn bộ hệ thống bằng **Docker multi-stage build** để đảm bảo tính nhất quán giữa môi trường phát triển và sản xuất, giảm thiểu "works on my machine" syndrome.
-
-5. Đạt độ bao phủ kiểm thử **(test coverage) ≥ 60%** trên backend với framework **Vitest**, tập trung vào các domain có logic nghiệp vụ phức tạp (auth, voting, notification triggers).
+**Mục tiêu kỹ thuật:** REST API với JWT (15 phút) + OTP email + RBAC 3 cấp; SSE notifications thời gian thực; full-text search PostgreSQL (`tsvector`); Docker multi-stage build; test coverage ≥ 60% (Vitest).
 
 ### 1.2.2 Phạm vi kỹ thuật
-
-Việc xác định rõ ràng phạm vi trong/ngoài dự án là bước quan trọng trong giai đoạn lập kế hoạch, giúp tránh scope creep — một trong những nguyên nhân hàng đầu dẫn đến trễ deadline trong dự án phần mềm.
 
 **Bảng 1.2 — Phạm vi kỹ thuật hệ thống MINI-FORUM**
 
@@ -147,58 +127,14 @@ Việc xác định rõ ràng phạm vi trong/ngoài dự án là bước quan t
 
 ### 1.2.3 Yêu cầu chức năng — Phân loại MoSCoW
 
-Kỹ thuật phân loại **MoSCoW** (Must have / Should have / Could have / Won't have) được áp dụng để ưu tiên hóa backlog ngay từ Sprint 0. Đây là cơ sở để quyết định thứ tự implement các tính năng trong 6 Sprint.
+Backlog được ưu tiên theo MoSCoW từ Sprint 0:
 
-**Hình 1.2 — Sơ đồ phân loại yêu cầu theo MoSCoW**
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║              PHÂN LOẠI YÊU CẦU THEO MOSCOW                      ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ┌─────────────────────────────────────────────────────────┐    ║
-║  │  MUST HAVE — Bắt buộc (Sprint 0–2)                     │    ║
-║  │  ▸ Đăng ký tài khoản + xác thực OTP email (Brevo)      │    ║
-║  │  ▸ Đăng nhập / Đăng xuất + JWT access/refresh token    │    ║
-║  │  ▸ Phân quyền 3 cấp: MEMBER / MODERATOR / ADMIN        │    ║
-║  │  ▸ CRUD bài viết với Block Layout (TEXT/IMAGE/CODE/     │    ║
-║  │    QUOTE)                                               │    ║
-║  │  ▸ Bình luận lồng nhau (nested) và trích dẫn (quote)   │    ║
-║  │  ▸ Quản lý category và tag cho bài viết                │    ║
-║  │  ▸ Dashboard thống kê (admin)                          │    ║
-║  │  ▸ Hệ thống báo cáo vi phạm và xử lý                  │    ║
-║  └─────────────────────────────────────────────────────────┘    ║
-║                                                                  ║
-║  ┌─────────────────────────────────────────────────────────┐    ║
-║  │  SHOULD HAVE — Nên có (Sprint 3–4)                     │    ║
-║  │  ▸ Vote upvote/downvote + tính điểm reputation         │    ║
-║  │  ▸ Tìm kiếm full-text PostgreSQL                       │    ║
-║  │  ▸ Thông báo real-time qua SSE                         │    ║
-║  │  ▸ Audit log ghi nhận hành động quản trị               │    ║
-║  │  ▸ Bookmark bài viết yêu thích                         │    ║
-║  │  ▸ Upload và quản lý avatar qua ImageKit CDN           │    ║
-║  └─────────────────────────────────────────────────────────┘    ║
-║                                                                  ║
-║  ┌─────────────────────────────────────────────────────────┐    ║
-║  │  COULD HAVE — Có thì tốt (Sprint 5)                    │    ║
-║  │  ▸ AI bot sinh nội dung (vibe-content) đa nhân vật     │    ║
-║  │  ▸ Upload ảnh trong bài viết (ImageKit CDN)             │    ║
-║  │  ▸ Chặn người dùng (user block list)                   │    ║
-║  │  ▸ Hồ sơ cá nhân mở rộng (bio, social links)          │    ║
-║  └─────────────────────────────────────────────────────────┘    ║
-║                                                                  ║
-║  ┌─────────────────────────────────────────────────────────┐    ║
-║  │  WON'T HAVE — Ngoài phạm vi dự án này                 │    ║
-║  │  ▸ Mobile app (iOS/Android native)                     │    ║
-║  │  ▸ Chat thời gian thực (WebSocket)                     │    ║
-║  │  ▸ OAuth2 social login                                 │    ║
-║  │  ▸ Video streaming / podcast                           │    ║
-║  │  ▸ Hệ thống thanh toán / subscription                 │    ║
-║  └─────────────────────────────────────────────────────────┘    ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-*Nguồn: Tác giả tự xây dựng dựa trên phương pháp MoSCoW (Clegg & Barker, 1994)*
+| Mức | Yêu cầu chính | Sprint |
+|-----|--------------|--------|
+| **Must Have** | Đăng ký+OTP, Login+JWT, RBAC 3 cấp, CRUD bài viết Block Layout, bình luận lồng nhau, category/tag, admin dashboard, báo cáo vi phạm | S0–S2, S4 |
+| **Should Have** | Vote+reputation, full-text search, SSE notification, audit log, bookmark, avatar upload | S3–S4 |
+| **Could Have** | AI bot, upload ảnh bài viết, block list, hồ sơ mở rộng | S5 |
+| **Won't Have** | Mobile app, WebSocket chat, OAuth2, video streaming, thanh toán | — |
 
 ### 1.2.4 Yêu cầu phi chức năng
 
@@ -219,15 +155,9 @@ Yêu cầu phi chức năng (Non-Functional Requirements — NFR) xác định c
 
 ## 1.3 Các bên liên quan (Stakeholders)
 
-### 1.3.1 Tổng quan về quản lý stakeholder
+### 1.3.1 Nhận diện và phân tích stakeholder
 
-Nhận diện và quản lý các bên liên quan (Stakeholder Management) là một trong những hoạt động cốt lõi trong quản trị dự án phần mềm. Theo PMBOK® Guide (PMI, 2021), stakeholder là "các cá nhân, nhóm hoặc tổ chức có thể ảnh hưởng hoặc bị ảnh hưởng bởi dự án, và có lợi ích trong thành công hoặc thất bại của dự án."
-
-Trong bối cảnh dự án MINI-FORUM thực hiện theo mô hình cá nhân (1 người), việc xác định rõ stakeholder giúp tránh tình trạng build sai thứ — phát triển tính năng không ai cần, hoặc bỏ sót yêu cầu cốt lõi của người dùng thực sự.
-
-### 1.3.2 Nhận diện và phân tích stakeholder
-
-Dự án MINI-FORUM có bốn nhóm stakeholder chính. Mỗi nhóm có profile lợi ích, mức độ tham gia và ảnh hưởng khác nhau đối với các quyết định dự án.
+Dự án có bốn nhóm stakeholder chính:
 
 **Bảng 1.4 — Phân tích chi tiết các bên liên quan**
 
@@ -238,64 +168,16 @@ Dự án MINI-FORUM có bốn nhóm stakeholder chính. Mỗi nhóm có profile 
 | **End User — Member** (Người dùng thành viên) | Người dùng cuối: đọc bài, đăng bài, bình luận, vote, nhận thông báo | Giao diện thân thiện; tốc độ tải nhanh; thông báo kịp thời; nội dung phong phú | Trải nghiệm kém (lag, UI phức tạp); mất dữ liệu; spam nội dung | **Thấp** — phản hồi qua user testing nội bộ Sprint 4–5 | **Trung bình** — phản hồi định hướng UX |
 | **Admin User** (Quản trị viên) | Người vận hành nền tảng: kiểm duyệt nội dung, quản lý user, xử lý báo cáo | Dashboard đầy đủ; công cụ moderation nhanh; audit log tin cậy; ít thao tác thủ công | Thiếu công cụ xử lý vi phạm; audit log không đầy đủ; không rõ hành động nào được phép | **Trung bình** — kiểm thử admin panel Sprint 4 | **Trung bình** — yêu cầu tính năng admin module |
 
-### 1.3.3 Ma trận ảnh hưởng và mức độ tham gia (Power-Interest Grid)
+### 1.3.2 Ma trận Power-Interest
 
-Ma trận Power-Interest (hay còn gọi là Power-Interest Grid, Eden & Ackermann, 1998) là công cụ phân tích stakeholder phổ biến, giúp xác định chiến lược quản lý phù hợp cho từng nhóm.
+| Vùng | Stakeholder | Chiến lược |
+|------|-------------|------------|
+| **Manage Closely** (Power cao, Interest cao) | Người thực hiện, Product Owner | Giao tiếp thường xuyên, cập nhật hàng ngày |
+| **Keep Informed** (Power thấp, Interest cao) | Admin User, End User | Cập nhật qua Sprint Review, thu thập feedback định kỳ |
 
-**Hình 1.3 — Ma trận Power-Interest của các bên liên quan MINI-FORUM**
+### 1.3.3 Quản lý kỳ vọng stakeholder
 
-```
-  Mức độ ảnh hưởng (Power)
-         │
-    Cao  │  ┌──────────────────────────────────┐
-         │  │    MANAGE CLOSELY                │
-         │  │                                  │
-         │  │   ◉ Product Owner               │
-         │  │   ◉ Người thực hiện dự án       │
-    ---  ┼  ├──────────────────────────────────┤
-         │  │    KEEP INFORMED                 │
-   Thấp  │  │                                  │
-         │  │   ◎ Admin User                  │
-         │  │                          ◎ End  │
-         │  │                            User  │
-         │  └──────────────────────────────────┘
-         └──────────────────────────────────────
-              Thấp                         Cao
-                    Mức độ tham gia (Interest)
-```
-
-| Vùng ma trận | Stakeholder | Chiến lược quản lý |
-|-------------|-------------|-------------------|
-| **Manage Closely** (Power cao, Interest cao) | Người thực hiện dự án, Product Owner | Giao tiếp thường xuyên; cập nhật tiến độ hàng ngày; ra quyết định cùng nhau |
-| **Keep Satisfied** (Power cao, Interest thấp) | — | N/A trong dự án này |
-| **Keep Informed** (Power thấp, Interest cao) | Admin User, End User | Cập nhật qua Sprint Review demo; thu thập feedback định kỳ |
-| **Monitor** (Power thấp, Interest thấp) | — | N/A trong dự án này |
-
-### 1.3.4 Chiến lược giao tiếp và tham gia stakeholder
-
-Dựa trên phân tích ma trận ở trên, các chiến lược giao tiếp cụ thể được thiết lập cho từng nhóm:
-
-**Bảng 1.5 — Kế hoạch giao tiếp stakeholder**
-
-| Stakeholder | Kênh giao tiếp | Tần suất | Nội dung | Người chịu trách nhiệm |
-|-------------|---------------|---------|---------|----------------------|
-| **Người thực hiện dự án** | Daily Standup/Daily Log (15 phút) | Hàng ngày (mỗi sáng) | Tiến độ hôm qua / hôm nay; blocker cần xử lý | Tác giả (Scrum Master kiêm nhiệm) |
-| **Product Owner** | Sprint Planning | Đầu mỗi sprint (2 tuần/lần) | Sprint Goal; chọn stories từ backlog; estimate | Lead Developer |
-| **Product Owner** | Sprint Review (demo) | Cuối mỗi sprint | Demo working software; thu thập feedback; update backlog | Tác giả |
-| **Product Owner** | Sprint Retrospective | Sau Sprint Review | Cải tiến quy trình; action items | Scrum Master |
-| **End User** | User Testing Session | Sprint 4 và Sprint 5 | Test giao diện frontend; thu thập UX feedback | Frontend Developer |
-| **Admin User** | Admin Panel Testing | Sprint 4 | Kiểm thử workflow quản trị; feedback về UX admin | Lead Developer |
-| **Tất cả** | Documentation trong `docs/` | Cập nhật liên tục | Quyết định kỹ thuật, API docs, README | Lead Developer |
-
-### 1.3.5 Quản lý kỳ vọng stakeholder
-
-Một rủi ro thường gặp trong dự án có Product Owner là giảng viên là **kỳ vọng không được quản lý tốt** — sinh viên làm theo ý mình mà không xác nhận với giảng viên, dẫn đến sprint review thất bại hoặc phải làm lại.
-
-Biện pháp phòng ngừa được áp dụng:
-- **Sprint Goal viết thành văn bản** trước khi bắt đầu mỗi sprint, được Product Owner xác nhận.
-- **Acceptance Criteria cụ thể** cho mỗi User Story (ví dụ: "Khi đăng nhập sai mật khẩu 5 lần, tài khoản bị khóa 30 phút").
-- **Demo live** thay vì chỉ trình bày slide — mọi tính năng phải chạy được trong buổi Sprint Review.
-- **Backlog refinement** vào giữa sprint để phát hiện sớm nếu sprint goal có nguy cơ không đạt.
+Biện pháp phòng ngừa kỳ vọng lệch nhau: Sprint Goal viết thành văn bản được PO xác nhận đầu mỗi sprint; Acceptance Criteria cụ thể cho từng User Story; demo live (không dùng slide) tại Sprint Review; Backlog Refinement giữa sprint để phát hiện sớm rủi ro trễ deadline.
 
 ---
 

@@ -98,15 +98,16 @@ Hệ thống gồm 4 dịch vụ chính:
 - **admin-client**: Bảng điều khiển quản trị với React/Vite
 - **vibe-content**: Dịch vụ sinh nội dung tự động bằng AI (Multi-LLM fallback chain)
 
-Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
+Báo cáo tập trung phân tích **6 khía cạnh tích hợp** cốt lõi:
 
 1. **Kiến trúc 4-tier** với giao tiếp liên service qua REST API và Prisma ORM
 2. **Thiết kế module** với phân tách trách nhiệm rõ ràng theo từng domain
 3. **API-first integration** đảm bảo business logic nhất quán cho mọi consumer
 4. **Bảo mật theo chiều sâu** (defense-in-depth) với 5 lớp độc lập theo OWASP
 5. **Tích hợp AI** với Autonomous Agent và Multi-LLM fallback cho độ tin cậy cao
+6. **Tích hợp blackbox** với ImageKit (media CDN) và Brevo (OTP email) theo Adapter Pattern
 
-**Từ khóa:** Hệ thống thông tin tích hợp, REST API, Monorepo, Multi-LLM, JWT, RBAC, PostgreSQL, Docker, TypeScript
+**Từ khóa:** Hệ thống thông tin tích hợp, REST API, Monorepo, Multi-LLM, JWT, RBAC, PostgreSQL, Docker, TypeScript, ImageKit, Brevo
 
 ---
 
@@ -159,6 +160,14 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 - 7.3 Hạn chế và hướng phát triển
 - 7.4 Kết luận
 
+**CHƯƠNG 8 — TÍCH HỢP BLACKBOX: IMAGEKIT VÀ BREVO OTP MAIL SERVICE**
+- 8.1 Tổng quan kiến trúc tích hợp bên thứ ba
+- 8.2 Tích hợp ImageKit — Lưu trữ và phân phối media
+- 8.3 Tích hợp Brevo — OTP Mail Service
+- 8.4 Quản lý biến môi trường và bảo mật credential
+- 8.5 Xử lý lỗi và resilience
+- 8.6 Sơ đồ luồng dữ liệu End-to-End cho media và email
+
 **PHỤ LỤC**
 - A. Cấu trúc thư mục đầy đủ
 - B. Bảng mapping Sprint — Tích hợp
@@ -180,6 +189,13 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 | Bảng 6.1 | Cấu hình triển khai 5 service | 6 |
 | Bảng 7.1 | Phân tích trade-off kiến trúc | 7 |
 | Bảng 7.2 | Hạn chế và đề xuất nâng cấp | 7 |
+| Bảng 8.1 | Phân tầng Adapter cho hai dịch vụ bên thứ ba | 8 |
+| Bảng 8.2 | So sánh hai Transformation Preset ImageKit | 8 |
+| Bảng 8.3 | Quy tắc nghiệp vụ khi upload media bài viết | 8 |
+| Bảng 8.4 | Các cơ chế bảo mật trong luồng OTP | 8 |
+| Bảng 8.5 | Biến môi trường cho hai dịch vụ bên thứ ba | 8 |
+| Bảng 8.6 | Xử lý lỗi trong luồng ImageKit | 8 |
+| Bảng 8.7 | So sánh chiến lược tích hợp ImageKit vs. Brevo | 8 |
 
 ## DANH MỤC SƠ ĐỒ
 
@@ -197,6 +213,12 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 | Hình 5.1 | Kiến trúc bảo mật 5 lớp | 5 |
 | Hình 6.1 | Docker Multi-stage Build Process | 6 |
 | Hình 6.2 | Sơ đồ triển khai đa nền tảng | 6 |
+| Hình 8.1 | Vị trí hai dịch vụ bên thứ ba trong kiến trúc tổng thể | 8 |
+| Hình 8.2 | Luồng URL transformation trên CDN ImageKit | 8 |
+| Hình 8.3 | Sequence Diagram: Upload Avatar | 8 |
+| Hình 8.4 | Kiến trúc phân tầng Email Service | 8 |
+| Hình 8.5 | Sequence Diagram: OTP Registration Flow | 8 |
+| Hình 8.6 | Luồng dữ liệu hoàn chỉnh: Media Upload và OTP Email | 8 |
 
 ---
 
@@ -229,6 +251,8 @@ Báo cáo tập trung phân tích **5 khía cạnh tích hợp** cốt lõi:
 | **OWASP** | Open Web Application Security Project — Dự án bảo mật ứng dụng web mở | Security best practices, Top 10 vulnerabilities |
 | **Prod** | Production — Môi trường sản xuất | Render.com, Vercel, production deployment |
 | **RBAC** | Role-Based Access Control — Kiểm soát truy cập theo vai trò | Authorization, user roles (MEMBER, MODERATOR, ADMIN) |
+| **CDN** | Content Delivery Network — Mạng phân phối nội dung | ImageKit CDN phân phối ảnh toàn cầu |
+| **DAM** | Digital Asset Management — Quản lý tài sản số | ImageKit.io — lưu trữ, xử lý và phân phối media |
 | **REST** | Representational State Transfer — Phong cách kiến trúc API | API design principle, HTTP verbs |
 | **SQLi** | SQL Injection — Lỗ hổng tiêm SQL | Security threat, Prisma parameterized queries ngăn chặn |
 | **SSE** | Server-Sent Events — Sự kiện từ server | Real-time notifications, one-way communication |

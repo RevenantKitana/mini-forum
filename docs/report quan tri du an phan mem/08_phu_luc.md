@@ -82,205 +82,49 @@ mini-forum/                    ← Root monorepo
 
 ```
 backend/
-├── package.json               ← Dependencies, scripts
-├── tsconfig.json              ← TypeScript config (strict: true)
-├── nodemon.json               ← Dev server hot-reload config
-├── Dockerfile                 ← Multi-stage build
-├── docker-entrypoint.sh       ← Run migrations → start server
-├── vitest.config.ts           ← Test configuration
-│
+├── package.json, tsconfig.json, Dockerfile, docker-entrypoint.sh, vitest.config.ts
 ├── prisma/
-│   ├── schema.prisma          ← 19 models + 12 enums
-│   ├── seed.ts                ← Seed initial data (categories, admin user)
-│   └── migrations/            ← 8 versioned migration files
-│       ├── 20250127000000_init/
-│       ├── 20250210000000_add_blocks/
-│       ├── 20250215000000_add_media/
-│       ├── 20250220000000_add_notifications/
-│       ├── 20250301000000_add_reports/
-│       ├── 20250310000000_add_audit_log/
-│       ├── 20250320000000_add_metrics/
-│       └── 20250401000000_add_config/
-│
-├── scripts/                   ← Maintenance scripts
-│   ├── backupDb.ts            ← Database backup
-│   ├── cleanupImagekit.ts     ← Remove orphaned media files
-│   ├── cleanupLegacyAvatars.ts
-│   ├── clearData.ts           ← Clear test data
-│   ├── migrateAvatarUrls.ts   ← TD-01: migrate avatar URLs
-│   ├── migratePostsToBlocks.ts← Migrate legacy posts
-│   ├── resetAllMedia.ts
-│   ├── resetAvatarMedia.ts
-│   ├── resetPostMedia.ts
-│   ├── wipeAllDb.ts
-│   └── README_MEDIA_SCRIPTS.md
-│
+│   ├── schema.prisma       ← 19 models + 12 enums
+│   ├── seed.ts
+│   └── migrations/         ← 8 versioned migration files
+├── scripts/                ← 10 maintenance scripts (backup, cleanup, migrate)
 └── src/
-    ├── app.ts                 ← Express app setup: middleware chain, routing
-    ├── index.ts               ← Entry point: DB connect, server listen
-    │
-    ├── controllers/           ← Request handlers (14 files)
-    │   ├── adminController.ts
-    │   ├── authController.ts
-    │   ├── blockReportController.ts
-    │   ├── bookmarkController.ts
-    │   ├── categoryController.ts
-    │   ├── commentController.ts
-    │   ├── configController.ts
-    │   ├── notificationController.ts
-    │   ├── postController.ts
-    │   ├── postMediaController.ts
-    │   ├── searchController.ts
-    │   ├── tagController.ts
-    │   ├── userController.ts
-    │   └── voteController.ts
-    │
-    ├── services/              ← Business logic (21 files)
-    │   ├── auditLogService.ts
-    │   ├── authService.ts
-    │   ├── blockService.ts
-    │   ├── blockValidationService.ts
-    │   ├── bookmarkService.ts
-    │   ├── brevoApiService.ts
-    │   ├── categoryService.ts
-    │   ├── commentService.ts
-    │   ├── emailService.ts
-    │   ├── imagekitService.ts
-    │   ├── metricsService.ts
-    │   ├── notificationService.ts
-    │   ├── otpService.ts
-    │   ├── postMediaService.ts
-    │   ├── postService.ts
-    │   ├── reportService.ts
-    │   ├── searchService.ts
-    │   ├── sseService.ts
-    │   ├── tagService.ts
-    │   ├── userService.ts
-    │   └── voteService.ts
-    │
-    ├── routes/                ← API routing (14 files, 1:1 với controllers)
-    │
-    ├── middlewares/           ← Express middlewares (9 files)
-    │   ├── authMiddleware.ts       ← JWT verification + decode
-    │   ├── roleMiddleware.ts       ← RBAC role check
-    │   ├── securityMiddleware.ts   ← Helmet, CORS, rate limiting
-    │   ├── metricsMiddleware.ts    ← Request metrics capture
-    │   ├── uploadMiddleware.ts     ← Multer file upload config
-    │   ├── errorMiddleware.ts      ← Centralized error handler
-    │   ├── requestLogger.ts        ← Request/response logging
-    │   ├── auditMiddleware.ts      ← Auto audit log on admin actions
-    │   └── validateMiddleware.ts   ← Zod schema validation wrapper
-    │
-    ├── validations/           ← Zod schemas (1 file per entity)
-    ├── types/                 ← Custom TypeScript type definitions
-    ├── config/                ← DB, ImageKit, env config
-    ├── constants/             ← Enum-like constants
-    ├── utils/                 ← Helper functions
-    └── __tests__/             ← Vitest test suite
-        ├── setup.ts
-        ├── auth.test.ts
-        ├── post.test.ts
-        ├── comment.test.ts
-        ├── vote.test.ts
-        ├── search.test.ts
-        ├── notification.test.ts
-        ├── imagekitService.test.ts
-        └── uploadMiddleware.test.ts
+    ├── app.ts, index.ts
+    ├── controllers/        ← 14 files
+    ├── services/           ← 21 files
+    ├── routes/             ← 14 files
+    ├── middlewares/        ← 9 files (auth, role, security, upload, audit, ...)
+    ├── validations/        ← Zod schemas (1 file per entity)
+    ├── types/, config/, constants/, utils/
+    └── __tests__/          ← 9 Vitest test files
 ```
 
 ### B.3 Frontend (`frontend/`)
 
 ```
 frontend/
-├── index.html                 ← Entry HTML
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── postcss.config.mjs
-├── vitest.config.ts
-│
+├── index.html, package.json, tsconfig.json, vite.config.ts, vitest.config.ts
 └── src/
-    ├── main.tsx               ← React entry: QueryClient + Router + AuthProvider
-    │
-    ├── App.tsx                ← Root: Router, layouts, protected routes
-    │
-    ├── pages/                 ← 14 trang React
-    │   ├── HomePage.tsx           ← Trang chủ: danh sách bài viết + filter
-    │   ├── PostDetailPage.tsx     ← Chi tiết bài + block renderer + bình luận
-    │   ├── CategoriesPage.tsx     ← Danh sách danh mục
-    │   ├── TagsPage.tsx           ← Danh sách nhãn
-    │   ├── SearchPage.tsx         ← Tìm kiếm full-text
-    │   ├── ProfilePage.tsx        ← Hồ sơ công khai người dùng
-    │   ├── EditProfilePage.tsx    ← Chỉnh sửa hồ sơ cá nhân
-    │   ├── BookmarksPage.tsx      ← Danh sách bài đã bookmark
-    │   ├── NotificationsPage.tsx  ← Thông báo (SSE real-time)
-    │   ├── BlockedUsersPage.tsx   ← Danh sách đã chặn
-    │   ├── EditPostPage.tsx       ← Soạn thảo bài (block editor)
-    │   ├── RegisterPage.tsx       ← Đăng ký + OTP verification
-    │   ├── LoginPage.tsx          ← Đăng nhập
-    │   └── ForgotPasswordPage.tsx ← Đặt lại mật khẩu qua OTP
-    │
-    ├── components/            ← Shared UI components
-    │   ├── PostCard.tsx
-    │   ├── CommentItem.tsx
-    │   ├── BlockRenderer.tsx  ← Render các block types
-    │   ├── BlockEditor.tsx    ← Block editor (TEXT/IMAGE/CODE/QUOTE)
-    │   ├── VoteButtons.tsx
-    │   ├── UserAvatar.tsx
-    │   ├── NotificationBadge.tsx
-    │   └── ...
-    │
-    ├── api/                   ← API hooks (React Query)
-    │   ├── auth.ts
-    │   ├── posts.ts
-    │   ├── comments.ts
-    │   ├── votes.ts
-    │   ├── notifications.ts
-    │   └── ...
-    │
-    ├── contexts/
-    │   └── AuthContext.tsx    ← Authentication state
-    │
-    ├── hooks/                 ← Custom React hooks
-    │   ├── useSSE.ts          ← SSE connection hook
-    │   ├── useInfiniteScroll.ts
-    │   └── ...
-    │
-    ├── routes/                ← Route definitions + guards
-    ├── types/                 ← TypeScript type definitions
-    └── utils/                 ← Helper functions
+    ├── main.tsx, App.tsx
+    ├── pages/              ← 14 trang React
+    ├── components/         ← Shared UI components (PostCard, BlockRenderer, BlockEditor, ...)
+    ├── api/                ← React Query hooks
+    ├── contexts/           ← AuthContext
+    ├── hooks/              ← useSSE, useInfiniteScroll, ...
+    ├── routes/, types/, utils/
+    └── __tests__/          ← Vitest + RTL test files
 ```
 
 ### B.4 Admin Panel (`admin-client/`)
 
 ```
 admin-client/
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── components.json            ← shadcn/ui config
-│
+├── index.html, package.json, tsconfig.json, vite.config.ts, components.json
 └── src/
-    ├── main.tsx
-    ├── App.tsx
-    │
-    ├── pages/                 ← 12 trang quản trị
-    │   ├── DashboardPage.tsx        ← KPI metrics + growth charts
-    │   ├── OperationalDashboard.tsx ← API metrics real-time
-    │   ├── UsersPage.tsx            ← Quản lý người dùng
-    │   ├── PostsPage.tsx            ← Quản lý bài viết
-    │   ├── CommentsPage.tsx         ← Quản lý bình luận
-    │   ├── CategoriesPage.tsx       ← Quản lý danh mục
-    │   ├── TagsPage.tsx             ← Quản lý nhãn
-    │   ├── ReportsPage.tsx          ← Xử lý báo cáo vi phạm
-    │   ├── AuditLogsPage.tsx        ← Lịch sử audit log
-    │   ├── SettingsPage.tsx         ← Cấu hình forum
-    │   └── LoginPage.tsx            ← Đăng nhập admin (ADMIN role only)
-    │
-    ├── components/            ← Shared admin components (DataTable, Charts, ...)
-    ├── api/                   ← API hooks cho admin endpoints
-    └── ...
+    ├── main.tsx, App.tsx
+    ├── pages/              ← 12 trang quản trị (Dashboard, Users, Posts, Reports, AuditLogs, ...)
+    ├── components/         ← DataTable, Charts, shared admin UI
+    └── api/                ← API hooks cho admin endpoints
 ```
 
 ### B.5 AI Bot (`vibe-content/`)

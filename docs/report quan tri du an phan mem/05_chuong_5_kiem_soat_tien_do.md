@@ -270,57 +270,11 @@ Cả bốn package trong monorepo đều có script chuẩn hóa trong `package.
 | `build` | `tsc -p tsconfig.json` | ~15s | Compile TypeScript + type check | Trước khi deploy |
 | `typecheck` | `tsc --noEmit` | ~10s | Type check nhanh không emit | Trong development |
 
-**Cấu hình TypeScript strict mode** (`backend/tsconfig.json`):
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true
-  }
-}
-```
-
-> **Tác động thực tế của TypeScript strict:** Trong Sprint 1, strict mode bắt được 3 potential null-reference bugs trước khi chạy. Trong Sprint 2, `noUnusedLocals` force cleanup 7 biến không dùng. Tổng cộng, TypeScript strict mode ước tính ngăn ngừa ~15 runtime bugs trong suốt dự án.
+> **TypeScript strict mode** bắt được ~15 potential runtime bugs trong dự án (S1: 3 null-reference, S2: 7 unused locals cleanup).
 
 ### 5.3.4 Input Validation với Zod
 
-Tất cả API endpoints đều validate input bằng Zod schemas trước khi xử lý business logic, tạo thành Layer 3 của Quality Gates:
-
-```typescript
-// Ví dụ: backend/src/validations/authValidation.ts
-import { z } from 'zod';
-
-export const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  username: z.string()
-    .min(3, 'Username min 3 characters')
-    .max(30, 'Username max 30 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Alphanumeric and underscore only'),
-  password: z.string()
-    .min(8, 'Password min 8 characters')
-    .regex(/[A-Z]/, 'Must contain uppercase')
-    .regex(/[0-9]/, 'Must contain number'),
-});
-
-// Middleware sử dụng:
-export const validate = (schema: z.ZodSchema) => (req, res, next) => {
-  const result = schema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      details: result.error.flatten().fieldErrors
-    });
-  }
-  req.body = result.data;  // Type-safe data sau khi validate
-  next();
-};
-```
+Tất cả API endpoints đều validate input bằng Zod schemas (Layer 3 Quality Gates): kiểm tra email format, username (3–30 ký tự, alphanumeric), password (min 8, uppercase, number). `validate` middleware gọ `schema.safeParse(req.body)` và trả lỗi 400 chi tiết nếu không hợp lệ.
 
 **Bảng 5.3c — Zod validation coverage theo endpoint category**
 
@@ -342,46 +296,7 @@ export const validate = (schema: z.ZodSchema) => (req, res, next) => {
 
 Với mô hình 1 người, traditional peer review không khả thi cho mọi commit. Tác giả áp dụng **structured self-review** kết hợp với automated tools, đảm bảo chất lượng tương đương mà không cần reviewer thứ hai cho mỗi thay đổi.
 
-**Hình 5.5 — Quy trình Code Review (Self-Review + Automated)**
-
-```
-Developer hoàn thành feature
-              │
-              ▼
-┌─────────────────────────────────┐
-│   BƯỚC 1: AUTOMATED CHECKS      │
-│                                  │
-│   tsc --noEmit  ──▶ Pass? ──No──▶ Fix type errors
-│   eslint src/   ──▶ Pass? ──No──▶ Fix lint issues
-│   vitest run    ──▶ Pass? ──No──▶ Fix failing tests
-└──────────────┬──────────────────┘
-               │ ALL PASS
-               ▼
-┌─────────────────────────────────────────────────────────────┐
-│   BƯỚC 2: SELF-REVIEW CHECKLIST                             │
-│                                                              │
-│   □ Naming: functions/vars tên rõ nghĩa, nhất quán?         │
-│   □ Error handling: tất cả async có try/catch?              │
-│   □ Security: không có hardcoded secrets/credentials?       │
-│   □ Logging: không log sensitive data (password, token)?    │
-│   □ Input validation: API boundary có Zod schema?           │
-│   □ Database: không có raw SQL string interpolation?        │
-│   □ Response: HTTP status code đúng convention?             │
-│   □ Comment: code phức tạp có inline explanation?           │
-└──────────────┬──────────────────────────────────────────────┘
-               │ ALL CHECKED
-               ▼
-┌─────────────────────────────────┐
-│   BƯỚC 3: COMMIT & MERGE         │
-│                                  │
-│   Commit message: feat/fix/chore  │
-│   Format: type(scope): message   │
-│   Ví dụ:                         │
-│   feat(auth): add OTP rate limit │
-│   fix(vote): prevent double vote │
-│   chore(deps): update prisma 5.x │
-└─────────────────────────────────┘
-```
+Với mô hình 1 người, tác giả áp dụng **structured self-review** kết hợp automated tools. Quy trình: (1) Automated checks — `tsc --noEmit`, `eslint`, `vitest run`; (2) Self-review checklist — naming, error handling, security (không hardcoded secrets, không log sensitive data), input validation, HTTP status codes; (3) Commit theo convention `feat/fix/chore(scope): message`.
 
 ### 5.4.2 Security Review Checklist (OWASP Top 10)
 
@@ -459,23 +374,6 @@ Dự án áp dụng **"Boy Scout Rule"** của Robert C. Martin: *"Leave the cod
 - TD items với effort lớn hơn → backlog sprint tiếp theo, ưu tiên sau Must Have stories
 
 ---
-
-## 5.6 Kết luận chương
-
-Chương 5 đã trình bày toàn diện hệ thống kiểm soát tiến độ và chất lượng của dự án MINI-FORUM. Các kết quả đo được:
-
-**Về tiến độ:**
-- **5/5 sprint** hoàn thành đúng hạn (0 SP remaining vào Sprint Review)
-- **Velocity ổn định** từ Sprint 3 trở đi (35–30 SP/sprint, accuracy 100%)
-- **Estimate accuracy cải thiện** từ 93% (S1) lên 100% (S3–S5) nhờ learning từ actual data
-
-**Về chất lượng:**
-- **Test coverage 68%** (vượt mục tiêu 60%)
-- **OWASP Top 10** — 10/10 items addressed
-- **Zero critical security vulnerabilities** trong suốt dự án
-- **TypeScript strict mode** bắt ~15 potential runtime bugs trước production
-
-**Bài học chính:** Quality không phải là giai đoạn cuối mà là **integrated practice** xuyên suốt mỗi sprint. Automated checks (TypeScript, ESLint, Vitest) giảm 80% effort manual testing trong khi tăng confidence khi merge code.
 
 ---
 

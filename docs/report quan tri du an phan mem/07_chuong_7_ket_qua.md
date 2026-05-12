@@ -2,18 +2,6 @@
 
 ---
 
-## Giới thiệu chương
-
-Chương kết thúc báo cáo trình bày toàn bộ kết quả đạt được sau 13 tuần thực hiện dự án MINI-FORUM, phân tích những bài học kinh nghiệm thực tế rút ra từ quá trình phát triển, và đề xuất các hướng cải tiến cho giai đoạn tiếp theo hoặc các dự án tương lai.
-
-Cấu trúc chương gồm bốn phần:
-1. **Danh sách deliverables hoàn thành** — Đo lường định lượng các sản phẩm bàn giao so với cam kết ban đầu
-2. **Bài học kinh nghiệm** — Phân tích theo ba chiều: lập kế hoạch, quy trình và kỹ thuật
-3. **Đề xuất cải tiến** — Lộ trình phát triển ngắn hạn và dài hạn với ưu tiên rõ ràng
-4. **Tự đánh giá tổng thể** — Nhìn lại điểm mạnh, điểm yếu và bài học trọng tâm
-
----
-
 ## 7.1 Danh sách deliverables hoàn thành
 
 ### 7.1.1 Tổng kết deliverables theo sprint
@@ -352,179 +340,15 @@ const voteSchema = z.object({
 
 ### 7.3.1 Cải tiến về quy trình phát triển
 
----
+**ĐỀ XUẤT 1: CI/CD Pipeline với GitHub Actions (Ưu tiên: Cao)** — Hiện tại deploy thủ công. Pipeline đề xuất: quality-gate job (tsc, eslint, vitest coverage ≥60%, build) → auto-deploy backend lên Render, frontend lên Vercel chỉ khi merge vào `main`. *Effort: 1–2 ngày.*
 
-**ĐỀ XUẤT 1: Thiết lập CI/CD Pipeline với GitHub Actions (Ưu tiên: Cao)**
+**ĐỀ XUẤT 2: E2E Testing với Playwright (Ưu tiên: Cao)** — Unit tests tốt nhưng không bắt integration bugs. 6 critical paths cần E2E: Auth flow, Create Post (block editor), Comment/Reply/Quote, Vote, Admin ban user, Admin hide post. *Effort: 3–5 ngày.*
 
-*Vấn đề hiện tại:* Deploy thủ công (chạy `npm test` → `npm run build` → push code → trigger Render/Vercel deploy) dễ gây lỗi human error và không có automated quality gate trước khi code lên production.
-
-*Đề xuất kiến trúc CI/CD:*
-
-```yaml
-# Đề xuất: .github/workflows/ci-cd.yml
-name: CI/CD Pipeline
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-jobs:
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Type Check
-        run: npx tsc --noEmit
-      - name: Lint
-        run: npx eslint src/ --max-warnings 0
-      - name: Unit Tests + Coverage
-        run: npx vitest run --coverage
-      - name: Coverage Gate (min 60%)
-        run: npx vitest run --coverage --coverage.thresholds.lines=60
-      - name: Build
-        run: npm run build
-
-  deploy-backend:
-    name: Deploy Backend
-    needs: quality-gate
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy to Render
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-  deploy-frontend:
-    name: Deploy Frontend
-    needs: quality-gate
-    if: github.ref == 'refs/heads/main'
-    # Vercel auto-deploys on push to main via Git integration
-```
-
-*Lợi ích dự kiến:*
-- Loại bỏ human error trong deploy
-- Mọi PR được kiểm tra tự động (type, lint, test) trước khi merge
-- Deployment history có audit trail
-- Blocked merge nếu quality gate không pass
-
-*Effort ước tính:* 1–2 ngày | *Impact:* Cao
-
----
-
-**ĐỀ XUẤT 2: End-to-End Testing với Playwright (Ưu tiên: Cao)**
-
-*Vấn đề hiện tại:* Unit tests backend tốt (~68% coverage) nhưng không bắt được integration bugs giữa frontend và backend. Flow Register → Verify OTP → Login → Create Post → Comment → Vote chưa có automated test.
-
-*Đề xuất test suite E2E:*
-
-```typescript
-// Đề xuất: playwright/tests/core-flows.spec.ts
-
-test.describe('Authentication Flow', () => {
-  test('complete registration with OTP', async ({ page }) => {
-    await page.goto('/register');
-    await page.fill('[name=username]', 'testuser');
-    await page.fill('[name=email]', 'test@example.com');
-    await page.fill('[name=password]', 'Test1234!');
-    await page.click('[type=submit]');
-
-    // Mock OTP cho test environment
-    await page.fill('[name=otp]', '123456');
-    await page.click('[data-testid=verify-otp]');
-
-    await expect(page).toHaveURL('/');
-    await expect(page.getByText('testuser')).toBeVisible();
-  });
-});
-
-test.describe('Forum Core Flow', () => {
-  test('create post → comment → vote', async ({ page }) => {
-    // Login first
-    await loginUser(page, 'testuser', 'Test1234!');
-
-    // Create post with block layout
-    await page.click('[data-testid=new-post]');
-    await page.fill('[data-testid=post-title]', 'Test Post');
-    await page.fill('[data-testid=text-block]', 'Hello World');
-    await page.click('[data-testid=publish]');
-
-    // Comment on post
-    await page.fill('[data-testid=comment-input]', 'Great post!');
-    await page.click('[data-testid=submit-comment]');
-
-    // Upvote
-    await page.click('[data-testid=upvote-button]');
-    await expect(page.getByTestId('vote-count')).toHaveText('1');
-  });
-});
-```
-
-*Critical paths cần E2E coverage:*
-1. Register → OTP → Login (Auth flow)
-2. Create Post (Block editor) → Publish
-3. Comment → Reply → Quote
-4. Vote → Reputation update
-5. Admin: Ban user → User cannot login
-6. Admin: Hide post → Post không hiển thị
-
-*Effort ước tính:* 3–5 ngày | *Impact:* Cao
-
----
-
-**ĐỀ XUẤT 3: Architecture Decision Records (ADR) cho các quyết định quan trọng**
-
-*Lý do:* Dự án có nhiều quyết định kiến trúc quan trọng chưa được ghi lại chính thức. Khi onboard developer mới hoặc nhìn lại sau 6 tháng, sẽ khó hiểu tại sao lại chọn SSE thay vì WebSocket, tại sao block layout thay vì textarea đơn giản.
-
-*Template ADR đề xuất:*
-```markdown
-# ADR-XXX: [Tiêu đề quyết định]
-
-**Ngày:** DD/MM/YYYY  
-**Status:** Proposed | Accepted | Deprecated | Superseded  
-**Sprint:** S[N]
-
-## Context
-[Mô tả tình huống đòi hỏi quyết định này]
-
-## Decision
-[Quyết định được đưa ra]
-
-## Reasons
-1. [Lý do 1]
-2. [Lý do 2]
-
-## Consequences
-- **Good:** [Hệ quả tốt]
-- **Bad:** [Hệ quả xấu / trade-off]
-
-## Alternatives Considered
-- [Phương án khác 1]: Rejected vì...
-- [Phương án khác 2]: Rejected vì...
-```
-
-*ADR cần tạo ngay cho dự án hiện tại:*
-
-| ADR | Quyết định | Sprint |
-|:---:|-----------|:------:|
-| ADR-001 | SSE thay vì WebSocket cho real-time notifications | S3 |
-| ADR-002 | Block layout (post_blocks) thay vì textarea đơn giản | S2 |
-| ADR-003 | Multi-LLM fallback chain cho vibe-content | S5 |
-| ADR-004 | JWT + Refresh Token rotation thay vì session-based auth | S1 |
-| ADR-005 | PostgreSQL full-text search thay vì Elasticsearch | S3 |
-
-*Effort ước tính:* 0.5 ngày/ADR | *Impact:* Trung bình
+**ĐỀ XUẤT 3: Architecture Decision Records (ADR)** — Ghi lại 5 quyết định kiến trúc quan trọng chưa có tài liệu: ADR-001 (SSE vs WebSocket), ADR-002 (block layout), ADR-003 (multi-LLM fallback), ADR-004 (JWT+refresh rotation), ADR-005 (PostgreSQL FTS vs Elasticsearch). *Effort: 0.5 ngày/ADR.*
 
 ### 7.3.2 Cải tiến về kỹ thuật
 
----
-
-**ĐỀ XUẤT 4: Monitoring Dashboard với Prometheus + Grafana (Ưu tiên: Trung bình)**
-
-*Vấn đề hiện tại:* `metricsService.ts` đã thu thập data (response time P50/P95/P99, request count per endpoint, error rate) nhưng chỉ expose qua một API endpoint. Không có historical data, không có alerting khi performance degradation.
-
-*Kiến trúc đề xuất:*
-
-```
-┌──────────────────────────────────────────────────────┐
+**ĐỀ XUẤT 4: Monitoring với Prometheus + Grafana (Ưu tiên: Trung bình)** — `metricsService.ts` đã có data (P50/P95/P99, error rate) nhưng chỉ expose qua API. Cần historical data và alerting khi performance degradation.
 │                  Monitoring Stack                    │
 │                                                      │
 │  backend/src/           Prometheus           Grafana │
@@ -546,96 +370,22 @@ test.describe('Forum Core Flow', () => {
 - `llm_api_calls_total` — by provider, success/fail
 - `db_query_duration_seconds` — Prisma slow query detection
 
-*Effort ước tính:* 2–3 ngày | *Impact:* Trung bình
+**ĐỀ XUẤT 5: Auto-generate API docs với `zod-to-openapi` (Ưu tiên: Thấp)** — Thêm `.openapi()` annotation vào Zod schemas hiện có, Swagger UI tại `/api/docs` luôn đồng bộ với code. *Effort: 1 ngày.*
 
----
-
-**ĐỀ XUẤT 5: Auto-generate API Documentation từ Zod Schemas (Ưu tiên: Thấp)**
-
-*Vấn đề hiện tại:* API documentation viết tay trong Markdown — không tự đồng bộ với code, dễ outdated sau mỗi sprint.
-
-*Giải pháp đề xuất với `zod-to-openapi`:*
-
-```typescript
-// Thêm .openapi() annotation vào Zod schemas hiện có:
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-
-const registerSchema = z.object({
-  username: z.string().min(3).max(30),
-  email:    z.string().email(),
-  password: z.string().min(8),
-}).openapi('RegisterRequest', {
-  example: {
-    username: 'johndoe',
-    email: 'john@example.com',
-    password: 'SecurePass123!'
-  }
-});
-
-// Auto-generate Swagger UI tại GET /api/docs
-// Không cần viết OpenAPI YAML thủ công
-```
-
-*Lợi ích:* Swagger UI tại `/api/docs` luôn đồng bộ với code; developer mới onboard nhanh hơn.
-
-*Effort ước tính:* 1 ngày | *Impact:* Thấp
-
----
-
-**ĐỀ XUẤT 6: Redis pub/sub cho SSE Scaling (Ưu tiên: Thấp — chỉ khi cần scale)**
-
-*Vấn đề hiện tại (TD-02):* SSE connections lưu trong process memory không cho phép horizontal scaling. Khi có 2+ backend instances, một user connect vào instance A không nhận được notification từ event xảy ra ở instance B.
-
-*Kiến trúc đề xuất khi có > 500 concurrent users:*
-
-```
-Hiện tại (in-memory, 1 instance):
-  Client ─── SSE ─── Backend Instance 1 (sseService Map)
-
-Đề xuất (Redis pub/sub, N instances):
-  Client A ─── SSE ─── Backend Instance 1 ─── Redis ─── Backend Instance 2 ─── SSE ─── Client B
-                                               pub/sub
-  Khi user B nhận notification:
-    1. Instance 1 publish event to Redis channel "user:B:notifications"
-    2. Instance 2 đang hold connection của user B nhận event từ Redis
-    3. Instance 2 push event xuống SSE stream của user B
-```
-
-*Effort ước tính:* 5–7 ngày | *Impact:* Cao (nhưng chỉ cần khi scale > 500 users)
+**ĐỀ XUẤT 6: Redis pub/sub cho SSE Scaling (Ưu tiên: Thấp — chỉ khi > 500 concurrent)** — Giải quyết TD-02: dùng Redis pub/sub để SSE hoạt động đúng khi horizontal scaling nhiều backend instances. *Effort: 5–7 ngày.*
 
 ### 7.3.3 Lộ trình cải tiến đề xuất
 
 **Bảng 7.5 — Roadmap cải tiến theo ưu tiên**
 
-| # | Đề xuất | Ưu tiên | Effort | Impact | Ghi chú |
-|:-:|---------|:-------:|:------:|:------:|---------|
-| 1 | CI/CD Pipeline (GitHub Actions) | **P1 Cao** | 1–2 ngày | Cao | Giảm thiểu human error deploy |
-| 2 | E2E Testing (Playwright) | **P1 Cao** | 3–5 ngày | Cao | Bắt integration bugs trước production |
-| 3 | Architecture Decision Records | **P2 Trung bình** | 0.5 ngày/ADR | Trung bình | Knowledge transfer, onboarding |
-| 4 | Prometheus + Grafana monitoring | **P2 Trung bình** | 2–3 ngày | Trung bình | Observability cho production |
-| 5 | Auto-generate API docs | **P3 Thấp** | 1 ngày | Thấp | Developer experience |
-| 6 | Redis pub/sub cho SSE | **P3 Thấp** | 5–7 ngày | Cao (khi scale) | Chỉ cần khi > 500 concurrent |
-
-**Hình 7.1 — Lộ trình cải tiến theo timeline đề xuất**
-
-> *Mô tả hình:* Biểu đồ Gantt 3 giai đoạn. Giai đoạn 1 (tháng 5/2026): CI/CD + E2E Testing — các cải tiến P1 ưu tiên cao nhất. Giai đoạn 2 (tháng 6/2026): ADR + Monitoring — cải tiến P2. Giai đoạn 3 (từ tháng 7/2026 trở đi): API Docs + Redis — khi có resource và nhu cầu.
-
-```
-LỘTRÌNH CẢI TIẾN ĐỀ XUẤT
-═══════════════════════════════════════════════════
-
-Tháng 5/2026 (Giai đoạn 1 — P1):
-  ├── CI/CD GitHub Actions        ██████████ (1–2 ngày)
-  └── E2E Testing Playwright      ████████████████████ (3–5 ngày)
-
-Tháng 6/2026 (Giai đoạn 2 — P2):
-  ├── Architecture Decision Records  ██████ (3 ADR × 0.5 ngày)
-  └── Prometheus + Grafana           ████████████ (2–3 ngày)
-
-Tháng 7+ (Giai đoạn 3 — P3 / Khi cần):
-  ├── Auto-generate API Docs      ████ (1 ngày)
-  └── Redis pub/sub (khi scale)   ████████████████████████████ (5–7 ngày)
-```
+| # | Đề xuất | Ưu tiên | Effort |
+|:-:|---------|:-------:|:------:|
+| 1 | CI/CD Pipeline (GitHub Actions) | **P1** | 1–2 ngày |
+| 2 | E2E Testing (Playwright) | **P1** | 3–5 ngày |
+| 3 | Architecture Decision Records (5 ADR) | **P2** | ~3 ngày |
+| 4 | Prometheus + Grafana monitoring | **P2** | 2–3 ngày |
+| 5 | Auto-generate API docs | **P3** | 1 ngày |
+| 6 | Redis pub/sub cho SSE | **P3** | 5–7 ngày |
 
 ---
 

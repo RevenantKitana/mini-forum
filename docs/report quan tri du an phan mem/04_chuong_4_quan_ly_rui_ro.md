@@ -389,61 +389,9 @@ Khi Brevo API timeout (> 10 giây), backend trả về `503 Service Unavailable`
 - Hành vi của `node_modules` (Windows case-insensitive vs Linux case-sensitive)
 - Database connection pool behavior
 
-**Biện pháp kỹ thuật — Docker containerization:**
+**Biện pháp kỹ thuật — Docker multi-stage build:**
 
-**Hình 4.3 — Docker multi-stage build cho backend**
-
-```
-┌─────────────────── Dockerfile (multi-stage) ───────────────────┐
-│                                                                  │
-│  Stage 1: BUILDER                                               │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  FROM node:18-alpine AS builder                         │   │
-│  │  WORKDIR /app                                           │   │
-│  │  COPY package*.json ./                                  │   │
-│  │  RUN npm ci                           ← Production deps │   │
-│  │  COPY . .                                               │   │
-│  │  RUN npm run build                    ← TypeScript → JS │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                           │                                      │
-│                           ▼ Copy only what's needed             │
-│  Stage 2: PRODUCTION                                            │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  FROM node:18-alpine AS production     ← Clean base     │   │
-│  │  WORKDIR /app                                           │   │
-│  │  COPY --from=builder /app/dist ./dist  ← Compiled JS    │   │
-│  │  COPY --from=builder /app/node_modules ./               │   │
-│  │  COPY --from=builder /app/prisma ./prisma               │   │
-│  │  COPY docker-entrypoint.sh .                            │   │
-│  │  RUN chmod +x docker-entrypoint.sh                      │   │
-│  │  EXPOSE 5000                                            │   │
-│  │  ENTRYPOINT ["./docker-entrypoint.sh"]                  │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  Final image size: ~200MB (vs ~500MB non-multi-stage)           │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Quy trình khởi động trong `docker-entrypoint.sh`:**
-
-```bash
-#!/bin/sh
-set -e
-
-echo "Running Prisma migrations..."
-npx prisma migrate deploy      # Apply pending migrations (production-safe)
-
-echo "Starting server..."
-node dist/index.js             # Start compiled Express server
-```
-
-**Lợi ích Docker đạt được:**
-- **Reproducibility:** `docker build` trên Windows và Linux cho cùng kết quả (Alpine Linux base image)
-- **Isolation:** Dependencies được đóng gói, không phụ thuộc vào Node.js version trên host
-- **Auto-migration:** `prisma migrate deploy` tự động chạy khi container khởi động
-- **Security:** Multi-stage build loại bỏ build tools và dev dependencies khỏi image production
-
-**Kết quả:** Không có environment-specific bug nào sau khi deploy production. `docker build` và `docker run` hoàn toàn nhất quán giữa môi trường development (Windows) và Render.com (Linux Ubuntu).
+Backend được containerize với Dockerfile 2 stage: **BUILDER** (compile TypeScript) và **PRODUCTION** (chỉ sao chép `/dist` + `node_modules` cần thiết — loại bỏ devDependencies). `docker-entrypoint.sh` tự động chạy `prisma migrate deploy` trước khi khởi động server. Kết quả: image ~200MB và không có environment bug nào sau deploy.
 
 ---
 
@@ -460,34 +408,6 @@ Block layout được thêm vào giữa Sprint 2 tạo ra tech debt:
 2. Frontend `CreatePostPage` ban đầu là textarea đơn giản → phải viết lại toàn bộ block editor component
 
 Biện pháp xử lý: Dành 1 ngày đầu Sprint 3 để refactor `postController.ts` và `postService.ts`. Tech debt được trả ngay, không để tích lũy sang Sprint 4.
-
----
-
-## 4.5 Lessons Learned về quản lý rủi ro
-
-**Bảng 4.8 — Tổng kết Lessons Learned từ quản lý rủi ro**
-
-| # | Bài học | Ngữ cảnh | Áp dụng cho dự án tương lai |
-|---|---------|---------|--------------------------|
-| 1 | **Nhận diện rủi ro sớm (Sprint 0) là đầu tư đáng giá** | Cả 7 rủi ro đều được nhận diện trước khi bắt đầu develop | Luôn dành ít nhất 2 giờ cho risk workshop trong Sprint 0 |
-| 2 | **Scope creep là rủi ro bị underestimate** | R06 không có trong Risk Register ban đầu | Thêm "Feature Scope Creep" như rủi ro mặc định trong mọi dự án Scrum |
-| 3 | **External service dependency cần fallback** | R02 (LLM), R04 (Email): không kiểm soát được external service | Mọi tích hợp external API đều cần fallback hoặc mock cho test |
-| 4 | **Accept phải đi kèm documentation** | R03 (SSE): quyết định Accept nhưng documented rõ upgrade path | Known limitation phải được ghi trong DEPLOYMENT.md ngay khi phát hiện |
-| 5 | **Containerization giải quyết 80% environment risk** | R07: Docker loại bỏ "works on my machine" | Dockerfile nên được setup ngay từ Sprint 0, không đợi đến cuối |
-| 6 | **Risk Score nên được cập nhật mỗi sprint** | R01 giảm từ 9 xuống 1 khi migrations ổn định | Risk Register là tài liệu "living document", không phải static |
-
----
-
-## 4.6 Kết luận chương
-
-Chương 4 đã trình bày toàn bộ quy trình quản lý rủi ro của dự án MINI-FORUM, từ nhận diện, đánh giá đến chiến lược xử lý và theo dõi 7 rủi ro chính. Kết quả nổi bật:
-
-- **6/7 rủi ro được resolved** hoàn toàn trước khi kết thúc dự án.
-- **R03 (SSE scalability)** được chấp nhận có chủ đích với documentation rõ ràng về upgrade path.
-- **Risk Score trung bình** giảm từ 5.1 (Sprint 0) xuống 2.0 (Sprint 5) — phản ánh hiệu quả của các biện pháp mitigate.
-- Không có rủi ro nào nằm ngoài tầm kiểm soát dẫn đến delay milestone.
-
-Kinh nghiệm quan trọng nhất: **Quản lý rủi ro proactive (trước khi xảy ra) hiệu quả hơn nhiều so với reactive (sau khi xảy ra)**. Chi phí prevent luôn thấp hơn chi phí fix.
 
 ---
 
