@@ -162,7 +162,9 @@ export class ContentGeneratorService {
       }
 
       let selectedUserId: number | null = null;
-      for (const user of botUsers) {
+      // Shuffle to avoid always picking the same bot
+      const shuffled = [...botUsers].sort(() => Math.random() - 0.5);
+      for (const user of shuffled) {
         if (this.rateLimiter.canPerform(user.id, actionType)) {
           selectedUserId = user.id;
           break;

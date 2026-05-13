@@ -75,7 +75,7 @@ schema.prisma → prisma generate → @prisma/client TypeScript types
 
 Khi rename field trong schema, TypeScript compiler báo lỗi tại **tất cả** chỗ dùng ngay lập tức — không có "silent breaking changes" đến production.
 
-### 8.2.3 Defense-in-Depth Security
+### 8.2.3 5 lớp bảo mật
 
 **Hình 8.1 — Hiệu quả 5 lớp bảo mật trước các loại tấn công**
 
@@ -106,35 +106,6 @@ Bắt vibe-content gọi Forum REST API thay vì ghi DB trực tiếp đã trán
 ---
 
 ## 8.3 Hạn chế và hướng phát triển
-
-**Bảng 8.2 — Hạn chế và lộ trình nâng cấp**
-
-| # | Hạn chế | Ngưỡng scale | Đề xuất | Ưu tiên |
-|---|--------|:------------:|---------|:-------:|
-| 1 | SSE connection store in-memory | > 1 backend instance | Redis Pub/Sub + EventEmitter | **Cao** |
-| 2 | Metrics in-memory — mất khi restart | N/A | Prometheus + Grafana | **Cao** |
-| 3 | Không có CI/CD pipeline | Ngay bây giờ | GitHub Actions | **Cao** |
-| 4 | Shared DB schema | Mọi lúc | Read-only role cho vibe-content | Trung bình |
-| 5 | Thiếu E2E tests | Ngay bây giờ | Playwright E2E | Trung bình |
-| 6 | Log không tập trung | > 2 service | Grafana Loki / ELK | Trung bình |
-| 7 | Không có DB read replica | > 1000 DAU | PostgreSQL read replica | Thấp |
-
-**Hạn chế #1 — SSE In-memory và giải pháp Redis Pub/Sub**:
-```
-Hiện tại (1 instance):  sseConnections: Map { userId:42 → stream }
-                         → Push event ✅
-
-Vấn đề (2+ instances):  Instance 1: {userId:42}  Instance 2: {userId:87}
-                         User C comment → đến Instance 2 → tìm userId:42 → ❌
-
-Giải pháp Redis:         Instance 1/2 đều SUBSCRIBE channel:user:{id}
-                         Request bất kỳ instance → PUBLISH → Redis broadcast → ✅
-```
-
-**Lộ trình phát triển** (3 phase):
-- **Phase 1** (~4 tuần): CI/CD Pipeline (GitHub Actions) + Redis Pub/Sub cho SSE
-- **Phase 2** (~3 tuần): Playwright E2E tests + Prometheus/Grafana monitoring
-- **Phase 3** (khi cần scale): PostgreSQL read replica + Grafana Loki centralized logs
 
 ---
 

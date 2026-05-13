@@ -143,33 +143,6 @@ Mọi hành động quản trị được ghi vào `audit_logs` với `user_id`,
 
 ---
 
-## 6.4 Tuân thủ OWASP Top 10
-
-**Bảng 6.2 — Mapping OWASP Top 10 với biện pháp trong codebase**
-
-| # | OWASP Risk | Biện pháp | File/Location |
-|---|-----------|----------|---------------|
-| **A01** | Broken Access Control | `authorize()` + resource ownership check | `roleMiddleware.ts`, `postService.ts` |
-| **A02** | Cryptographic Failures | bcrypt SALT_ROUNDS=12; JWT HS256; HTTPS production | `authService.ts` |
-| **A03** | Injection | Prisma ORM — parameterized queries toàn bộ, không raw SQL | `services/*.ts` |
-| **A04** | Insecure Design | Service layer isolation; Zod validation; API-first bot | `validateMiddleware.ts` |
-| **A05** | Security Misconfiguration | Helmet headers; CORS whitelist; ẩn stack trace production | `securityMiddleware.ts` |
-| **A06** | Vulnerable Components | `npm audit` định kỳ; cố định version | `package.json` |
-| **A07** | Auth & Session Failures | JWT TTL 15min; httpOnly cookie; authLimiter 10 req/15min | `authMiddleware.ts` |
-| **A08** | Software & Data Integrity | npm lockfile; Docker image hash | `package-lock.json`, `Dockerfile` |
-| **A09** | Security Logging Failures | `auditLogService` + `httpLoggerMiddleware` | `services/auditLogService.ts` |
-| **A10** | SSRF | Không có user-controlled URL fetch; CORS whitelist | Không có SSRF surface |
-
-**A03 — SQL Injection Prevention**:
-```typescript
-// ✅ Prisma parameterized (safe):
-const user = await prisma.users.findFirst({ where: { email: userInput } });
-
-// ✅ Nếu bắt buộc dùng raw query:
-const user = await prisma.$queryRaw(Prisma.sql`SELECT * FROM users WHERE email = ${userInput}`);
-```
-
----
 
 ## 6.5 Bảo mật tích hợp cho Vibe-Content
 
