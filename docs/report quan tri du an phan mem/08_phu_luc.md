@@ -372,58 +372,110 @@ Các bảng khác:
 
 ## Phụ lục E — Danh mục tài liệu tham khảo
 
-### E.1 Sách và giáo trình
+### E.1 Tài liệu quản lý và kiến trúc
 
-| # | Tài liệu | Tác giả | Năm |
-|:-:|---------|---------|:---:|
-| [1] | *The Scrum Guide* | Schwaber, K. & Sutherland, J. | 2020 |
-| [2] | *Agile Estimating and Planning* | Cohn, M. | 2005 |
-| [3] | *Refactoring: Improving the Design of Existing Code* (2nd ed.) | Fowler, M. | 2019 |
-| [4] | *Peopleware: Productive Projects and Teams* (3rd ed.) | DeMarco, T. & Lister, T. | 2013 |
-| [5] | *A Guide to the Project Management Body of Knowledge (PMBOK® Guide)* (6th ed.) | PMI | 2017 |
-| [6] | *Clean Architecture: A Craftsman's Guide to Software Structure and Design* | Martin, R.C. | 2017 |
-| [7] | *The DevOps Handbook* | Kim, G., Humble, J., Debois, P., Willis, J. | 2016 |
+[1] Schwaber, K., & Sutherland, J. (2020). *The Scrum Guide: The Definitive Guide to Scrum: The Rules of the Game*. Scrum.org.
 
-### E.2 Tài liệu kỹ thuật chính thức
+[2] Cohn, M. (2005). *Agile Estimating and Planning*. Prentice Hall.
 
-| # | Tài liệu | URL |
-|:-:|---------|-----|
-| [8] | Prisma Documentation | https://www.prisma.io/docs |
-| [9] | React Documentation | https://react.dev |
-| [10] | Express.js Guide | https://expressjs.com/en/guide |
-| [11] | TanStack Query v5 Documentation | https://tanstack.com/query/v5/docs |
-| [12] | Zod Documentation | https://zod.dev |
-| [13] | Vitest Documentation | https://vitest.dev |
-| [14] | TailwindCSS Documentation | https://tailwindcss.com/docs |
-| [15] | shadcn/ui Documentation | https://ui.shadcn.com |
-| [16] | Docker Best Practices | https://docs.docker.com/develop/develop-images/dockerfile_best-practices |
-| [17] | TypeScript Handbook | https://www.typescriptlang.org/docs |
-| [18] | ImageKit Documentation | https://docs.imagekit.io |
-| [19] | Brevo API Documentation | https://developers.brevo.com |
+[3] Fowler, M. (2019). *Refactoring: Improving the Design of Existing Code* (2nd ed.). Addison-Wesley Professional.
 
-### E.3 Tiêu chuẩn và best practices
+[4] DeMarco, T., & Lister, T. (2013). *Peopleware: Productive Projects and Teams* (3rd ed.). Addison-Wesley Professional.
 
-| # | Tài liệu | URL |
-|:-:|---------|-----|
-| [20] | OWASP Top Ten 2021 | https://owasp.org/Top10 |
-| [21] | OWASP REST Security Cheat Sheet | https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html |
-| [22] | Node.js Best Practices (goldbergyoni) | https://github.com/goldbergyoni/nodebestpractices |
-| [23] | PostgreSQL Full-Text Search | https://www.postgresql.org/docs/current/textsearch.html |
-| [24] | JWT Best Current Practices (RFC 8725) | https://datatracker.ietf.org/doc/html/rfc8725 |
-| [25] | 12-Factor App Methodology | https://12factor.net |
+[5] Project Management Institute (PMI). (2017). *A Guide to the Project Management Body of Knowledge (PMBOK® Guide)* (6th ed.). PMI.
 
-### E.4 Tài liệu nội bộ dự án
+[6] Martin, R. C. (2017). *Clean Architecture: A Craftsman's Guide to Software Structure and Design*. Prentice Hall.
 
-| # | File | Mô tả |
-|:-:|------|-------|
-| [26] | `README.md` | Hướng dẫn cài đặt và chạy dự án (monorepo root) |
-| [27] | `DEPLOYMENT.md` | Hướng dẫn triển khai chi tiết, known limitations, scaling notes |
-| [28] | `DB_SETUP.md` | Hướng dẫn thiết lập database, migration, seed data |
-| [29] | `DEPLOY_CHECKLIST.md` | Checklist kiểm tra trước khi deploy production |
-| [30] | `backend/scripts/README_MEDIA_SCRIPTS.md` | Hướng dẫn maintenance scripts cho media |
-| [31] | `backend/README.md` | Backend-specific documentation |
-| [32] | `frontend/README.md` | Frontend setup và development guide |
-| [33] | `vibe-content/README.md` | AI bot service documentation |
+[7] Kim, G., Humble, J., Debois, P., & Willis, J. (2016). *The DevOps Handbook: How to Create World-Class Agility, Reliability, and Security in Technology Organizations*. IT Revolution Press.
+
+### E.2 Microservices & Architecture
+
+[8] Richardson, C. (2018). *Microservices Patterns: With examples in Java*. Manning Publications.
+
+[9] Newman, S. (2015). *Building Microservices: Designing Fine-Grained Systems*. O'Reilly Media.
+
+[10] Fowler, M., & Lewis, J. (2014). "Microservices". *Martinfowler.com*.  
+    URL: https://martinfowler.com/articles/microservices.html
+
+[11] Fielding, R. T. (2000). *Architectural Styles and the Design of Network-based Software Architectures* [Doctoral dissertation]. University of California, Irvine.
+
+[12] Richardson, L., & Ruby, S. (2007). *RESTful Web Services*. O'Reilly Media.
+
+### E.3 Tài liệu kỹ thuật chính thức
+
+[13] Express.js Documentation. (2024). *Express: Fast, unopinionated, minimalist web framework for Node.js*.  
+    URL: https://expressjs.com/
+
+[14] Prisma Team. (2024). *Prisma: Next-generation Node.js and TypeScript ORM*.  
+    URL: https://www.prisma.io/docs
+
+[15] React Core Team. (2024). *React: The library for web and native user interfaces*.  
+    URL: https://react.dev
+
+[16] TanStack. (2024). *TanStack Query v5 Documentation: Powerful asynchronous state management for TS/JS, React, Solid, Svelte and Vue*.  
+    URL: https://tanstack.com/query/v5/docs
+
+[17] Zod Contributors. (2024). *Zod: TypeScript-first schema validation with static type inference*.  
+    URL: https://zod.dev
+
+[18] Vitest Contributors. (2024). *Vitest: A blazing fast unit test framework powered by Vite*.  
+    URL: https://vitest.dev
+
+[19] Tailwind Labs. (2024). *TailwindCSS: A utility-first CSS framework*.  
+    URL: https://tailwindcss.com/docs
+
+[20] shadcn/ui Contributors. (2024). *shadcn/ui: Beautifully designed components built with Radix UI and Tailwind CSS*.  
+    URL: https://ui.shadcn.com
+
+[21] Docker Inc. (2024). *Docker Best Practices*.  
+    URL: https://docs.docker.com/develop/develop-images/dockerfile_best-practices
+
+[22] Microsoft. (2024). *TypeScript Handbook*.  
+    URL: https://www.typescriptlang.org/docs
+
+[23] ImageKit Contributors. (2024). *ImageKit Documentation: Real-time image optimization, transformation, and delivery*.  
+    URL: https://docs.imagekit.io
+
+[24] Brevo. (2024). *Brevo (Sendinblue) API Documentation: Email Marketing & CRM*.  
+    URL: https://developers.brevo.com
+
+### E.4 Tiêu chuẩn và Best Practices
+
+[25] OWASP. (2021). *OWASP Top Ten 2021: The Top 10 Web Application Security Risks*.  
+    URL: https://owasp.org/Top10
+
+[26] OWASP. (2024). *OWASP REST Security Cheat Sheet*.  
+    URL: https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
+
+[27] Goldbergyoni. (2024). *Node.js Best Practices: Comprehensive guide to Node.js best practices*.  
+    URL: https://github.com/goldbergyoni/nodebestpractices
+
+[28] The PostgreSQL Global Development Group. (2024). *PostgreSQL Full-Text Search*.  
+    URL: https://www.postgresql.org/docs/current/textsearch.html
+
+[29] IETF. (2020). *JWT Best Current Practices (RFC 8725)*.  
+    URL: https://datatracker.ietf.org/doc/html/rfc8725
+
+[30] Heroku. (2024). *The Twelve-Factor App Methodology*.  
+    URL: https://12factor.net
+
+### E.5 Tài liệu nội bộ dự án MINI-FORUM
+
+[31] Mini-Forum Team. (2026). *README.md — Hướng dẫn cài đặt và chạy dự án (monorepo root)*.
+
+[32] Mini-Forum Team. (2026). *DEPLOYMENT.md — Hướng dẫn triển khai chi tiết, known limitations, scaling notes*.
+
+[33] Mini-Forum Team. (2026). *DB_SETUP.md — Hướng dẫn thiết lập database, migration, seed data*.
+
+[34] Mini-Forum Team. (2026). *DEPLOY_CHECKLIST.md — Checklist kiểm tra trước khi deploy production*.
+
+[35] Mini-Forum Team. (2026). *backend/scripts/README_MEDIA_SCRIPTS.md — Hướng dẫn maintenance scripts cho media*.
+
+[36] Mini-Forum Team. (2026). *backend/README.md — Backend-specific documentation*.
+
+[37] Mini-Forum Team. (2026). *frontend/README.md — Frontend setup và development guide*.
+
+[38] Mini-Forum Team. (2026). *vibe-content/README.md — AI bot service documentation*.
 
 ---
 

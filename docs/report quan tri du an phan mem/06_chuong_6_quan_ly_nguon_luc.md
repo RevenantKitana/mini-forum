@@ -1,493 +1,175 @@
-# CHƯƠNG 6: QUẢN LÝ NGUỒN LỰC
+﻿# CHƯƠNG 6: QUẢN LÝ NGUỒN LỰC
 
 ---
 
 ## 6.1 Cấu trúc vai trò và phân công trách nhiệm
 
-### 6.1.1 Tổng quan mô hình triển khai
+### 6.1.1 Mô hình triển khai cá nhân
 
-Dự án MINI-FORUM được thực hiện theo mô hình **cá nhân (1 người)**, trong đó tác giả kiêm nhiệm đồng thời nhiều vai trò từ Backend, Frontend, DevOps, AI Integration đến Scrum Master.
+Dự án MINI-FORUM được thực hiện theo mô hình **1 người**, tác giả kiêm nhiệm đồng thời nhiều vai trò:
 
-**Bảng 6.1 — So sánh Scrum chuẩn và mô hình cá nhân trong MINI-FORUM**
+| Vai trò | Effort | Phạm vi |
+|---------|:---:|---|
+| Lead Developer (Backend) | 40% | 14 controllers, 21 services, 9 middlewares |
+| Frontend Developer | 20% | React app 14 trang |
+| Admin Panel Developer | 15% | Admin client 12 trang |
+| AI/DevOps Engineer | 15% | vibe-content, Docker, deploy |
+| QA + Scrum Master | 10% | Testing, planning, docs |
 
-| Tiêu chí | Nhóm Scrum chuẩn (5–9 người) | Mô hình cá nhân MINI-FORUM (1 người) | Cách thích ứng |
-|---------|------------------------------|----------------------------------|---------------|
-| Phân công vai trò | Mỗi người một chuyên môn | Kiêm nhiệm nhiều vai trò | Ưu tiên rõ ràng theo sprint; không làm đồng thời |
-| Daily Standup | Meeting thực sự (15 phút) | Solo/duo — dễ bỏ qua | Thay bằng Daily Log file markdown |
-| Conflict resolution | Có quy trình rõ | Không có conflict nội bộ | Conflict chính là technical: ghi nhận ADR |
-| Knowledge silo | Rủi ro mỗi người biết riêng một phần | Một người biết toàn bộ | Rủi ro khi thành viên duy nhất bị blocked |
-| Sprint capacity | Dự báo theo từng thành viên | Toàn bộ capacity từ 1 người | Buffer 10–15% cho unexpected events |
-| Handoff overhead | Có — cần communication | Gần như không có | Tiết kiệm thời gian giao tiếp |
+Product Owner = giảng viên hướng dẫn, tham gia Sprint Review cuối mỗi sprint.
 
-### 6.1.2 Vai trò kiêm nhiệm
+**So sánh Scrum chuẩn vs. mô hình cá nhân:**
 
-Tác giả kiêm nhiệm 4 vai trò chính: **Lead Developer** (Backend API — 40% effort), **Frontend Developer** (React app — 20%, Admin panel — 15%), **DevOps** (Docker/deploy), **AI Integration** (vibe-content — 15%), kết hợp với **QA** (test/coverage — 10%) và **Scrum Master** (planning/docs — 10%). Product Owner là giảng viên hướng dẫn, tham gia Sprint Review cuối mỗi sprint.
+| Tiêu chí | Scrum chuẩn | MINI-FORUM (1 người) | Cách thích ứng |
+|---------|:---:|:---:|---|
+| Daily Standup | Meeting 15 phút | Không khả thi | Daily Log markdown 3 dòng |
+| Conflict resolution | Quy trình rõ | Không có nội bộ | ADR cho quyết định kỹ thuật |
+| Sprint capacity | Theo từng thành viên | Từ 1 người | Buffer 10–15% cho sự cố |
+| Handoff overhead | Có | Hầu như không | Tiết kiệm thời gian giao tiếp |
 
-### 6.1.3 Ma trận trách nhiệm RACI đầy đủ
+### 6.1.2 Ma trận RACI
 
-Ma trận RACI xác định rõ ai làm gì và ai chịu trách nhiệm cho từng hoạt động. **R** = Responsible, **A** = Accountable, **C** = Consulted, **I** = Informed.
+**Bảng 6.1 — RACI đầy đủ** *(R=Responsible, A=Accountable, C=Consulted, I=Informed)*
 
-**Bảng 6.2 — Ma trận RACI đầy đủ**
+| Hoạt động | Lead Dev | Frontend Dev | Product Owner |
+|-----------|:---:|:---:|:---:|
+| **QUẢN LÝ DỰ ÁN** | | | |
+| Product Backlog, Sprint Planning | R,A | C | **A** |
+| Sprint Review demo | R | R | **A** (accept/reject) |
+| Velocity & Risk tracking | R,A | I | I |
+| **THIẾT KẾ HỆ THỐNG** | | | |
+| Kiến trúc, ERD, API contract | **R,A** | C | I |
+| Security model (RBAC, JWT) | **R,A** | I | I |
+| **BACKEND** | | | |
+| Auth, Forum Core, Vote, Search, SSE, Admin, Media | **R,A** | I/C | I |
+| Zod validation schemas | **R,A** | I | I |
+| **FRONTEND & ADMIN** | | | |
+| React app (14 trang), Admin panel (12 trang) | C | **R,A** | I |
+| SSE client, Block editor UI | C | **R,A** | I |
+| **AI & DEVOPS** | | | |
+| vibe-content, Multi-LLM, Docker, Deployment | **R,A** | C | I |
+| DB migration management | **R,A** | I | I |
+| **TESTING & DOCS** | | | |
+| Unit tests, API testing, README × 4, DEPLOYMENT.md | R,A | C | I |
 
-| Hoạt động / Deliverable | Lead Dev | Frontend Dev | Product Owner | Ghi chú |
-|------------------------|:--------:|:------------:|:------------:|---------|
-| **QUẢN LÝ DỰ ÁN** | | | | |
-| Xây dựng Product Backlog ban đầu | R, A | C | **A**, C | PO phê duyệt cuối cùng |
-| Sprint Planning (ưu tiên, estimate) | R, A | R | **A** | PO chốt priority |
-| Sprint Review demo | R | R | **A** | PO accept/reject stories |
-| Retrospective | R, A | R | I | Tự đánh giá theo sprint |
-| Velocity & Burndown tracking | R, A | I | I | Lead cập nhật hàng ngày |
-| Risk management | R, A | C | I | Review cuối mỗi sprint |
-| **THIẾT KẾ HỆ THỐNG** | | | | |
-| Kiến trúc tổng thể (monorepo) | **R, A** | C | I | Lead quyết định |
-| ERD và Database schema | **R, A** | C | I | Frontend cần biết để UI |
-| API contract (endpoint, schema) | **R, A** | C | I | Thống nhất trước khi code |
-| Security model (RBAC, JWT) | **R, A** | I | I | Backend responsibility |
-| **BACKEND DEVELOPMENT** | | | | |
-| Auth & OTP flow | **R, A** | I | I | |
-| Post / Comment / Category / Tag APIs | **R, A** | I | I | |
-| Vote + Search + SSE | **R, A** | C | I | SSE client do Frontend |
-| Admin APIs | **R, A** | I | I | |
-| Media upload (ImageKit) | **R, A** | C | I | Frontend gọi API |
-| Zod validation schemas | **R, A** | I | I | |
-| **FRONTEND DEVELOPMENT** | | | | |
-| User-facing React app (14 trang) | C | **R, A** | I | |
-| Admin panel (12 trang) | C | **R, A** | I | |
-| SSE client (notifications) | C | **R, A** | I | |
-| Block layout editor UI | C | **R, A** | I | |
-| **AI & DEVOPS** | | | | |
-| vibe-content service toàn bộ | **R, A** | I | I | |
-| Multi-LLM fallback chain | **R, A** | I | I | |
-| Docker multi-stage build | **R, A** | C | I | |
-| Render.com + Vercel deployment | **R, A** | C | I | Frontend cần Vercel config |
-| DB migration management | **R, A** | I | I | |
-| **TESTING & DOCUMENTATION** | | | | |
-| Unit tests Vitest (backend) | R, A | R | I | Mỗi người test phần mình |
-| API testing (REST Client) | **R, A** | C | I | |
-| README × 4, DEPLOYMENT.md | R, A | C | I | |
-| DB_SETUP.md, DEPLOY_CHECKLIST.md | **R, A** | I | I | |
-
-### 6.1.4 Luồng giao tiếp và quy trình ra quyết định
-
-Trong mô hình cá nhân, giao tiếp diễn ra chủ yếu không đồng bộ để tối ưu thời gian làm việc thực sự. Quy trình ra quyết định được phân tầng theo mức độ tác động:
-
-**Bảng 6.3 — Phân tầng quyết định theo mức độ tác động**
+### 6.1.3 Phân tầng quyết định
 
 | Loại quyết định | Ai quyết định | Thời gian | Ghi chép |
-|----------------|:-------------|:--------:|---------|
-| Kỹ thuật cấp thấp (tên biến, cấu trúc hàm) | Lead tự quyết | Ngay lập tức | Không bắt buộc |
-| Kỹ thuật cấp trung (chọn thư viện, pattern) | Lead + Frontend thảo luận | < 2 giờ | Comment trong code hoặc PR |
+|----------------|---|:---:|---|
+| Kỹ thuật cấp thấp (naming, cấu trúc hàm) | Lead tự quyết | Ngay | Không bắt buộc |
+| Chọn thư viện, pattern | Lead + Frontend | < 2h | Comment trong code |
 | Kiến trúc quan trọng (SSE vs WebSocket) | Tác giả + ADR | < 1 ngày | Architecture Decision Record |
-| Scope change (thêm/bớt User Story) | Lead + Product Owner | Sprint Review | Sprint backlog update |
-| Scope change khẩn cấp (blocker) | Lead quyết định, PO confirm | < 4 giờ | Message ghi lại |
+| Scope change | Lead + Product Owner | Sprint Review | Sprint backlog update |
+| Scope change khẩn | Lead quyết, PO confirm | < 4h | Message ghi lại |
 
 ---
 
 ## 6.2 Phân bổ thời gian theo module
 
-### 6.2.1 Tổng quan phân bổ effort
+Toàn dự án: **13 tuần** (27/01–27/04/2026), tương đương **~60 person-days**.
 
-Toàn bộ dự án MINI-FORUM thực hiện trong **13 tuần** (27/01 – 27/04/2026), tương đương **~60 person-days** với 1 developer fulltime (20 ngày/tháng × 3 tháng).
+**Bảng 6.2 — Phân bổ effort theo module**
 
-**Bảng 6.4 — Phân bổ effort theo module chính**
+| Module | % Effort | Person-days | Sprint chủ yếu | Lý do effort |
+|--------|:--------:|:-----------:|:--------------:|---|
+| **Backend API** | **40%** | ~24 ngày | S1–S4 | 14 controllers, 21 services, 9 middlewares; SSE, GIN search, vote atomic |
+| **Frontend React** | **20%** | ~12 ngày | S2–S4 | React Query + TailwindCSS giảm boilerplate; tái sử dụng component |
+| **Admin Panel** | **15%** | ~9 ngày | S4 | Reuse pattern từ frontend; data tables sort/filter/paginate |
+| **vibe-content AI** | **15%** | ~9 ngày | S5 | Multi-LLM unknown; debug prompt engineering + fallback chain |
+| **Testing + Deploy** | **10%** | ~6 ngày | S1, S5, Buffer | Docker optimize sớm; test tập trung critical paths |
 
-| Module | % Effort | Person-days | Sprint chủ yếu | Lý do effort cao/thấp |
-|--------|:--------:|:-----------:|:--------------:|----------------------|
-| **Backend API** | **40%** | ~24 ngày | S1–S4 | Complexity cao nhất: 14 controllers, 21 services, 9 middlewares; nghiệp vụ phức tạp (vote + reputation, SSE streaming, full-text search GIN index) |
-| **Frontend React** | **20%** | ~12 ngày | S2–S4 | React Query + TailwindCSS giảm boilerplate đáng kể; 14 trang nhưng nhiều trang tái sử dụng component (PostCard, UserAvatar, CommentItem) |
-| **Admin Panel** | **15%** | ~9 ngày | S4 | Reuse toàn bộ pattern từ frontend; complexity chính ở data tables (sort/filter/paginate) và form validation phức tạp |
-| **vibe-content AI** | **15%** | ~9 ngày | S5 | Multi-LLM integration có nhiều unknown; debug prompt engineering và test fallback chain mất nhiều thời gian |
-| **Testing + Deploy** | **10%** | ~6 ngày | S1, S5, Buffer | Docker multi-stage được optimize từ sớm; test suite tập trung vào critical paths |
-| **Tổng** | **100%** | **~60 ngày** | S0–Buffer | |
+**Bảng 6.3 — Phân bổ effort Backend chi tiết (~24 ngày)**
 
-### 6.2.2 Biểu đồ phân bổ effort
+| Nhóm | Controllers | Services | Days | % Backend |
+|------|:-----------:|:--------:|:----:|:---------:|
+| Auth & Security | 1 | 4 (auth, otp, email, brevo) | ~3.5 | 15% |
+| Forum Core | 4 (post, comment, cat, tag) | 6 (post, comment, cat, tag, block, blockValidation) | ~6 | 25% |
+| Tương tác | 4 (vote, bookmark, search, notif) | 5 (vote, bookmark, search, notif, sse) | ~6 | 25% |
+| Admin & Reports | 3 (admin, blockReport, config) | 3 (report, auditLog, metrics) | ~4.8 | 20% |
+| Media | 1 (postMedia) | 3 (imagekit, postMedia, userAvatar) | ~3.7 | 15% |
 
-**Hình 6.2 — Biểu đồ phân bổ effort theo module**
+**Bảng 6.4 — Phân bổ effort theo sprint và module (%)**
 
-> *Mô tả hình:* Biểu đồ cột nằm ngang (horizontal bar chart). Trục dọc là các module theo thứ tự effort giảm dần. Trục ngang là phần trăm effort (0–50%). Mỗi cột hiển thị số ngày tuyệt đối và phần trăm. Màu sắc: Backend = xanh đậm, Frontend = xanh nhạt, Admin = cam, vibe-content = vàng, Test/Deploy = xám.
+| Sprint | Backend | Frontend | Admin | AI Bot | Deploy/Test | Total SP |
+|--------|:---:|:---:|:---:|:---:|:---:|:---:|
+| S0 | 60% | 20% | 10% | 10% | — | Setup |
+| S1 | 80% | 15% | — | — | 5% | 28 SP |
+| S2 | 60% | 35% | — | — | 5% | 33 SP |
+| S3 | 55% | 40% | — | — | 5% | 35 SP |
+| S4 | 30% | 20% | 40% | — | 10% | 32 SP |
+| S5 | 10% | 5% | 5% | 60% | 20% | 30 SP |
+| Buffer | 10% | 10% | 10% | 10% | 60% | — |
 
-```
-        PHÂN BỔ EFFORT THEO MODULE (Person-days)
-        ═══════════════════════════════════════════════════════
+**Milestones chính:**
 
-        Backend API    ████████████████████████████████████████  40% | 24 ngày
-        Frontend       ████████████████████                     20% | 12 ngày
-        Admin Client   ███████████████                          15% |  9 ngày
-        vibe-content   ███████████████                          15% |  9 ngày
-        Test + Deploy  ██████████                               10% |  6 ngày
-                       ────────────────────────────────────────────────────────
-                       0%    10%   20%   30%   40%   50%   Tổng: 60 ngày
-```
-
-### 6.2.3 Phân tích chi tiết effort Backend (40% = ~24 ngày)
-
-**Bảng 6.5 — Phân bổ effort chi tiết trong Backend**
-
-| Nhóm chức năng | Controllers | Services (số lượng) | Person-days | % trong Backend |
-|---------------|:----------:|:-------------------:|:-----------:|:---------------:|
-| **Auth & Security** | authController | authService, otpService, emailService, brevoApiService (4) | ~3.5 ngày | 15% |
-| **Forum Core** | postController, commentController, categoryController, tagController (4) | postService, commentService, categoryService, tagService, blockService, blockValidationService (6) | ~6 ngày | 25% |
-| **Tương tác** | voteController, bookmarkController, searchController, notificationController (4) | voteService, bookmarkService, searchService, notificationService, sseService (5) | ~6 ngày | 25% |
-| **Admin & Reports** | adminController, blockReportController, configController (3) | reportService, auditLogService, metricsService (3) | ~4.8 ngày | 20% |
-| **Media** | postMediaController (1) | imagekitService, postMediaService, userService-avatar (3) | ~3.7 ngày | 15% |
-| **Middleware cross-cutting** | — | authMiddleware, roleMiddleware, securityMiddleware, … (9) | ~included | — |
-| **Tổng Backend** | **14 controllers** | **21 services** | **~24 ngày** | **100%** |
-
-**Phân tích nguyên nhân effort cao của từng nhóm:**
-
-- **Auth & Security (15%):** OTP email với retry logic (tối đa 3 lần, TTL 10 phút), JWT rotation (access token 15 phút + refresh token 7 ngày với revocation), RBAC middleware với 3 role levels — mỗi component cần test kỹ về security edge cases và attack scenarios.
-- **Forum Core (25%):** Block layout system (`post_blocks`) là tính năng phức tạp nhất — schema đa dạng với 4 block types (TEXT/IMAGE/CODE/QUOTE), `sort_order` management (đảm bảo thứ tự khi reorder), nested comments với `parent_id` self-referential.
-- **Tương tác (25%):** `searchService` với full-text search GIN index cần tune query và test hiệu năng (latency P95 < 150ms); `sseService` memory management với concurrent connections; vote reputation calculation cần atomic update để tránh race condition.
-- **Admin (20%):** `auditLogService` ghi nhận mọi admin action với old/new values đòi hỏi middleware tự động; `metricsService` thu thập response time theo endpoint; report management với workflow state machine.
-- **Media (15%):** ImageKit upload pipeline, URL transformation (preview vs standard resolution), cleanup script cho orphaned files.
-
-### 6.2.4 Phân bổ effort theo sprint
-
-**Bảng 6.6 — Phân bổ effort theo sprint và module (%)**
-
-| Sprint | Tuần | Backend | Frontend | Admin | AI Bot | Deploy/Test | Tổng SP |
-|--------|:----:|:-------:|:--------:|:-----:|:------:|:-----------:|:-------:|
-| **S0** | W1–W2 | 60% | 20% | 10% | 10% | — | Setup |
-| **S1** | W3–W4 | 80% | 15% | — | — | 5% | 28 SP |
-| **S2** | W5–W6 | 60% | 35% | — | — | 5% | 33 SP |
-| **S3** | W7–W8 | 55% | 40% | — | — | 5% | 35 SP |
-| **S4** | W9–W10 | 30% | 20% | 40% | — | 10% | 32 SP |
-| **S5** | W11–W12 | 10% | 5% | 5% | 60% | 20% | 30 SP |
-| **Buffer** | W13 | 10% | 10% | 10% | 10% | 60% | — |
-
-### 6.2.5 Lịch làm việc thực tế theo tuần
-
-**Hình 6.3 — Gantt chart lịch làm việc và deliverable theo tuần**
-
-> *Mô tả hình:* Biểu đồ Gantt với trục ngang là 13 tuần (W1–W13) và trục dọc là các module/deliverable. Các thanh đặc thể hiện khoảng thời gian làm việc. Các dấu `●` trên trục ngang là các milestone. Màu sắc: xanh đậm = backend, xanh nhạt = frontend, cam = admin, vàng = AI, xám = test/deploy/docs.
-
-```
-MODULE / DELIVERABLE     W1  W2  W3  W4  W5  W6  W7  W8  W9  W10 W11 W12 W13
-                         ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ───
-Kiến trúc & Setup        ████████
-Database Schema (ERD)    ████████████
-Auth + OTP + JWT                  ████████
-User Management                   ████████
-Post + Block Layout                        ████████
-Comment (nested/quote)                     ████████
-Category + Tag                             ████████
-Vote + Reputation                                   ████████
-Full-text Search                                    ████████
-SSE Notifications                                   ████████
-Admin APIs                                                   ████████
-Media (ImageKit)                                             ████████
-Audit Log                                                    ████████
-vibe-content AI Bot                                                   ████████
-Test Suite (Vitest)      ████               ████             ████    ████
-Docker Build                                                          ████████
-Documentation            ████                                         ████████████
-                         ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ───
-MILESTONE:
-  M0 (07/02) ────────────●─── Monorepo running + ERD v1 + Seed script
-  M1 (21/02) ────────────────────● Auth end-to-end (register→OTP→login→refresh)
-  M2 (07/03) ──────────────────────────────● Forum core (post+comment+category)
-  M3 (21/03) ──────────────────────────────────────● Interactive (vote+search+SSE)
-  M4 (04/04) ───────────────────────────────────────────────● Admin panel complete
-  M5 (18/04) ───────────────────────────────────────────────────────● Production-ready
-```
+| Milestone | Ngày | Deliverable |
+|-----------|:---:|---|
+| M0 | 07/02 | Monorepo running + ERD v1 + Seed script |
+| M1 | 21/02 | Auth end-to-end (register→OTP→login→refresh) |
+| M2 | 07/03 | Forum core (post + comment + category) |
+| M3 | 21/03 | Interactive (vote + search + SSE) |
+| M4 | 04/04 | Admin panel complete |
+| M5 | 18/04 | Production-ready deploy |
 
 ---
 
-## 6.3 Quản lý nợ kỹ thuật (Technical Debt)
+## 6.3 Quản lý Nợ Kỹ Thuật
 
-### 6.3.1 Khái niệm và vai trò trong dự án
+**Technical Debt** (Ward Cunningham, 1992) — cái giá phải trả khi chọn giải pháp nhanh thay vì đúng đắn, tích lũy "lãi suất" qua thời gian (bug fix lâu hơn, khó thêm tính năng, onboarding chậm hơn).
 
-**Technical Debt** (nợ kỹ thuật) là khái niệm do Ward Cunningham đặt ra năm 1992, dùng để mô tả cái giá phải trả về sau khi chọn giải pháp nhanh thay vì giải pháp đúng đắn hơn. Tương tự như nợ tài chính, technical debt tích lũy "lãi suất" theo thời gian:
+**Bảng 6.5 — Phân loại Technical Debt**
 
-- Thời gian sửa bug tăng (phải hiểu code phức tạp hơn do workaround)
-- Khó thêm tính năng mới (side effects không lường trước từ quick fix)
-- Onboarding developer mới mất nhiều thời gian hơn
+| Loại | Định nghĩa | Ví dụ trong MINI-FORUM |
+|------|-----------|---|
+| **Intentional** | Cố ý chọn giải pháp tạm, biết rõ giới hạn | SSE in-memory (TD-02), deprecated `avatar_url` |
+| **Inadvertent** | Không biết đang tạo debt khi viết; phát hiện sau | Thiếu CI/CD (TD-04), thiếu E2E tests (TD-05) |
+| **Bit rot** | Code đúng lúc viết nhưng lỗi thời | Metrics in-memory (TD-03) khi scale |
 
-**Bảng 6.7 — Phân loại Technical Debt trong dự án MINI-FORUM**
+**Bảng 6.6 — Debt Register đầy đủ**
 
-| Loại | Định nghĩa | Ví dụ trong MINI-FORUM | Nguyên nhân phát sinh |
-|------|-----------|----------------------|----------------------|
-| **Intentional** | Cố ý chọn giải pháp tạm thời, biết rõ giới hạn, chấp nhận có kiểm soát | SSE in-memory (TD-02), deprecated `avatar_url` (TD-01) | Trade-off: deadline vs. giải pháp lý tưởng; nghiệp vụ không đòi hỏi ngay |
-| **Inadvertent** | Không biết đang tạo debt khi viết code; phát hiện sau | Thiếu CI/CD (TD-04), thiếu E2E tests (TD-05) | Thiếu kinh nghiệm hoặc không có thời gian suy nghĩ dài hạn lúc viết |
-| **Bit rot** | Code đúng lúc viết nhưng lỗi thời khi môi trường thay đổi | Metrics in-memory (TD-03) khi codebase scale | Môi trường thay đổi sau khi viết (tăng tải, nhiều instance) |
+| ID | Mô tả | Loại | Tác động | Ưu tiên | Sprint | Kế hoạch | Trạng thái |
+|:--:|-------|:----:|:--------:|:-------:|:------:|----------|:----------:|
+| TD-01 | `avatar_url` deprecated, giữ backward-compat | Intentional | Thấp | P3 | S2 | Chạy `migrateAvatarUrls.ts` sau migrate all clients | Open |
+| TD-02 | SSE in-memory, không scale multi-instance | Intentional | Cao (KT) | P2 | S3 | Redis pub/sub + socket.io | Open |
+| TD-03 | API metrics in-memory, mất khi restart | Intentional | Trung bình | P2 | S4 | Prometheus exporter + Grafana | Open |
+| TD-04 | Không có CI/CD pipeline — deploy thủ công | Inadvertent | Trung bình | P1 | S5 | GitHub Actions: lint→test→build→deploy | Documented |
+| TD-05 | Thiếu E2E tests cho critical user flows | Inadvertent | Cao (KD) | P1 | S2 | Playwright: auth, post, vote, admin flows | Documented |
+| TD-06 | API docs viết tay — không đồng bộ với code | Inadvertent | Thấp | P3 | S1 | `zod-to-openapi` + Swagger UI `/api/docs` | Partial |
 
-### 6.3.2 Quy trình nhận diện và ghi nhận Technical Debt
+**Chiến lược "10% Rule":** Mỗi sprint dành 10% capacity cho debt stories:
 
-**Hình 6.4 — Quy trình xử lý Technical Debt trong vòng đời Sprint**
+- Sprint 4 (32 SP): 29 SP features + 3 SP debt budget → xử lý 1 debt item
+- Mọi debt item được ghi nhận ngay khi phát hiện, không xử lý trong sprint đang chạy
+- Debt không được phép block milestone delivery
 
-> *Mô tả hình:* Flowchart 4 bước. Bắt đầu từ "Phát hiện debt" (qua code review, testing, retrospective) → "Ghi nhận vào Debt Register" với đầy đủ thông tin → "Đánh giá Priority" (Cao/TB/Thấp) → phân nhánh sang sprint tiếp theo / backlog / theo dõi → cuối cùng đều về "Monitor & Review cuối sprint".
+**Bảng 6.7 — Theo dõi Technical Debt theo sprint**
 
-```
-              Phát hiện Technical Debt
-              (Code Review / Testing / Sprint Retro / Daily Work)
-                             │
-                             ▼
-              Tạo "Debt Story" trong Product Backlog
-              Template:
-              ┌──────────────────────────────────────┐
-              │ WHAT: Mô tả rõ vấn đề                │
-              │ WHERE: Vị trí cụ thể trong codebase  │
-              │ IMPACT: Tác động kinh doanh + kỹ thuật│
-              │ TYPE: Intentional / Inadvertent / Rot │
-              │ PRIORITY: P1 / P2 / P3               │
-              └──────────────────────────────────────┘
-                             │
-                             ▼
-              Đánh giá Priority
-              ┌─────────────────────────────────────────┐
-              │  P1 Cao: block feature/deploy/security  │
-              │  P2 TB:  ảnh hưởng performance/scale   │
-              │  P3 Thấp: chỉ ảnh hưởng DX/maintainability│
-              └─────────────────────────────────────────┘
-                    │              │              │
-                   P1             P2             P3
-                    │              │              │
-               Sprint          Product        Backlog
-               tiếp theo       Backlog        (theo dõi)
-               (10% budget)    (priority)
-                    │              │              │
-                    └──────────────┴──────────────┘
-                                   │
-                                   ▼
-              Review & Monitor cuối Sprint
-              (Retrospective: debt nào cần escalate?)
-```
+| Sprint | Velocity | Debt mới | Debt xử lý | Tổng lũy kế | Nhận xét |
+|--------|:---:|:---:|:---:|:---:|---|
+| S1 | 28 | TD-01 | 0 | 1 | Brevo delay; TD-01 từ migration strategy S0 |
+| S2 | 33 | TD-06 | 0 | 2 | Scope creep; TD-06 từ "viết docs sau" |
+| S3 | 35 | TD-02 | 0 | 3 | Sprint tốt nhất; TD-02 từ SSE in-memory |
+| S4 | 32 | TD-03 | 1 (TD-06 partial) | 3 | Inline comments; TD-03 từ metrics design |
+| S5 | 30 | TD-04, TD-05 | 1 (docs) | 5 | Phát hiện khi chuẩn bị production deploy |
+| Buffer | — | 0 | 2 (docs + scripts) | 3 | TD-04/05 documented; TD-02 Open nhưng acceptable |
 
-### 6.3.3 Debt Register — Bảng theo dõi nợ kỹ thuật đầy đủ
-
-**Bảng 6.8 — Debt Register đầy đủ của dự án**
-
-| ID | Mô tả | Loại | Vị trí | Tác động KD | Tác động KT | Ưu tiên | Sprint phát sinh | Kế hoạch | Trạng thái |
-|:--:|-------|:----:|--------|:-----------:|:-----------:|:-------:|:----------------:|----------|:----------:|
-| **TD-01** | Field `avatar_url` deprecated nhưng vẫn giữ trong schema để backward-compatible với clients cũ chưa migrate | Intentional | `backend/prisma/schema.prisma` | Thấp — dư thừa data | Thấp — không ảnh hưởng query | P3 | S2 | Chạy `migrateAvatarUrls.ts` sau khi all clients dùng `avatar_standard_url` | **Open** |
-| **TD-02** | SSE connections lưu trong process memory (Map) — không scale khi có nhiều instance | Intentional | `backend/src/services/sseService.ts` | Trung bình — giới hạn ~500 concurrent | Cao — block horizontal scaling | P2 | S3 | Upgrade: Redis pub/sub adapter + socket.io; documented trong `DEPLOYMENT.md` | **Open** |
-| **TD-03** | API metrics (response time, count) thu thập trong memory — mất khi restart | Intentional | `backend/src/services/metricsService.ts` | Thấp — chỉ mất khi restart | Trung bình — không có historical data | P2 | S4 | Tích hợp Prometheus exporter `/metrics` endpoint + Grafana dashboard | **Open** |
-| **TD-04** | Không có CI/CD pipeline — deploy thủ công qua dashboard | Inadvertent | Toàn bộ project (không có `.github/workflows/`) | Trung bình — risk human error | Trung bình — không có automated quality gate trước deploy | P1 | S5 | GitHub Actions: lint → typecheck → test → build → deploy on merge to main | **Documented** |
-| **TD-05** | Thiếu End-to-End tests cho critical user flows | Inadvertent | `frontend/`, `admin-client/` | Cao — regression risk khi thêm tính năng | Cao — bugs phát hiện trễ ở production | P1 | S2 | Playwright: auth flow, create post, vote flow, admin actions | **Documented** |
-| **TD-06** | API documentation viết tay trong Markdown — không tự đồng bộ với code | Inadvertent | `docs/` | Thấp — developer experience | Thấp — risk outdated docs | P3 | S1 | `zod-to-openapi` auto-generate từ Zod schemas; Swagger UI tại `/api/docs` | **Partial** |
-
-### 6.3.4 Ma trận Technical Debt — Impact vs. Effort to Fix
-
-**Hình 6.5 — Ma trận phân tích Technical Debt**
-
-> *Mô tả hình:* Ma trận 2×2. Trục X là Effort to Fix (Thấp bên trái, Cao bên phải). Trục Y là Impact nếu không giải quyết (Thấp bên dưới, Cao bên trên). Bốn góc: Quick Win (trên-trái), Strategic (trên-phải), Low Priority (dưới-trái), Questionable (dưới-phải). Các TD được đặt trong ma trận.
-
-```
-        Impact (Tác động nếu KHÔNG giải quyết)
-        CAO  │
-             │  ┌─────────────────┐ │ ┌─────────────────────────────┐
-             │  │  QUICK WIN ✓    │ │ │      STRATEGIC ★            │
-             │  │                 │ │ │                             │
-             │  │  TD-05 E2E Tests│ │ │  TD-02 SSE Scaling          │
-             │  │  (Impact: Cao,  │ │ │  (Impact: Cao,              │
-             │  │   Effort: TB)   │ │ │   Effort: Cao 5–7 ngày)     │
-             │  │                 │ │ │                             │
-             │  └─────────────────┘ │ └─────────────────────────────┘
-             │                      │
-             │─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│
-             │                      │
-             │  ┌─────────────────┐ │ ┌─────────────────────────────┐
-             │  │  LOW PRIORITY ○ │ │ │      BACKLOG △              │
-             │  │                 │ │ │                             │
-             │  │  TD-01 avatar   │ │ │  TD-03 Prometheus           │
-             │  │  TD-06 API Docs │ │ │  TD-04 CI/CD Pipeline       │
-             │  │                 │ │ │  (Impact: TB,               │
-             │  │                 │ │ │   Effort: TB 2–3 ngày)      │
-             │  └─────────────────┘ │ └─────────────────────────────┘
-        THẤP │                      │
-             └──────────────────────┴──────────────────────────────
-                       THẤP                       CAO
-                            Effort to Fix
-
-        ✓ Quick Win: Giải quyết sớm nhất (high impact, manageable effort)
-        ★ Strategic: Lập kế hoạch dài hạn (chỉ fix khi có resource)
-        ○ Low Priority: Xử lý khi có thời gian rảnh
-        △ Backlog: Cân nhắc kỹ, đưa vào sprint khi capacity cho phép
-```
-
-### 6.3.5 Chiến lược quản lý Technical Debt trong Scrum
-
-Dự án áp dụng **"10% Rule"** — một tỷ lệ cố định của sprint capacity dành riêng cho debt stories:
-
-```
-Sprint Capacity × 10% = Technical Debt Budget
-
-Ví dụ Sprint 4 (32 SP total):
-  ├── Feature stories:  32 × 90% ≈ 29 SP
-  └── Debt budget:      32 × 10% ≈  3 SP → Chọn 1 debt story giá trị nhất
-```
-
-**4 quy tắc cứng:**
-
-1. **Ghi nhận ngay khi phát sinh** — Khi phát hiện potential debt (code review, daily work, testing), tạo ngay Debt Story trong backlog với đầy đủ thông tin theo template chuẩn.
-2. **Không address debt trong sprint đang chạy** — Mọi debt được ghi nhận nhưng không được xử lý ngay trong sprint hiện tại, trừ khi debt block hoàn toàn một business feature.
-3. **Debt không được phép block milestone delivery** — Nếu một debt có nguy cơ ảnh hưởng đến milestone, escalate ngay lên Product Owner để quyết định: fix ngay hoặc chấp nhận rủi ro có kiểm soát.
-4. **DoD ngăn chặn debt mới** — DoD 6 tiêu chí (compile, lint, test, API test, self-review, doc) là bức tường đầu tiên chống lại việc merge code tạo ra debt không được biết đến.
-
-### 6.3.6 Tương quan Technical Debt và Sprint Velocity
-
-**Bảng 6.9 — Theo dõi Technical Debt theo sprint**
-
-| Sprint | Velocity (SP) | Debt Hoàn Thành | Debt Mới | Tổng Debt Lũy Kế | Nhận xét |
-|--------|:-------------:|:---------------:|:--------:|:----------------:|---------|
-| S1 | 28 | 0 | TD-01 | 1 | Brevo delay giảm velocity; TD-01 từ migration strategy quyết định trong S0 |
-| S2 | 33 | 0 | TD-06 | 2 | Block layout scope creep; TD-06 từ quyết định "viết docs sau deadline" |
-| S3 | 35 | 0 | TD-02 | 3 | Sprint tốt nhất; TD-02 từ quyết định SSE in-memory (đổi lấy tốc độ implement) |
-| S4 | 32 | 1 (TD-06 partial) | TD-03 | 3 | TD-06 partial: inline comments; TD-03 từ metricsService simple design |
-| S5 | 30 | 1 (docs hoàn chỉnh) | TD-04, TD-05 | 5 | TD-04/05 nhận ra khi chuẩn bị production deploy |
-| Buffer | — | 2 (docs + scripts) | 0 | 3 | TD-04/05 documented với upgrade path; TD-02 Open nhưng acceptable |
-
-**Hình 6.6 — Biểu đồ tích lũy Technical Debt theo sprint**
-
-> *Mô tả hình:* Biểu đồ đường với trục X là sprint (S0–Buffer) và trục Y là số lượng debt items. Đường cam đặc = Debt Cumulative thực tế (tăng từ 0 đến 5 rồi giảm nhẹ về 3 sau Buffer). Đường ngang xanh đứt = Ideal (0 debt). Các mũi tên ghi chú chỉ ra sprint nào phát sinh debt mới.
-
-```
-Số debt items
- 6 │
-   │
- 5 │                                          ●
-   │                                  TD-04↗/ │TD-05 phát sinh
- 4 │                                  ●       │
-   │                          TD-02↗/         │
- 3 │                          ●               ●── Buffer (fix 2, còn 3)
-   │               TD-06↗/                    ▲
- 2 │               ●                     TD-06 partial fix
-   │    TD-01↗/
- 1 │    ●
-   │
- 0 └────────────────────────────────────────────────────────
-       S0    S1    S2    S3    S4    S5   Buffer
-
-   ──── Cumulative Debt (thực tế)   ─ ─ ─ Ideal (0 debt)
-```
-
-> **Phân tích:** Debt tăng nhanh từ S3 phản ánh trade-off điển hình: sprint đầu ít debt vì codebase đơn giản; sprint sau áp lực deadline tăng → chấp nhận thêm debt. Quan trọng là: **không có debt item nào block delivery** — 100% User Stories hoàn thành đúng hạn. Đây là outcome lý tưởng khi áp dụng "10% Rule" và DoD nghiêm túc.
+> **Kết quả:** Không có debt item nào block delivery. 100% User Stories hoàn thành đúng hạn — outcome lý tưởng khi áp dụng "10% Rule" và DoD nghiêm túc.
 
 ---
 
-## 6.4 Quản lý công cụ và môi trường phát triển
+## 6.4 Môi trường phát triển
 
-### 6.4.1 Cấu trúc môi trường 4 tầng
+**Bảng 6.8 — Cấu hình 4 môi trường**
 
-**Bảng 6.10 — Cấu hình 4 môi trường phát triển**
+| Môi trường | Nền tảng | Đặc trưng | Mục đích |
+|-----------|:---:|---|---|
+| **Development** | Local machine | `.env` local, PostgreSQL port 5432, hot reload | Develop, debug tương tác |
+| **Test** | Local (isolated) | `NODE_ENV=test`, PostgreSQL port 5433, mock services | Vitest isolated, không gọi external APIs |
+| **Staging** | Docker local | `docker-compose.yml`, PostgreSQL trong container | Integration test E2E trước deploy |
+| **Production** | Render.com + Vercel | Env vars qua dashboard, PostgreSQL Managed, CDN | Live traffic |
 
-| Môi trường | Nền tảng | Cấu hình đặc trưng | Mục đích | Người sử dụng |
-|-----------|:--------:|-------------------|---------|:-------------:|
-| **Development** | Local machine | `.env` local, PostgreSQL local port 5432, `NODE_ENV=development`, hot reload | Develop tính năng mới, debug tương tác, thử nghiệm nhanh | Developer |
-| **Test** | Local machine (isolated) | `NODE_ENV=test`, PostgreSQL test DB port 5433, mock services (email, LLM, ImageKit) | Vitest unit tests isolated, không gọi external APIs | CI / Developer |
-| **Staging** | Docker local | `docker-compose.yml`, `.env.staging`, PostgreSQL trong container, không mock | Integration test end-to-end trước khi deploy production | Developer trước deploy |
-| **Production** | Render.com (backend), Vercel (frontend/admin) | Environment variables qua dashboard, PostgreSQL Managed (Render), CDN Vercel | Live traffic, end users | End users |
-
-**Hình 6.7 — Luồng triển khai qua 4 môi trường**
-
-> *Mô tả hình:* Flowchart tuyến tính từ trái sang phải: Development → Test → Staging → Production. Mỗi bước có điều kiện PASS/FAIL. Fail ở bước nào thì quay về bước đó. Cuối cùng là Production với monitor loop.
-
-```
-┌─────────────┐    ┌──────────────┐    ┌──────────────┐    ┌─────────────┐
-│ DEVELOPMENT │    │     TEST     │    │   STAGING    │    │ PRODUCTION  │
-│             │    │              │    │              │    │             │
-│ Code + Debug│───▶│ vitest run   │───▶│ docker-      │───▶│ Render.com  │
-│ Local DB    │    │ ESLint       │    │ compose up   │    │ Vercel      │
-│ Hot reload  │    │ tsc --noEmit │    │ Manual API   │    │             │
-│             │    │              │    │ test         │    │ Health check│
-└─────────────┘    └──────┬───────┘    └──────┬───────┘    └──────┬──────┘
-                          │                   │                   │
-                         FAIL                FAIL             Monitor
-                          │                   │             (logs, alerts)
-                          ▼                   ▼
-                     Fix & Retry        Fix & Retry
-```
-
-### 6.4.2 Quản lý secrets và bảo mật cấu hình
-
-Bảo mật secrets là yêu cầu bắt buộc theo OWASP Top 10 (A02: Cryptographic Failures, A05: Security Misconfiguration). Dự án áp dụng nghiêm ngặt nguyên tắc "zero secrets in code":
-
-**Bảng 6.11 — Danh sách và phân loại biến môi trường**
-
-| Biến môi trường | Dịch vụ | Mức độ nhạy cảm | Nơi lưu trữ |
-|----------------|---------|:--------------:|------------|
-| `DATABASE_URL` | PostgreSQL | 🔴 Tối mật | Render dashboard + `.env` local (gitignored) |
-| `JWT_SECRET` | JWT Access Token | 🔴 Tối mật | Render dashboard (min 32 ký tự random) |
-| `JWT_REFRESH_SECRET` | JWT Refresh Token | 🔴 Tối mật | Render dashboard (khác hoàn toàn JWT_SECRET) |
-| `BREVO_API_KEY` | Email OTP | 🟠 Nhạy cảm | Render dashboard + Brevo portal |
-| `IMAGEKIT_PRIVATE_KEY` | CDN upload signed | 🟠 Nhạy cảm | Render dashboard + ImageKit portal |
-| `IMAGEKIT_PUBLIC_KEY` | CDN public | 🟡 Ít nhạy | Có thể expose ở client (by design) |
-| `IMAGEKIT_URL_ENDPOINT` | CDN base URL | 🟢 Công khai | Có thể hardcode |
-| `GEMINI_API_KEY` | LLM primary | 🟠 Nhạy cảm | vibe-content `.env` + Render dashboard |
-| `GROQ_API_KEY` | LLM fallback 1 | 🟠 Nhạy cảm | vibe-content `.env` + Render dashboard |
-| `CEREBRAS_API_KEY` | LLM fallback 2 | 🟠 Nhạy cảm | vibe-content `.env` + Render dashboard |
-| `NVIDIA_API_KEY` | LLM fallback 3 | 🟠 Nhạy cảm | vibe-content `.env` + Render dashboard |
-| `VITE_API_URL` | Frontend → Backend | 🟢 Công khai | Vercel env (visible in browser bundle) |
-
-**Quy trình bảo mật secrets được áp dụng:**
-
-```
-Nguyên tắc 1 — Zero secrets in git:
-  .gitignore:  .env  .env.*  .env.local  .env.staging  .env.production
-
-Nguyên tắc 2 — Template an toàn:
-  .env.example chứa: KEY=<mô tả giá trị cần điền> (không có giá trị thật)
-
-Nguyên tắc 3 — Principle of Least Privilege:
-  • DB user: chỉ SELECT/INSERT/UPDATE/DELETE, không có DROP/CREATE
-  • ImageKit API key: giới hạn upload folder cụ thể
-  • Brevo API key: chỉ quyền gửi email transactional
-
-Nguyên tắc 4 — Rotation khi có sự cố:
-  Render dashboard → Environment Variables → Update → Save → Trigger Redeploy
-```
-
-### 6.4.3 Stack công cụ và năng suất phát triển
-
-**Bảng 6.12 — Stack công cụ phát triển và lý do lựa chọn**
-
-| Loại | Công cụ | Phiên bản | Lý do lựa chọn | Đóng góp vào năng suất |
-|------|--------|:--------:|----------------|------------------------|
-| **IDE** | VS Code | Latest | Extensions phong phú (Prisma, TypeScript, REST Client), debugging tốt | Nền tảng chính |
-| **Version Control** | Git + GitHub | — | Industry standard, free private repos, GitHub Actions (khi có CI/CD) | Không thể thiếu |
-| **API Testing** | REST Client (VS Code ext.) | — | File `.http` commit được, inline trong editor, không cần switch app | Tiết kiệm ~20% thời gian |
-| **DB GUI** | Prisma Studio | Built-in | `npx prisma studio` — xem/edit data trực quan không cần SQL | Tiết kiệm ~30% debug time |
-| **Container** | Docker Desktop | Latest | Đảm bảo "works on my machine" → staging environment nhất quán | Giảm production surprises |
-| **TypeScript** | tsc | 5.x | Strict mode bắt lỗi compile time, IDE intellisense | Giảm ~40% runtime bugs |
-| **Test Runner** | Vitest | Latest | Nhanh hơn Jest (Vite-native), watch mode hot reload | Feedback loop dưới 2 giây |
-| **Linting** | ESLint | Latest | Bắt common mistakes, enforce style trước commit | Giảm nitpicks trong review |
-| **Formatter** | Prettier | Latest | Auto-format, không tranh cãi về style | Đồng nhất codebase |
-| **Package Manager** | npm | 9+ | Workspace support cho monorepo | Tiêu chuẩn |
-
-### 6.4.4 Ước tính ROI của công cụ và thực hành
-
-**Bảng 6.13 — Ước tính lợi ích của các công cụ trong 60 ngày dự án**
-
-| Công cụ / Thực hành | Thời gian tiết kiệm (est.) | Thời gian setup | ROI |
-|--------------------|:-------------------------:|:--------------:|:---:|
-| TypeScript strict mode | ~8 ngày (giảm debug runtime) | 0.5 ngày | **16:1** |
-| Prisma Studio + type-safe client | ~3 ngày (không cần raw SQL debug) | 0 (built-in) | **∞** |
-| Vitest watch mode | ~2 ngày (fast feedback loop) | 0.5 ngày | **4:1** |
-| REST Client `.http` files | ~2 ngày (thay Postman GUI) | 0.5 ngày | **4:1** |
-| Docker staging environment | ~1.5 ngày (ít surprise ở production) | 1 ngày | **1.5:1** |
-| ESLint + Prettier | ~1 ngày (giảm code review nits) | 0.5 ngày | **2:1** |
-| Prisma migrations versioned | ~1 ngày (rollback nhanh nếu cần) | 0 (part of workflow) | **∞** |
+**Luồng triển khai:** Development → Test (vitest + eslint + tsc) → Staging (docker-compose + manual API test) → Production (Render/Vercel). Fail bước nào → fix và retry từ bước đó.
 
 ---
 
-## 6.5 Tổng kết chương
-
-Chương 6 đã phân tích toàn diện bốn khía cạnh quản lý nguồn lực trong dự án MINI-FORUM:
-
-**[Về nguồn lực con người]**
-Mô hình thực hiện cá nhân (1 người) đòi hỏi kiêm nhiệm nhiều vai trò và kỷ luật cao về ưu tiên công việc. RACI matrix giúp tránh mơ hồ ngay cả khi một người đảm nhiệm nhiều mũ vai trò — mỗi deliverable phải có đúng một người Accountable. Phân tầng quyết định rõ ràng giảm thiểu thời gian "phân vân" và tăng tốc độ thực thi.
-
-**[Về phân bổ thời gian]**
-Backend API chiếm 40% effort — hợp lý vì đây là nơi tập trung toàn bộ business logic phức tạp, bảo mật và tích hợp dịch vụ bên ngoài. Phân bổ 15% cho vibe-content (AI) phản ánh overhead cao của tích hợp LLM. Lịch làm việc theo sprint đảm bảo mỗi component được build và test độc lập trước khi integrate.
-
-**[Về nợ kỹ thuật]**
-6 debt items được ghi nhận nhưng **không có item nào block delivery** — outcome lý tưởng khi áp dụng "10% Rule" và DoD nghiêm túc. Chiến lược "Ghi nhận ngay, giải quyết có kế hoạch" tốt hơn nhiều so với "fix ngay" (làm gián đoạn sprint) hoặc "để sau" (quên mất).
-
-**[Về công cụ và môi trường]**
-Đầu tư vào công cụ đúng chỗ (TypeScript strict, Prisma Studio, Vitest watch) mang lại ROI cao — tiết kiệm ước tính ~18 ngày developer time trong 60 ngày dự án, tức ~30% năng suất tăng thêm.
-
-> **Bài học chính:** Quản lý nguồn lực hiệu quả trong mô hình cá nhân không có nghĩa là làm nhiều việc cùng lúc, mà là **làm đúng việc đúng thời điểm** — ưu tiên rõ ràng, ghi nhận debt minh bạch, và bảo vệ sprint backlog khỏi scope creep không có kiểm soát.
-
----
-
-*[Tiếp theo: Chương 7 — Kết quả và bài học kinh nghiệm]*
+*[Tiếp theo: Chương 7 — Kết quả và Bài học kinh nghiệm]*
