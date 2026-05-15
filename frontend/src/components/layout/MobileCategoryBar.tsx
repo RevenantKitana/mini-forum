@@ -16,7 +16,8 @@ interface MobileCategoryBarProps {
 export function MobileCategoryBar({ categories, activeCategory, onSelect }: MobileCategoryBarProps) {
   return (
     <div
-      className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide"
+      className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide"
+      style={{ WebkitOverflowScrolling: 'touch' }}
       role="tablist"
       aria-label="Danh mục"
     >
@@ -26,7 +27,7 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
         aria-selected={!activeCategory}
         onClick={() => onSelect(null)}
         className={cn(
-          "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+          "flex-shrink-0 px-4 py-2 rounded-full text-sm sm:text-xs font-medium border transition-colors min-h-[44px] flex items-center justify-center",
           !activeCategory
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-background border-border text-foreground hover:bg-muted"
@@ -42,15 +43,15 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
           aria-selected={activeCategory === cat.slug}
           onClick={() => onSelect(cat.slug)}
           className={cn(
-            "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap",
+            "flex-shrink-0 px-4 py-2 rounded-full text-sm sm:text-xs font-medium border transition-colors whitespace-nowrap min-h-[44px] flex items-center justify-center gap-1",
             activeCategory === cat.slug
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-background border-border text-foreground hover:bg-muted"
           )}
         >
-          {cat.name}
+          <span>{cat.name}</span>
           {cat.post_count > 0 && (
-            <span className="ml-1 text-[10px] opacity-60">({cat.post_count})</span>
+            <span className="text-[11px] sm:text-[10px] opacity-60">({cat.post_count})</span>
           )}
         </button>
       ))}

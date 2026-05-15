@@ -1063,9 +1063,23 @@ body[data-scroll-locked] {
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile-optimized horizontal scroll container */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch-friendly minimum tap target on mobile */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Prevent content jump on modal/dialog open */
