@@ -61,6 +61,9 @@ export function PostsPage() {
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
       const response = await adminService.getPosts(params);
       setPosts(response.data);
       setTotalPages(response.pagination.totalPages);
@@ -74,7 +77,7 @@ export function PostsPage() {
 
   useEffect(() => {
     fetchPosts();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, searchQuery]);
 
   const handleToggleVisibility = async (post: AdminPost) => {
     try {
@@ -273,11 +276,11 @@ export function PostsPage() {
           <Input
             placeholder="Tìm kiếm bài viết..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Lọc trạng thái" />
           </SelectTrigger>

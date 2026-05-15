@@ -458,7 +458,7 @@ export function AuditLogsPage() {
                 <Input
                   placeholder="Tìm theo người dùng, mục tiêu..."
                   value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPage(1); }}
                   className="pl-10"
                 />
               </div>

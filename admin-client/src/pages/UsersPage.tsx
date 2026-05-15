@@ -59,6 +59,9 @@ export function UsersPage() {
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
       const response = await adminService.getUsers(params);
       setUsers(response.data);
       setTotalPages(response.pagination.totalPages);
@@ -72,7 +75,7 @@ export function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter, statusFilter]);
+  }, [page, roleFilter, statusFilter, searchQuery]);
 
   const handleChangeRole = async (userId: number, newRole: string) => {
     try {
@@ -183,11 +186,11 @@ export function UsersPage() {
           <Input
             placeholder="Tìm kiếm người dùng..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="pl-9"
           />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
+        <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Vai trò" />
           </SelectTrigger>
@@ -199,7 +202,7 @@ export function UsersPage() {
             <SelectItem value="BOT">Bot</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
