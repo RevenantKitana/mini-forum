@@ -19,6 +19,7 @@ import { BookmarkButton } from '@/components/common/BookmarkButton';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { BlockRenderer } from '@/components/post/BlockRenderer';
+import { ImageBlockScroller } from '@/components/post/ImageBlockScroller';
 import { getAvatarUrl } from '@/utils/imageHelpers';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -360,6 +361,17 @@ export function PostDetailPage() {
           {post.blocks && post.blocks.length > 0 ? (
             <BlockRenderer blocks={post.blocks} />
           ) : null}
+
+          {/* Images uploaded in non-block mode (block_id = null, not linked to any block) */}
+          {(() => {
+            const blockMediaIds = new Set(
+              (post.blocks || []).flatMap((b) => (b.media || []).map((m) => m.id))
+            );
+            const orphanMedia = (post.media || []).filter((m) => !blockMediaIds.has(m.id));
+            return orphanMedia.length > 0 ? (
+              <ImageBlockScroller images={orphanMedia} className="mt-4" />
+            ) : null;
+          })()}
 
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4">
