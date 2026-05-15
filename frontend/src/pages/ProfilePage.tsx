@@ -367,10 +367,10 @@ export function ProfilePage() {
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                         <span>Trên bài viết</span>
                         <Link
-                          to={`/posts/${comment.post_id}`}
+                          to={`/posts/${comment.post?.id}`}
                           className="text-primary hover:underline font-medium"
                         >
-                          {comment.post?.title || `#${comment.post_id}`}
+                          {comment.post?.title || `#${comment.post?.id}`}
                         </Link>
                         <span>•</span>
                         <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: vi })}</span>
