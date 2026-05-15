@@ -39,6 +39,7 @@ import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function UsersPage() {
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -277,7 +278,7 @@ export function UsersPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <a
-                            href={`http://localhost:5173/users/${user.username}`}
+                            href={`${frontendUrl}/users/${user.username}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

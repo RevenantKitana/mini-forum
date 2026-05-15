@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function PostsPage() {
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
   const [posts, setPosts] = useState<AdminPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -386,7 +387,7 @@ export function PostsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <a
-                            href={`http://localhost:5173/posts/${post.id}`}
+                            href={`${frontendUrl}/posts/${post.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -581,7 +582,7 @@ export function PostsPage() {
               )}
               <div className="flex gap-2 border-t pt-4">
                 <Button size="sm" variant="outline" asChild>
-                  <a href={`http://localhost:5173/posts/${previewPost.id}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${frontendUrl}/posts/${previewPost.id}`} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3.5 w-3.5 mr-1" /> Xem đầy đủ
                   </a>
                 </Button>

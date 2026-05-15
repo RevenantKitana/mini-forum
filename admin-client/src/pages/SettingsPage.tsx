@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function SettingsPage() {
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
   const { user } = useAuth();
 
   return (
@@ -95,12 +96,12 @@ export function SettingsPage() {
                 </div>
               </div>
               <a
-                href="http://localhost:5173"
+                href={frontendUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-sm"
               >
-                localhost:5173
+                {frontendUrl}
               </a>
             </div>
           </div>

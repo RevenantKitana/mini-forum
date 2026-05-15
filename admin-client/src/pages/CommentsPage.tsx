@@ -42,6 +42,7 @@ import { formatDate, truncateText, decodeHtmlEntities } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function CommentsPage() {
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -337,7 +338,7 @@ export function CommentsPage() {
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <a
-                      href={`http://localhost:5173/posts/${comment.post.id}`}
+                      href={`${frontendUrl}/posts/${comment.post.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-sm text-primary hover:underline max-w-[200px]"
@@ -369,7 +370,7 @@ export function CommentsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <a
-                            href={`http://localhost:5173/posts/${comment.post.id}#comment-${comment.id}`}
+                            href={`${frontendUrl}/posts/${comment.post.id}#comment-${comment.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

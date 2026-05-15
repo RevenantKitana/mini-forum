@@ -88,6 +88,7 @@ const bottomNavItems = [
 ];
 
 export function AdminLayout() {
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
   const { user, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -223,7 +224,7 @@ export function AdminLayout() {
 
       {/* Link to main site */}
       <a
-        href="http://localhost:5173"
+        href={frontendUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
