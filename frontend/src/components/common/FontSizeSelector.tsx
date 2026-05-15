@@ -19,19 +19,20 @@ export function FontSizeSelector() {
     <DropdownMenu>
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 btn-press"
-              title="Tùy chỉnh cỡ chữ"
+              disabled
+              className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 btn-press opacity-50 cursor-not-allowed"
+              title="Không khả dụng"
             >
               <Type className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Cỡ chữ
+          Không khả dụng
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-48">
