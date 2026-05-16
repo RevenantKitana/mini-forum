@@ -1076,7 +1076,7 @@ body[data-scroll-locked] {
 
 /* Touch-friendly minimum tap target on mobile */
 @media (max-width: 768px) {
-  button, a, [role="button"] {
+  button:not([role="tab"]), a:not([role="tab"]), [role="button"]:not([role="tab"]) {
     min-height: 44px;
     min-width: 44px;
   }

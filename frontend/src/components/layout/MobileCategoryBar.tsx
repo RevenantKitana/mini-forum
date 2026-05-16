@@ -27,7 +27,7 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
         aria-selected={!activeCategory}
         onClick={() => onSelect(null)}
         className={cn(
-          "flex-shrink-0 w-max h-9 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center whitespace-nowrap",
+          "flex-shrink-0 h-9 min-h-[36px] px-4 rounded-lg text-xs font-medium border transition-colors inline-flex items-center justify-center whitespace-nowrap",
           !activeCategory
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-background border-border text-foreground hover:bg-muted"
@@ -43,7 +43,7 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
           aria-selected={activeCategory === cat.slug}
           onClick={() => onSelect(cat.slug)}
           className={cn(
-            "flex-shrink-0 w-max h-9 px-4 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap flex items-center justify-center gap-1",
+            "flex-shrink-0 h-9 min-h-[36px] px-4 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap inline-flex items-center justify-center gap-1",
             activeCategory === cat.slug
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-background border-border text-foreground hover:bg-muted"
