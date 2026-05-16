@@ -16,7 +16,7 @@ interface MobileCategoryBarProps {
 export function MobileCategoryBar({ categories, activeCategory, onSelect }: MobileCategoryBarProps) {
   return (
     <div
-      className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide"
+      className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-3 md:-mx-4 px-3 md:px-4 scrollbar-hide"
       style={{ WebkitOverflowScrolling: 'touch' }}
       role="tablist"
       aria-label="Danh mục"

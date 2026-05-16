@@ -219,7 +219,7 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur py-2 sm:py-1 px-4 md:px-4 border-b">
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur py-2 sm:py-1 px-3 md:px-4 border-b\">
         {/* Header - Dynamic based on selected category */}
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2 sm:gap-4">
           <div className="min-w-0 flex-1">
@@ -363,7 +363,7 @@ export function HomePage() {
       </div>
 
       {/* Scrollable Posts List */}
-      <div className="flex-1 overflow-y-auto pt-3 px-2 md:px-1">
+      <div className="flex-1 overflow-y-auto pt-3 px-3 md:px-4">
         {/* Mobile Category Bar */}
         <MobileCategoryBar
           categories={visibleCategories}
