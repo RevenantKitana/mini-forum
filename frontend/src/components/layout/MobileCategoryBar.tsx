@@ -16,7 +16,7 @@ interface MobileCategoryBarProps {
 export function MobileCategoryBar({ categories, activeCategory, onSelect }: MobileCategoryBarProps) {
   return (
     <div
-      className="flex md:hidden gap-1 md:gap-2 overflow-x-auto pb-2 -mx-3 md:-mx-4 px-3 md:px-4 scrollbar-hide"
+      className="flex md:hidden gap-1 md:gap-2 overflow-x-auto pb-2 -mx-3 md:-mx-4 px-3 md:px-4 scrollbar-hide items-center"
       style={{ WebkitOverflowScrolling: 'touch' }}
       role="tablist"
       aria-label="Danh mục"
@@ -27,7 +27,7 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
         aria-selected={!activeCategory}
         onClick={() => onSelect(null)}
         className={cn(
-          "flex-shrink-0 min-w-fit px-4 py-2 rounded-full text-xs font-medium border transition-colors min-h-[44px] flex items-center justify-center",
+          "flex-shrink-0 h-9 px-4 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center whitespace-nowrap",
           !activeCategory
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-background border-border text-foreground hover:bg-muted"
@@ -43,7 +43,7 @@ export function MobileCategoryBar({ categories, activeCategory, onSelect }: Mobi
           aria-selected={activeCategory === cat.slug}
           onClick={() => onSelect(cat.slug)}
           className={cn(
-            "flex-shrink-0 min-w-fit px-4 py-2 rounded-full text-xs font-medium border transition-colors whitespace-nowrap min-h-[44px] flex items-center justify-center gap-1",
+            "flex-shrink-0 h-9 px-4 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap flex items-center justify-center gap-1",
             activeCategory === cat.slug
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-background border-border text-foreground hover:bg-muted"
