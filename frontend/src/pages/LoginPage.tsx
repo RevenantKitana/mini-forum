@@ -83,6 +83,9 @@ export function LoginPage() {
           <CardDescription>
             Nhập thông tin đăng nhập để truy cập tài khoản
           </CardDescription>
+            <CardDescription>
+            Test Account: nqk6829@gmail.com / Password: Admin@123
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
