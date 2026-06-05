@@ -11,6 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert';
 import { Shield, Loader2 } from 'lucide-react';
 
 export function LoginPage() {
@@ -23,7 +28,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +40,10 @@ export function LoginPage() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+      setError(
+        err.response?.data?.message ||
+          'Đăng nhập thất bại. Vui lòng thử lại.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -49,11 +58,14 @@ export function LoginPage() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
           </div>
+
           <CardTitle className="text-2xl">Admin Panel</CardTitle>
+
           <CardDescription>
             Đăng nhập để truy cập bảng điều khiển quản trị
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -88,11 +100,30 @@ export function LoginPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Đăng nhập
             </Button>
           </form>
+
+          {/* Test Account */}
+          <Alert className="mt-6">
+            <AlertTitle>Tài khoản thử nghiệm</AlertTitle>
+            <AlertDescription className="mt-2 space-y-1">
+              <div>
+                <strong>Email:</strong> admin@example.com
+              </div>
+              <div>
+                <strong>Mật khẩu:</strong> admin123
+              </div>
+            </AlertDescription>
+          </Alert>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>Chỉ admin và moderator mới có thể truy cập</p>
