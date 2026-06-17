@@ -341,6 +341,20 @@ export class LLMProviderManager {
     return MODEL_LABEL_MAP[label];
   }
 
+  /**
+   * Public method to check if provider has API key configured
+   */
+  checkProviderApiKey(providerId: string): boolean {
+    return this.hasApiKey(providerId);
+  }
+
+  /**
+   * Get all providers (for health check service)
+   */
+  getProviders(): ILLMProvider[] {
+    return this.providers;
+  }
+
   async getProviderStatusSnapshot(): Promise<ProviderStatusSnapshot[]> {
     const snapshot: ProviderStatusSnapshot[] = [];
 

@@ -40,12 +40,14 @@ Vibe-Content là một dịch vụ tạo nội dung tự động cho forum, sử
 #### **LLMHealthCheckService** (`src/services/LLMHealthCheckService.ts`) [NEW]
 - **Chức năng**: Chuyên biệt kiểm tra availability của tất cả LLM providers
 - **Features**:
-  - Comprehensive health check cho tất cả providers
+  - **Real health check**: Gọi `generate()` thực sự trên mỗi provider (không chỉ check config)
+  - Minimal prompt test: `"Respond with exactly: 'health_check_ok'"` - tiêu hao ít tokens
+  - Timeout per provider: 15 seconds - tránh block health check
+  - Parallel testing: Test tất cả providers cùng lúc
+  - Response time tracking: Đo latency từng provider
   - Circuit breaker state tracking
-  - Cooldown window monitoring
+  - API key validation
   - Overall health status (healthy/degraded/unhealthy)
-  - Availability rate calculation
-  - Provider grouping by status
 
 ### 2. LLM Providers
 
@@ -126,10 +128,19 @@ Hỗ trợ 5 loại providers với 10 model variants:
 
 ---
 
-## 🚀 Endpoints Kiểm Tra LLM Availability
+## 🚀 Endpoints Kiểm Tra LLM Availability (Real Health Check)
+
+### How It Works
+
+1. **API Key Check**: Xác minh API key được configure
+2. **Circuit Breaker Check**: Kiểm tra circuit breaker state  
+3. **Real Test**: Gọi `model.generate()` với minimal prompt
+   - Prompt: `"Respond with exactly: 'health_check_ok'"`
+   - Timeout: 15 giây per provider
+   - Parallel: Tất cả providers được test cùng lúc
+4. **Response Tracking**: Ghi lại thời gian response (responseTimeMs) của mỗi provider
 
 ### 1. **GET `/llm-health`** - Comprehensive Health Check
-Returns detailed health status của tất cả LLM providers.
 
 **Response (HTTP 200 - Healthy):**
 ```json
@@ -143,19 +154,30 @@ Returns detailed health status của tất cả LLM providers.
       "id": "beeknoee-qwen3-235b",
       "available": true,
       "reason": null,
-      "message": null,
+      "message": "Provider is operational",
       "checkedAt": "2026-06-17T10:30:45.123Z",
       "cooldownUntil": null,
       "circuitState": "CLOSED",
       "failureCount": 0,
-      "openSince": null
+      "responseTimeMs": 2341
+    },
+    {
+      "id": "gemini-flash",
+      "available": true,
+      "reason": null,
+      "message": "Provider is operational",
+      "checkedAt": "2026-06-17T10:30:45.123Z",
+      "circuitState": "CLOSED",
+      "failureCount": 0,
+      "responseTimeMs": 1847
     },
     ...
   ],
   "summary": {
     "overall": "healthy",
     "availabilityRate": 100,
-    "message": "All 10 LLM providers are available"
+    "message": "All 10 LLM providers are operational",
+    "avgResponseTimeMs": 2105
   }
 }
 ```
@@ -250,11 +272,10 @@ Check status của specific provider.
 |--------|-------------|
 | `available` | Provider available & ready |
 | `missing_api_key` | API key not configured |
-| `cooldown` | Rate limited, cooling down (2h) |
-| `auth_error` | Authentication failed |
-| `rate_limited` | Hit rate limit |
-| `timeout` | Request timeout |
-| `unavailable` | Service unavailable |
+| `circuit_breaker_open` | Circuit breaker is OPEN (too many failures) |
+| `test_failed` | Real health test failed (timeout or error) |
+| `test_error` | Error during test execution |
+| `provider_not_found` | Provider instance not found |
 
 ---
 
@@ -358,40 +379,112 @@ setInterval(async () => {
 
 ### Modified Files
 - `src/services/ContentGeneratorService.ts` - Added `getLLMManager()` method
+- `src/services/llm/LLMProviderManager.ts` - Added public methods:
+  - `checkProviderApiKey(providerId)` - Check if provider has API key
+  - `getProviders()` - Get all provider instances (for health check)
 - `src/index.ts` - Added 4 new endpoints for LLM health checking
 
 ### Metrics Tracked
-- Total providers
-- Available/unavailable count
+- Total providers & available/unavailable count
 - Availability rate (%)
 - Circuit breaker state per provider
-- Cooldown windows
-- Transient failure TTL (10 minutes)
+- **Response time per provider (responseTimeMs)** - from real test call
+- **Average response time (avgResponseTimeMs)** - across all tested providers
+- Test reason (why provider is unavailable)
+- Test execution time
 
 ---
 
 ## 🎯 Best Practices
 
 1. **Regular Monitoring**
-   - Use `/llm-health/quick` for frequent checks (30s intervals)
-   - Use `/llm-health` for detailed diagnostics
+   - Use `/llm-health/quick` for frequent checks (30s intervals) - minimal overhead
+   - Use `/llm-health` for detailed diagnostics (2-5 min intervals) - includes real test
 
 2. **Alert Triggers**
    - `overall === 'unhealthy'` → critical alert
    - `overall === 'degraded' && availabilityRate < 30%` → warning
+   - `avgResponseTimeMs > 10000` → performance warning (slow providers)
 
-3. **Provider Selection**
-   - System automatically uses fallback queue
+3. **Performance Considerations**
+   - Each health check calls generate() on all providers in parallel
+   - Timeout per provider: 15 seconds
+   - Total check time ≈ max provider timeout + overhead (typically 15-20s)
+   - Minimal token usage: prompt is `"Respond with exactly: 'health_check_ok'"`
+
+4. **Provider Selection**
+   - System automatically uses fallback queue during production
    - Manual provider selection via label: `GET /trigger/post/:label`
+   - Health check results inform automatic failover decisions
 
-4. **Debugging**
-   - Check `/llm-health/by-status` to see which providers are in cooldown
+5. **Debugging**
+   - Check `/llm-health` for response times - identify slow providers
+   - Check `/llm-health/by-status` to see provider states
    - Check `/llm-health/:providerId` for specific provider issues
-   - Check `/metrics` for LLM call statistics
+   - Check `/metrics` for LLM call statistics from actual workload
 
 ---
 
-## 📊 Related Existing Endpoints
+---
+
+## 🔧 Implementation Details - Real Health Check
+
+### Testing Strategy
+
+**Minimal Resource Consumption:**
+- **Prompt**: `"Respond with exactly: 'health_check_ok'"` 
+  - Very short prompt: ~7 tokens
+  - Predictable response: model must respond with specific text
+  - No JSON parsing required: just text comparison
+  - Cost per test: ~10-20 tokens (input + output)
+
+**Timeout Management:**
+- Per-provider timeout: 15 seconds
+- Prevents single slow provider from blocking entire health check
+- All providers tested in parallel using `Promise.all()`
+
+**Test Flow:**
+```
+1. Check API Key Configured?
+   ├─ YES → Continue
+   └─ NO → Mark unavailable (missing_api_key)
+
+2. Check Circuit Breaker State?
+   ├─ OPEN → Mark unavailable (circuit_breaker_open)  
+   └─ CLOSED/HALF_OPEN → Continue
+
+3. Call provider.generate(MINIMAL_PROMPT) with 15s timeout
+   ├─ Success → Mark available, record responseTimeMs
+   └─ Failure/Timeout → Mark unavailable (test_failed), record error
+```
+
+**Parallel Execution:**
+```
+Time:  0ms ─ Start all 10 providers in parallel
+      15ms ─ Provider 1 responds ✓
+      500ms ─ Provider 2 responds ✓
+     1200ms ─ Provider 3 responds ✓
+     ...
+     3500ms ─ All providers complete
+     
+Total check time: ~3500ms (not 10 * 15 = 150s)
+```
+
+### Code Structure
+
+**LLMHealthCheckService:**
+- `checkAllProviders()` - Main method, performs real tests in parallel
+- `testProviderWithTimeout()` - Individual provider test with timeout
+- `hasProviderApiKey()` - Check if API key is configured
+- `getQuickStatus()` - Returns quick summary
+- `getProviderHealth()` - Get specific provider status
+- `getProvidersByStatus()` - Group providers by state
+
+**LLMProviderManager (new public methods):**
+- `checkProviderApiKey(providerId)` - Public wrapper for API key check
+- `getProviders()` - Get all provider instances for testing
+
+---
 
 | Endpoint | Purpose |
 |----------|---------|
