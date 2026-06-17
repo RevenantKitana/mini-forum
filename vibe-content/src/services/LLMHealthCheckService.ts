@@ -8,7 +8,7 @@ export interface LLMProviderHealth {
   message?: string;
   checkedAt: string;
   cooldownUntil?: string;
-  circuitState?: 'OPEN' | 'CLOSED';
+  circuitState?: 'OPEN' | 'CLOSED' | 'HALF_OPEN';
   failureCount?: number;
   openSince?: string | null;
 }
