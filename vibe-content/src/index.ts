@@ -2,6 +2,7 @@ import express from 'express';
 import config from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 import { StatusService } from './services/StatusService.js';
+import { LLMHealthCheckService } from './services/LLMHealthCheckService.js';
 import { startCronScheduler, stopCronScheduler } from './scheduler/cronScheduler.js';
 import logger from './utils/logger.js';
 import { getLLMMetricsSnapshot } from './services/llmMetrics.js';
@@ -12,6 +13,7 @@ app.use(express.json());
 const generator = new ContentGeneratorService();
 const startedAt = new Date();
 const statusService = new StatusService(generator, startedAt);
+const llmHealthCheckService = new LLMHealthCheckService(generator.getLLMManager());
 
 // Health check — simple check to verify server is running
 app.get('/health', async (_req, res) => {
@@ -98,6 +100,77 @@ app.get('/metrics', (_req, res) => {
   res.json(getLLMMetricsSnapshot());
 });
 
+// LLM Health Check — dedicated endpoint to check availability of all LLM providers
+app.get('/llm-health', async (_req, res) => {
+  try {
+    const result = await llmHealthCheckService.checkAllProviders();
+    const statusCode = result.summary.overall === 'healthy' ? 200 : result.summary.overall === 'degraded' ? 206 : 503;
+    res.status(statusCode).json(result);
+  } catch (error: any) {
+    logger.error(`LLM health check endpoint error: ${error.message}`);
+    res.status(500).json({
+      error: 'Failed to check LLM provider health',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// LLM Health Quick Status — minimal endpoint for quick status check
+app.get('/llm-health/quick', async (_req, res) => {
+  try {
+    const result = await llmHealthCheckService.getQuickStatus();
+    const statusCode = result.status === 'healthy' ? 200 : result.status === 'degraded' ? 206 : 503;
+    res.status(statusCode).json(result);
+  } catch (error: any) {
+    logger.error(`LLM health quick check endpoint error: ${error.message}`);
+    res.status(500).json({
+      error: 'Failed to check LLM provider health',
+      message: error.message,
+    });
+  }
+});
+
+// LLM Health by Status — grouped providers by their status
+app.get('/llm-health/by-status', async (_req, res) => {
+  try {
+    const result = await llmHealthCheckService.getProvidersByStatus();
+    res.json({
+      timestamp: new Date().toISOString(),
+      ...result,
+    });
+  } catch (error: any) {
+    logger.error(`LLM health by-status endpoint error: ${error.message}`);
+    res.status(500).json({
+      error: 'Failed to check LLM provider health',
+      message: error.message,
+    });
+  }
+});
+
+// LLM Provider Health Detail — check specific provider
+app.get('/llm-health/:providerId', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const result = await llmHealthCheckService.getProviderHealth(providerId);
+    if (!result) {
+      res.status(404).json({
+        error: 'Provider not found',
+        providerId,
+      });
+      return;
+    }
+    const statusCode = result.available ? 200 : 503;
+    res.status(statusCode).json(result);
+  } catch (error: any) {
+    logger.error(`LLM health provider detail endpoint error: ${error.message}`);
+    res.status(500).json({
+      error: 'Failed to check LLM provider health',
+      message: error.message,
+    });
+  }
+});
+
 // Specific action triggers (for testing)
 app.get('/trigger/post', (req, res) => handleTriggerAction('post', req, res));
 app.post('/trigger/post', (req, res) => handleTriggerAction('post', req, res));
@@ -119,7 +192,7 @@ const server = app.listen(config.port, () => {
   logger.info(`Vibe Content Service started on port ${config.port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
   logger.info(`Forum API: ${config.forumApiUrl}/v1`);
-  logger.info(`Endpoints: /health, /status, /trigger, /trigger/{post,comment,vote}, /trigger/{post,comment,vote}/:label`);
+  logger.info(`Endpoints: /health, /status, /metrics, /llm-health, /llm-health/quick, /llm-health/by-status, /llm-health/:providerId, /trigger, /trigger/{post,comment,vote}, /trigger/{post,comment,vote}/:label`);
 
   // Start cron scheduler
   startCronScheduler(generator);

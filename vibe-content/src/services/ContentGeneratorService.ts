@@ -532,6 +532,10 @@ export class ContentGeneratorService {
     return this.llmManager.getProviderIdByLabel(label);
   }
 
+  getLLMManager() {
+    return this.llmManager;
+  }
+
   async getStatusSnapshot(): Promise<GeneratorStatusSnapshot> {
     const providerStatus = await this.llmManager.getProviderStatusSnapshot();
     const modelStack = await this.llmManager.getProviderStackSnapshot();
