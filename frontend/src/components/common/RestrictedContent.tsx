@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Lock, LogIn, ShieldAlert } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
@@ -24,6 +24,7 @@ export function RestrictedContent({
   className = '',
 }: RestrictedContentProps) {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
   
   const permissionLabel = permissionLabels[requiredPermission] || 'người dùng được ủy quyền';
   
@@ -60,7 +61,7 @@ export function RestrictedContent({
         {!isAuthenticated && (
           <div className="flex gap-3">
             <Button asChild>
-              <Link to="/login">
+              <Link to="/login" state={{ from: location }}>
                 <LogIn className="h-4 w-4 mr-2" />
                 Đăng nhập
               </Link>

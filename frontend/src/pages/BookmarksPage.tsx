@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { PostCard } from '@/components/PostCard';
 import { Card, CardContent } from '@/app/components/ui/card';
@@ -11,6 +12,7 @@ import { useState } from 'react';
 export function BookmarksPage() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useBookmarks(user?.id || 0, page, 10, isAuthenticated && !!user?.id);
@@ -19,7 +21,7 @@ export function BookmarksPage() {
   const pagination = data?.pagination;
 
   if (!isAuthenticated) {
-    navigate('/login');
+    navigate('/login', { state: { from: location } });
     return null;
   }
 

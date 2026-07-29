@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePost, useDeletePost } from '@/hooks/usePosts';
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment, Comment } from '@/hooks/useComments';
@@ -99,6 +99,7 @@ export function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [replyToId, setReplyToId] = useState<number | undefined>();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -480,7 +481,10 @@ export function PostDetailPage() {
                     <p className="text-sm text-muted-foreground mt-2">
                       Danh mục này yêu cầu quyền {permissionLabels[commentPermission] || commentPermission} trở lên để bình luận.
                     </p>
-                    <Button className="mt-4" onClick={() => navigate('/login')}>
+                    <Button
+                      className="mt-4"
+                      onClick={() => navigate('/login', { state: { from: location } })}
+                    >
                       Đăng nhập
                     </Button>
                   </CardContent>
@@ -492,7 +496,7 @@ export function PostDetailPage() {
               <Card>
                 <CardContent className="pt-6 text-center">
                   <p className="text-muted-foreground mb-4">Vui lòng đăng nhập để bình luận</p>
-                  <Button onClick={() => navigate('/login')}>Đăng nhập</Button>
+                  <Button onClick={() => navigate('/login', { state: { from: location } })}>Đăng nhập</Button>
                 </CardContent>
               </Card>
             );

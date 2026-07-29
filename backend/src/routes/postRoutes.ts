@@ -12,6 +12,7 @@ const router = Router();
 
 // Public routes (with optional auth for permission-based filtering)
 router.get('/', optionalAuthMiddleware, postController.getPosts);
+router.get('/random', optionalAuthMiddleware, postController.getRandomPublicPost);
 router.get('/featured', optionalAuthMiddleware, postController.getFeaturedPosts);
 router.get('/latest', optionalAuthMiddleware, postController.getLatestPosts);
 router.get('/:id/related', optionalAuthMiddleware, postController.getRelatedPosts as RequestHandler);

@@ -51,8 +51,8 @@ export function MobileNav({ className }: MobileNavProps) {
     navigate('/');
   };
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
+  const handleNavigate = (path: string, options?: { state?: unknown }) => {
+    navigate(path, options);
     setOpen(false);
   };
 
@@ -338,7 +338,7 @@ export function MobileNav({ className }: MobileNavProps) {
                 <Button
                   variant="ghost"
                   className="w-full justify-start min-h-[44px]"
-                  onClick={() => handleNavigate('/login')}
+                  onClick={() => handleNavigate('/login', { state: { from: location } })}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
                   Đăng nhập

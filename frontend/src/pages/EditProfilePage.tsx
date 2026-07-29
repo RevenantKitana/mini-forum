@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateProfile, useChangePassword } from '@/hooks/useUsers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -29,6 +29,7 @@ function StrengthItem({ ok, label }: { ok: boolean; label: string }) {
 
 export function EditProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, refreshUser } = useAuth();
 
   // Profile form state
@@ -137,7 +138,7 @@ export function EditProfilePage() {
   };
 
   if (!user) {
-    navigate('/login');
+    navigate('/login', { state: { from: location } });
     return null;
   }
 

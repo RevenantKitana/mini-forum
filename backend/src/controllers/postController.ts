@@ -20,6 +20,20 @@ export async function getPosts(req: Request, res: Response, next: NextFunction) 
 }
 
 /**
+ * GET /api/v1/posts/random
+ * Get one random public post for homepage box
+ */
+export async function getRandomPublicPost(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authReq = req as AuthRequest;
+    const post = await postService.getRandomPublicPost(authReq.user?.role);
+    return sendSuccess(res, post, 'Random public post retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * GET /api/v1/posts/featured
  * Get featured posts
  */

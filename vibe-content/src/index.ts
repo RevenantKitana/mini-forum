@@ -58,6 +58,18 @@ async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req
   try {
     const result = await generator.runOnceForAction(actionType, 'manual');
 
+    if (actionType === 'post') {
+      res.json({
+        success: result.success,
+        actionType: result.actionType,
+        provider: result.provider,
+        latencyMs: result.latencyMs,
+        postId: result.postId,
+        preview: result.preview ?? null,
+      });
+      return;
+    }
+
     res.json({ result });
   } catch (error: any) {
     logger.error(`Trigger error (${actionType}): ${error.message}`);

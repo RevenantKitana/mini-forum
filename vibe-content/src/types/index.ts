@@ -123,6 +123,12 @@ export interface ActionResult {
   completedAt?: string;
   triggerSource?: ActionTriggerSource;
   postId?: number;
+  preview?: {
+    title: string;
+    category: string | null;
+    tags: string[];
+    contentPreview: string;
+  };
 }
 
 export interface SelectedAction {

@@ -212,7 +212,7 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 className="btn-press transition-all duration-200 hidden min-[400px]:inline-flex"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/login', { state: { from: location } })}
               >
                 <span className="hidden sm:inline">Đăng nhập</span>
                 <span className="sm:hidden">Vào</span>

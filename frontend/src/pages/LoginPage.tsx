@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,6 +22,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -32,17 +33,25 @@ export function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  const searchParams = new URLSearchParams(location.search);
+  const redirectFromQuery = searchParams.get('redirect');
+  const redirectTarget = redirectFromQuery
+    ? decodeURIComponent(redirectFromQuery)
+    : (location.state as { from?: { pathname?: string; search?: string } } | null)?.from
+      ? `${(location.state as { from?: { pathname?: string; search?: string } }).from?.pathname || ''}${(location.state as { from?: { pathname?: string; search?: string } }).from?.search || ''}`
+      : '/';
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectTarget]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.identifier, data.password);
-      navigate('/');
+      navigate(redirectTarget, { replace: true });
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 429) {

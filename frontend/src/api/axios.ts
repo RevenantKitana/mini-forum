@@ -110,7 +110,8 @@ apiClient.interceptors.response.use(
 
       if (!refreshToken) {
         clearTokens();
-        window.location.href = '/login';
+        const currentPath = window.location.pathname + window.location.search + window.location.hash;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
         return Promise.reject(error);
       }
 
@@ -132,7 +133,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
         clearTokens();
-        window.location.href = '/login';
+        const currentPath = window.location.pathname + window.location.search + window.location.hash;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

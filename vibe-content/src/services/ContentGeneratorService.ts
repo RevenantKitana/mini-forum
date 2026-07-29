@@ -11,6 +11,7 @@ import { RetryQueue, FailedAction } from '../scheduler/retryQueue.js';
 import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
 import { JobLifecycleStore } from '../tracking/JobLifecycleStore.js';
 import logger, { logAction } from '../utils/logger.js';
+import { buildPostPreview } from '../utils/postPreview.js';
 
 // Per-user per-post cooldown: same bot cannot comment/vote on the same post within this window
 const POST_USER_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -288,13 +289,28 @@ export class ContentGeneratorService {
     }
 
     const latencyMs = Date.now() - startTime;
+    const preview = buildPostPreview({
+      title: validation.data!.title,
+      content: validation.data!.content,
+      category: context.category.name,
+      tags: validation.data!.tags,
+    });
+
     logAction({
       actionId, userId, actionType: 'post', stage: 'api_call', status: 'success',
       provider, latencyMs,
       details: { postId: apiResult.postId, title: validation.data!.title, tags: validation.data!.tags },
     });
 
-    return { success: true, actionType: 'post', userId, provider, latencyMs };
+    return {
+      success: true,
+      actionType: 'post',
+      userId,
+      provider,
+      latencyMs,
+      postId: apiResult.postId,
+      preview,
+    };
   }
 
   private async executeComment(

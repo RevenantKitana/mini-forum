@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Lock, LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import {
   Dialog,
@@ -33,6 +33,7 @@ export function LoginRequiredDialog({
   redirectOnClose = true,
 }: LoginRequiredDialogProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const permissionLabel = permissionLabels[requiredPermission] || 'thành viên';
   
   const defaultDescription = `Bạn cần đăng nhập để tiếp tục. Chỉ ${permissionLabel} trở lên mới có thể truy cập nội dung này.`;
@@ -72,7 +73,7 @@ export function LoginRequiredDialog({
         
         <div className="flex flex-col gap-3 mt-4">
           <Button asChild className="w-full gap-2">
-            <Link to="/login" onClick={() => onOpenChange(false)}>
+            <Link to="/login" state={{ from: location }} onClick={() => onOpenChange(false)}>
               <LogIn className="h-4 w-4" />
               Đăng nhập
             </Link>

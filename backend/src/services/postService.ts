@@ -1,4 +1,5 @@
 import prisma from '../config/database.js';
+import config from '../config/index.js';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors.js';
 import { CreatePostInput, UpdatePostInput, UpdatePostStatusInput, ListPostsQuery } from '../validations/postValidation.js';
 import { generateSlug } from '../utils/slug.js';
@@ -362,6 +363,52 @@ export async function getPosts(query: ListPostsQuery, requestingUserId?: number,
       total,
       totalPages: Math.ceil(total / limit),
     },
+  };
+}
+
+/**
+ * Get one random public post for homepage box
+ */
+export async function getRandomPublicPost(userRole?: string) {
+  const viewPermissionFilter = buildViewPermissionFilter(userRole);
+  const categoryFilter = viewPermissionFilter ? { categories: viewPermissionFilter } : {};
+
+  const where = {
+    status: 'PUBLISHED' as const,
+    ...categoryFilter,
+  };
+
+  const total = await prisma.posts.count({ where });
+  if (total === 0) {
+    return null;
+  }
+
+  const randomOffset = Math.floor(Math.random() * total);
+  const [post] = await prisma.posts.findMany({
+    where,
+    select: postListSelect,
+    skip: randomOffset,
+    take: 1,
+  });
+
+  if (!post) {
+    return null;
+  }
+
+  const transformed = transformPostTags(post);
+  const previewContent = (transformed.content || transformed.excerpt || '').replace(/[#*`\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+  const contentPreview = previewContent.length > 180 ? `${previewContent.slice(0, 180)}...` : previewContent;
+  const categoryName = transformed.category?.name ?? null;
+  const tagNames = (transformed.tags || []).map((tag: any) => tag?.name || tag?.slug || '').filter(Boolean);
+  const frontendBaseUrl = (config.cors.origin as string[] | string)[0] || 'http://localhost:5173';
+  const postUrl = `${frontendBaseUrl.replace(/\/$/, '')}/posts/${transformed.id}`;
+
+  return {
+    category: categoryName,
+    tags: tagNames,
+    title: transformed.title,
+    contentPreview,
+    link: postUrl,
   };
 }
 
