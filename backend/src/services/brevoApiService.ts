@@ -4,6 +4,7 @@
  */
 
 import config from '../config/index.js';
+import { getSenderDomainHealthReport } from '../utils/emailDomainCheck.js';
 
 // Type definitions for sib-api-v3-sdk
 interface TransactionalEmailPayload {
@@ -60,6 +61,16 @@ export async function sendOtpEmailViaApi(options: SendOtpEmailOptions): Promise<
 
     // Log initialization attempt
     console.log('[Brevo] Initializing SDK for email sending to:', to);
+
+    const senderDomain = config.brevo.fromEmail.split('@')[1]?.toLowerCase();
+    if (senderDomain) {
+      const domainHealth = await getSenderDomainHealthReport(senderDomain);
+      if (domainHealth.warnings.length > 0) {
+        console.warn('[Brevo] Sender domain health warnings:', domainHealth.warnings);
+      } else {
+        console.log('[Brevo] Sender domain health OK for:', senderDomain);
+      }
+    }
 
     // Set up the API client - create new instance instead of using .instance
     const apiClient = new SibApiV3Sdk.ApiClient();

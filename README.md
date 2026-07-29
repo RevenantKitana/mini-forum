@@ -2,6 +2,12 @@
 
 Ứng dụng diễn đàn trực tuyến full-stack với kiến trúc monorepo, bao gồm giao diện người dùng, trang quản trị, API server và dịch vụ sinh nội dung AI tự động.
 
+## Mô tả phù hợp cho ứng tuyển Tester
+
+Mini Forum là một hệ thống diễn đàn trực tuyến có nhiều luồng nghiệp vụ quan trọng cần được kiểm thử đầy đủ, bao gồm đăng ký/đăng nhập, xác thực OTP qua email, phân quyền theo vai trò (Member, Moderator, Admin, Bot), quản lý bài viết, bình luận, danh mục, tag, bookmark, vote, upload ảnh, thông báo real-time và tích hợp dịch vụ AI sinh nội dung. Dự án được xây dựng theo kiến trúc monorepo với các module riêng biệt cho frontend, admin, backend và AI service, giúp phù hợp cho việc thực hiện kiểm thử chức năng, kiểm thử API, kiểm thử phân quyền, kiểm thử bảo mật và kiểm thử hồi quy.
+
+Bên cạnh các tính năng nghiệp vụ, hệ thống cũng triển khai các cơ chế bảo mật và xử lý lỗi như JWT authentication, validation, rate limiting, CORS, Helmet và error handling, tạo ra nhiều tình huống kiểm thử quan trọng liên quan đến độ ổn định, bảo mật và trải nghiệm người dùng. Với cấu trúc rõ ràng và các công nghệ hiện đại, đây là một sản phẩm phù hợp để thể hiện khả năng kiểm thử toàn diện trên các tầng ứng dụng từ giao diện đến backend.
+
 ## Tổng quan kiến trúc
 
 ```
