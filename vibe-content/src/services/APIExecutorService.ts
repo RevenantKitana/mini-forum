@@ -22,6 +22,53 @@ export class APIExecutorService {
   private tokenCache = new Map<number, TokenCache>();
   private client: AxiosInstance;
 
+  async checkConnectivity(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const parsed = new URL(config.forumApiUrl);
+      if (!parsed.protocol || !parsed.hostname) {
+        return { success: false, error: 'Invalid forum API URL' };
+      }
+
+      const res = await this.client.get('/health', { timeout: 4000 });
+      if (res.status >= 200 && res.status < 300) {
+        return { success: true };
+      }
+
+      return { success: false, error: `Forum API health check failed with status ${res.status}` };
+    } catch (error: any) {
+      if (error?.code === 'ERR_INVALID_URL' || error?.message?.includes('Invalid URL')) {
+        return { success: false, error: 'Invalid forum API URL' };
+      }
+
+      if (error?.code === 'ECONNREFUSED' || error?.code === 'ENOTFOUND') {
+        return { success: false, error: `Cannot connect to Forum API at ${config.forumApiUrl}` };
+      }
+
+      return { success: false, error: error?.message || 'Unable to reach Forum API' };
+    }
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
+    const delays = [400, 800, 1400];
+    let attempt = 0;
+
+    while (true) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        const status = error?.response?.status;
+        const shouldRetry = !status || [408, 429, 500, 502, 503, 504].includes(status);
+        if (!shouldRetry || attempt >= delays.length) {
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+        attempt += 1;
+        console.warn(`   [DEBUG] Retrying ${context} after transient error`, { attempt, status, message: error.message });
+      }
+    }
+  }
+
   constructor() {
     this.client = axios.create({
       baseURL: config.forumApiUrl,
@@ -84,11 +131,11 @@ export class APIExecutorService {
     data: { title: string; content: string; categoryId: number; tags: string[] },
   ): Promise<{ success: boolean; postId?: number; error?: string }> {
     try {
-      const token = await this.getToken(userId, email);
+      const token = await this.withRetry(() => this.getToken(userId, email), `createPost:getToken:${userId}`);
       // Stable key: same user+title will not create duplicates on retry
       const idempotencyKey = makeIdempotencyKey('post', userId, data.title, data.categoryId);
 
-      const res = await this.client.post(
+      const res = await this.withRetry(() => this.client.post(
         '/posts',
         {
           title: data.title,
@@ -103,7 +150,7 @@ export class APIExecutorService {
             'X-Idempotency-Key': idempotencyKey,
           },
         },
-      );
+      ), `createPost:post:${userId}`);
 
       const post = res.data.data || res.data;
       return { success: true, postId: post.id };
@@ -159,7 +206,7 @@ export class APIExecutorService {
     data: { postId: number; content: string; parentId?: number; quotedCommentId?: number },
   ): Promise<{ success: boolean; commentId?: number; error?: string }> {
     try {
-      const token = await this.getToken(userId, email);
+      const token = await this.withRetry(() => this.getToken(userId, email), `createComment:getToken:${userId}`);
       const idempotencyKey = makeIdempotencyKey('comment', userId, data.postId, data.parentId ?? '', data.content.slice(0, 40));
 
       const body: Record<string, any> = { content: data.content };
@@ -172,7 +219,7 @@ export class APIExecutorService {
         body.quoted_comment_id = quotedCommentId;
       }
 
-      const res = await this.client.post(
+      const res = await this.withRetry(() => this.client.post(
         `/posts/${data.postId}/comments`,
         body,
         {
@@ -181,7 +228,7 @@ export class APIExecutorService {
             'X-Idempotency-Key': idempotencyKey,
           },
         },
-      );
+      ), `createComment:comment:${userId}`);
 
       const comment = res.data.data || res.data;
       return { success: true, commentId: comment.id };
@@ -196,14 +243,14 @@ export class APIExecutorService {
     data: { targetType: 'post' | 'comment'; targetId: number; voteType: 'up' | 'down' },
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const token = await this.getToken(userId, email);
+      const token = await this.withRetry(() => this.getToken(userId, email), `castVote:getToken:${userId}`);
       const idempotencyKey = makeIdempotencyKey('vote', userId, data.targetType, data.targetId, data.voteType);
 
       const url = data.targetType === 'post'
         ? `/posts/${data.targetId}/vote`
         : `/comments/${data.targetId}/vote`;
 
-      await this.client.post(
+      await this.withRetry(() => this.client.post(
         url,
         { voteType: data.voteType },
         {
@@ -212,7 +259,7 @@ export class APIExecutorService {
             'X-Idempotency-Key': idempotencyKey,
           },
         },
-      );
+      ), `castVote:${userId}`);
 
       return { success: true };
     } catch (error: any) {

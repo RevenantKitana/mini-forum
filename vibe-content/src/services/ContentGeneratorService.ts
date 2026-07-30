@@ -10,6 +10,9 @@ import { PersonalityService } from './PersonalityService.js';
 import { RetryQueue, FailedAction } from '../scheduler/retryQueue.js';
 import { ActionHistoryTracker } from '../tracking/ActionHistoryTracker.js';
 import { JobLifecycleStore } from '../tracking/JobLifecycleStore.js';
+
+export type ProgressStep = 'selecting' | 'gathering' | 'generating' | 'publishing' | 'completed';
+export type ProgressCallback = (step: ProgressStep) => void;
 import logger, { logAction } from '../utils/logger.js';
 import { buildPostPreview } from '../utils/postPreview.js';
 
@@ -56,7 +59,11 @@ export class ContentGeneratorService {
     });
   }
 
-  async runOnce(triggerSource: ActionTriggerSource = 'cron'): Promise<ActionResult> {
+  getApiExecutor(): APIExecutorService {
+    return this.apiExecutor;
+  }
+
+  async runOnce(triggerSource: ActionTriggerSource = 'cron', progress?: ProgressCallback): Promise<ActionResult> {
     const startTime = Date.now();
     const actionId = `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -148,6 +155,7 @@ export class ContentGeneratorService {
     actionType: ActionType,
     triggerSource: ActionTriggerSource = 'manual',
     forcedProviderId?: string,
+    progress?: ProgressCallback,
   ): Promise<ActionResult> {
     const startTime = Date.now();
     const actionId = `action-${actionType}-${Date.now()}`;
@@ -181,14 +189,15 @@ export class ContentGeneratorService {
       }
 
       logAction({ actionId, userId: selectedUserId, actionType, stage: 'action_select', status: 'success' });
+      progress?.('gathering');
 
       let result: ActionResult;
       switch (actionType) {
         case 'post':
-          result = await this.executePost(selectedUserId, startTime, actionId, forcedProviderId);
+          result = await this.executePost(selectedUserId, startTime, actionId, forcedProviderId, progress);
           break;
         case 'comment':
-          result = await this.executeComment(selectedUserId, startTime, actionId, forcedProviderId);
+          result = await this.executeComment(selectedUserId, startTime, actionId, forcedProviderId, progress);
           break;
         case 'vote':
           result = await this.executeVote(selectedUserId, startTime, actionId, forcedProviderId);
@@ -217,6 +226,7 @@ export class ContentGeneratorService {
     startTime: number,
     actionId: string,
     forcedProviderId?: string,
+    progress?: ProgressCallback,
   ): Promise<ActionResult> {
     // 1. Gather context
     logAction({ actionId, userId, actionType: 'post', stage: 'context_gather', status: 'info' });
@@ -227,6 +237,7 @@ export class ContentGeneratorService {
     logAction({ actionId, userId, actionType: 'post', stage: 'prompt_build', status: 'info' });
     const prompt = await this.promptBuilder.buildPostPrompt(context);
 
+    progress?.('generating');
     // 3. Call LLM (with fallback stack)
     logAction({ actionId, userId, actionType: 'post', stage: 'llm_call', status: 'info' });
     const { output: llmOutput, provider } = forcedProviderId
@@ -268,6 +279,7 @@ export class ContentGeneratorService {
       };
     }
 
+    progress?.('publishing');
     // 5. Call Forum API
     logAction({ actionId, userId, actionType: 'post', stage: 'api_call', status: 'info', provider });
     const user = (await this.contextGatherer.getAllBotUsers()).find((u) => u.id === userId);
@@ -318,6 +330,7 @@ export class ContentGeneratorService {
     startTime: number,
     actionId: string,
     forcedProviderId?: string,
+    progress?: ProgressCallback,
   ): Promise<ActionResult> {
     // 1. Gather context
     logAction({ actionId, userId, actionType: 'comment', stage: 'context_gather', status: 'info' });

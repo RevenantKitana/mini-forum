@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import config from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 import { StatusService } from './services/StatusService.js';
@@ -6,14 +7,22 @@ import { LLMHealthCheckService } from './services/LLMHealthCheckService.js';
 import { startCronScheduler, stopCronScheduler } from './scheduler/cronScheduler.js';
 import logger from './utils/logger.js';
 import { getLLMMetricsSnapshot } from './services/llmMetrics.js';
+import { TriggerProgressStore } from './services/TriggerProgressStore.js';
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
 
 const generator = new ContentGeneratorService();
 const startedAt = new Date();
 const statusService = new StatusService(generator, startedAt);
 const llmHealthCheckService = new LLMHealthCheckService(generator.getLLMManager());
+const triggerProgressStore = new TriggerProgressStore();
 
 // Health check — simple check to verify server is running
 app.get('/health', async (_req, res) => {
@@ -56,25 +65,70 @@ async function handleTrigger(_req: express.Request, res: express.Response) {
 async function handleTriggerAction(actionType: 'post' | 'comment' | 'vote', _req: express.Request, res: express.Response) {
   logger.info(`Manual trigger received for action: ${actionType}`);
   try {
-    const result = await generator.runOnceForAction(actionType, 'manual');
+    const jobId = triggerProgressStore.startJob(actionType);
+    triggerProgressStore.updateStep(jobId, 'selecting');
 
-    if (actionType === 'post') {
-      res.json({
-        success: result.success,
-        actionType: result.actionType,
-        provider: result.provider,
-        latencyMs: result.latencyMs,
-        postId: result.postId,
-        preview: result.preview ?? null,
+    const connectivity = await generator.getApiExecutor().checkConnectivity();
+    if (!connectivity.success) {
+      triggerProgressStore.failJob(jobId, connectivity.error ?? 'Invalid forum API URL');
+      res.status(502).json({
+        accepted: false,
+        jobId,
+        actionType,
+        status: 'failed',
+        currentStep: 'selecting',
+        error: connectivity.error ?? 'Invalid forum API URL',
+        aiStepDescs: triggerProgressStore.getAiStepDescs(),
       });
       return;
     }
 
-    res.json({ result });
+    res.status(202).json({
+      accepted: true,
+      jobId,
+      actionType,
+      status: 'queued',
+      currentStep: 'selecting',
+      aiStepDescs: triggerProgressStore.getAiStepDescs(),
+    });
+
+    void (async () => {
+      try {
+        const result = await generator.runOnceForAction(actionType, 'manual', undefined, (step) => {
+          triggerProgressStore.updateStep(jobId, step);
+        });
+
+        if (result.success) {
+          triggerProgressStore.completeJob(jobId, {
+            success: result.success,
+            postId: result.postId,
+            provider: result.provider,
+            latencyMs: result.latencyMs,
+            preview: result.preview ?? null,
+          });
+        } else {
+          triggerProgressStore.failJob(jobId, result.error ?? 'Action failed');
+        }
+      } catch (error: any) {
+        logger.error(`Trigger progress error (${actionType}/${jobId}): ${error.message}`);
+        triggerProgressStore.failJob(jobId, error.message);
+      }
+    })();
   } catch (error: any) {
     logger.error(`Trigger error (${actionType}): ${error.message}`);
     res.status(500).json({ error: error.message });
   }
+}
+
+async function handleTriggerStatus(req: express.Request, res: express.Response) {
+  const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  const snapshot = triggerProgressStore.getJobSnapshot(jobId);
+  if (!snapshot) {
+    res.status(404).json({ error: 'job not found' });
+    return;
+  }
+
+  res.json(snapshot);
 }
 
 async function handleTriggerActionByLabel(
@@ -190,6 +244,8 @@ app.get('/trigger/comment', (req, res) => handleTriggerAction('comment', req, re
 app.post('/trigger/comment', (req, res) => handleTriggerAction('comment', req, res));
 app.get('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
 app.post('/trigger/vote', (req, res) => handleTriggerAction('vote', req, res));
+app.get('/trigger/status/:jobId', handleTriggerStatus);
+app.post('/trigger/status/:jobId', handleTriggerStatus);
 
 // Model-label verification endpoints
 app.get('/trigger/post/:label', (req, res) => handleTriggerActionByLabel('post', req, res));
