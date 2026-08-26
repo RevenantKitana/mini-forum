@@ -14,7 +14,6 @@ import {
 } from '../../types/index.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
-import { NvidiaProvider } from './NvidiaProvider.js';
 import { OpenRouterProvider } from './OpenRouterProvider.js';
 import { CircuitBreaker } from '../../utils/circuitBreaker.js';
 import config from '../../config/index.js';
@@ -79,9 +78,6 @@ export class LLMProviderManager {
           break;
         case 'groq':
           this.providers.push(new GroqProvider(entry.id, entry.model));
-          break;
-        case 'nvidia':
-          this.providers.push(new NvidiaProvider(entry.id, entry.model));
           break;
         case 'openrouter':
           this.providers.push(new OpenRouterProvider(entry.id, entry.model));
@@ -309,7 +305,6 @@ export class LLMProviderManager {
   private defaultHasApiKey(providerId: string): boolean {
     if (providerId.startsWith('gemini')) return !!config.llm.geminiApiKey;
     if (providerId.startsWith('groq')) return !!config.llm.groqApiKey;
-    if (providerId.startsWith('nvidia')) return !!config.llm.nvidiaApiKey;
     if (providerId.startsWith('openrouter')) return !!config.llm.openRouterApiKey;
     return true;
   }
