@@ -171,7 +171,7 @@ export class APIExecutorService {
       if (error.code === 'ECONNREFUSED') {
         return {
           success: false,
-          error: `Cannot connect to Forum API at ${config.forumApiUrl}/v1 — backend may not be running`,
+          error: `Cannot connect to Forum API at ${config.forumApiUrl} — backend may not be running`,
         };
       }
 

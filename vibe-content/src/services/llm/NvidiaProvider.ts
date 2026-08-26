@@ -11,6 +11,7 @@ export class NvidiaProvider implements ILLMProvider {
     this.id = id;
     this.model = model;
     this.timeoutMs = config.llm.providerTimeoutMs;
+    console.log(`[NVIDIA] Initialized with ID: ${id}, Model: ${model}`);
   }
 
   async isAvailable(): Promise<boolean> {
@@ -22,23 +23,30 @@ export class NvidiaProvider implements ILLMProvider {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
+      const requestBody = {
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.9,
+        max_tokens: 4096,
+      };
+
+      console.log(`[NVIDIA] Sending request with model: ${this.model}`);
+      console.log(`[NVIDIA] Request body:`, JSON.stringify(requestBody, null, 2));
+
       const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.llm.nvidiaApiKey}`,
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.9,
-          max_tokens: 4096,
-          response_format: { type: 'json_object' },
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
 
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`[NVIDIA] HTTP ${res.status}: ${errorText}`);
+        
         if (res.status === 429) {
           throw new LLMError('NVIDIA rate limit exceeded', 'RATE_LIMIT', 429);
         }
@@ -52,23 +60,40 @@ export class NvidiaProvider implements ILLMProvider {
       let text = data.choices?.[0]?.message?.content || '';
 
       if (!text) {
+        console.error('[NVIDIA] Empty response - full response data:', JSON.stringify(data, null, 2));
         throw new LLMError('Empty response from NVIDIA', 'VALIDATION');
       }
 
-      // Clean markdown wrappers
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      console.log('[NVIDIA] Raw response text:', text.substring(0, 200));
 
-      const parsed = JSON.parse(text);
+      // Try to parse as JSON first
+      try {
+        text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsed = JSON.parse(text);
 
-      return {
-        title: parsed.title,
-        content: parsed.content,
-        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-        explain: parsed.explain,
-        shouldVote: parsed.shouldVote,
-        voteType: parsed.voteType,
-        reason: parsed.reason,
-      };
+        return {
+          title: parsed.title,
+          content: parsed.content,
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+          explain: parsed.explain,
+          shouldVote: parsed.shouldVote,
+          voteType: parsed.voteType,
+          reason: parsed.reason,
+        };
+      } catch (jsonError: any) {
+        console.warn(`[NVIDIA] Failed to parse JSON, treating as plain text: ${jsonError.message}`);
+        
+        // Fallback: treat plain text response as a simple post
+        return {
+          title: text.split('\n')[0] || 'Untitled',
+          content: text,
+          tags: [],
+          explain: '',
+          shouldVote: false,
+          voteType: 'neutral',
+          reason: '',
+        };
+      }
     } catch (error: any) {
       if (error.name === 'AbortError') {
         throw new LLMError('NVIDIA request timed out', 'TIMEOUT');

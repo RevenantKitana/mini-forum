@@ -259,7 +259,7 @@ app.post('/trigger/vote/:label', (req, res) => handleTriggerActionByLabel('vote'
 const server = app.listen(config.port, () => {
   logger.info(`Vibe Content Service started on port ${config.port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
-  logger.info(`Forum API: ${config.forumApiUrl}/v1`);
+  logger.info(`Forum API: ${config.forumApiUrl}`);
   logger.info(`Endpoints: /health, /status, /metrics, /llm-health, /llm-health/quick, /llm-health/by-status, /llm-health/:providerId, /trigger, /trigger/{post,comment,vote}, /trigger/{post,comment,vote}/:label`);
 
   // Start cron scheduler

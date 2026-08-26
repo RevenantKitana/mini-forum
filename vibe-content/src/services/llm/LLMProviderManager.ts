@@ -14,9 +14,8 @@ import {
 } from '../../types/index.js';
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
-import { CerebrasProvider } from './CerebrasProvider.js';
 import { NvidiaProvider } from './NvidiaProvider.js';
-import { BeeknoeeProvider } from './BeeknoeeProvider.js';
+import { OpenRouterProvider } from './OpenRouterProvider.js';
 import { CircuitBreaker } from '../../utils/circuitBreaker.js';
 import config from '../../config/index.js';
 import logger from '../../utils/logger.js';
@@ -81,14 +80,11 @@ export class LLMProviderManager {
         case 'groq':
           this.providers.push(new GroqProvider(entry.id, entry.model));
           break;
-        case 'cerebras':
-          this.providers.push(new CerebrasProvider(entry.id, entry.model));
-          break;
         case 'nvidia':
           this.providers.push(new NvidiaProvider(entry.id, entry.model));
           break;
-        case 'beeknoee':
-          this.providers.push(new BeeknoeeProvider(entry.id, entry.model));
+        case 'openrouter':
+          this.providers.push(new OpenRouterProvider(entry.id, entry.model));
           break;
       }
     }
@@ -313,9 +309,8 @@ export class LLMProviderManager {
   private defaultHasApiKey(providerId: string): boolean {
     if (providerId.startsWith('gemini')) return !!config.llm.geminiApiKey;
     if (providerId.startsWith('groq')) return !!config.llm.groqApiKey;
-    if (providerId.startsWith('cerebras')) return !!config.llm.cerebrasApiKey;
     if (providerId.startsWith('nvidia')) return !!config.llm.nvidiaApiKey;
-    if (providerId.startsWith('beeknoee')) return !!config.llm.beeknoeeApiKey;
+    if (providerId.startsWith('openrouter')) return !!config.llm.openRouterApiKey;
     return true;
   }
 

@@ -18,7 +18,7 @@ export class BeeknoeeProvider implements ILLMProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    return !!config.llm.beeknoeeApiKey;
+    return false;
   }
 
   async generate(prompt: string): Promise<LLMOutput> {
@@ -142,7 +142,7 @@ export class BeeknoeeProvider implements ILLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.llm.beeknoeeApiKey}`,
+        Authorization: `Bearer `,
       },
       body: JSON.stringify(body),
       signal,

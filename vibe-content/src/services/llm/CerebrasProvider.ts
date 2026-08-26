@@ -14,7 +14,7 @@ export class CerebrasProvider implements ILLMProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    return !!config.llm.cerebrasApiKey;
+    return false;
   }
 
   async generate(prompt: string): Promise<LLMOutput> {
@@ -26,7 +26,7 @@ export class CerebrasProvider implements ILLMProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.llm.cerebrasApiKey}`,
+          Authorization: `Bearer `,
         },
         body: JSON.stringify({
           model: this.model,
