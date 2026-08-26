@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import express from 'express';
+import logger from '../utils/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -60,10 +62,8 @@ const createCorsOriginCallback = () => {
       return callback(null, true);
     }
 
-    // Check IP-based access (from Origin header or X-Forwarded-For)
+    // Check IP-based access (from Origin header)
     if (allowedIps.length > 0) {
-      // In production, also check X-Forwarded-For from proxies
-      // For now, just check if the origin hostname matches an allowed IP
       try {
         const originUrl = new URL(origin);
         const hostname = originUrl.hostname;
@@ -76,6 +76,38 @@ const createCorsOriginCallback = () => {
     }
 
     callback(new Error('CORS not allowed'));
+  };
+};
+
+// Middleware to check client IP for CORS - must be placed BEFORE cors middleware
+export const createIpBasedCorsMiddleware = () => {
+  const allowedIps = getCorsIps();
+  
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (allowedIps.length === 0) {
+      return next();
+    }
+
+    // Get client IP from various sources (proxy chains, direct connection)
+    const clientIp = 
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+      req.socket.remoteAddress ||
+      req.ip ||
+      '';
+
+    // Also check if origin header contains an allowed IP
+    const origin = req.headers.origin as string;
+    const originHasAllowedIp = origin && allowedIps.some(ip => origin.includes(ip));
+
+    if (allowedIps.includes(clientIp) || originHasAllowedIp) {
+      return next();
+    }
+
+    // Log IP check failure for debugging
+    logger.warn(`CORS IP check failed - Client IP: ${clientIp}, Origin: ${origin}, Allowed IPs: ${allowedIps.join(', ')}`);
+    
+    // Don't block - let the cors middleware handle it
+    next();
   };
 };
 

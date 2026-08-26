@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import config from './config/index.js';
+import config, { createIpBasedCorsMiddleware } from './config/index.js';
 import { ContentGeneratorService } from './services/ContentGeneratorService.js';
 import { StatusService } from './services/StatusService.js';
 import { LLMHealthCheckService } from './services/LLMHealthCheckService.js';
@@ -11,6 +11,9 @@ import { TriggerProgressStore } from './services/TriggerProgressStore.js';
 
 const app = express();
 app.use(express.json());
+
+// Apply IP-based CORS middleware before main cors middleware
+app.use(createIpBasedCorsMiddleware());
 app.use(cors(config.cors));
 
 const generator = new ContentGeneratorService();
