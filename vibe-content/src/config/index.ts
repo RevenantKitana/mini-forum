@@ -102,8 +102,11 @@ export const createIpBasedCorsMiddleware = () => {
       return next();
     }
 
-    // Don't block - let the cors middleware handle it
-    next();
+    // Block request from unauthorized IP
+    return res.status(403).json({
+      error: 'Forbidden: Your IP is not in the allowed list',
+      clientIp,
+    });
   };
 };
 
