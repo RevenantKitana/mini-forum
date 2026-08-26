@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
-import logger from '../utils/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -103,9 +102,6 @@ export const createIpBasedCorsMiddleware = () => {
       return next();
     }
 
-    // Log IP check failure for debugging
-    logger.warn(`CORS IP check failed - Client IP: ${clientIp}, Origin: ${origin}, Allowed IPs: ${allowedIps.join(', ')}`);
-    
     // Don't block - let the cors middleware handle it
     next();
   };

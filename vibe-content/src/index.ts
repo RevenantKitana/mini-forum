@@ -12,17 +12,7 @@ import { TriggerProgressStore } from './services/TriggerProgressStore.js';
 const app = express();
 app.use(express.json());
 
-// Apply IP-based CORS middleware before main cors middleware
-app.use(createIpBasedCorsMiddleware());
-app.use(cors(config.cors));
-
-const generator = new ContentGeneratorService();
-const startedAt = new Date();
-const statusService = new StatusService(generator, startedAt);
-const llmHealthCheckService = new LLMHealthCheckService(generator.getLLMManager());
-const triggerProgressStore = new TriggerProgressStore();
-
-// Health check — simple check to verify server is running
+// Health check — simple check to verify server is running (OUTSIDE CORS)
 app.get('/health', async (_req, res) => {
   try {
     res.status(200).json({
@@ -36,6 +26,16 @@ app.get('/health', async (_req, res) => {
     });
   }
 });
+
+// Apply IP-based CORS middleware before main cors middleware
+app.use(createIpBasedCorsMiddleware());
+app.use(cors(config.cors));
+
+const generator = new ContentGeneratorService();
+const startedAt = new Date();
+const statusService = new StatusService(generator, startedAt);
+const llmHealthCheckService = new LLMHealthCheckService(generator.getLLMManager());
+const triggerProgressStore = new TriggerProgressStore();
 
 // Enhanced status endpoint (Phase 4.3)
 app.get('/status', async (_req, res) => {
