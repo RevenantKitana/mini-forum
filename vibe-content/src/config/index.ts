@@ -24,6 +24,61 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+// Parse CORS allowed origins and IPs from environment
+const getCorsOrigins = () => {
+  const envOrigins = process.env.CORS_ORIGINS || '';
+  if (envOrigins.trim()) {
+    return envOrigins.split(',').map(origin => origin.trim());
+  }
+  // Default fallback
+  return process.env.NODE_ENV === 'development'
+    ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000']
+    : ['https://k.mio.io.vn'];
+};
+
+const getCorsIps = () => {
+  const envIps = process.env.CORS_IPS || '';
+  if (envIps.trim()) {
+    return envIps.split(',').map(ip => ip.trim());
+  }
+  return [];
+};
+
+// CORS origin callback - supports both domain and IP-based whitelisting
+const createCorsOriginCallback = () => {
+  const allowedOrigins = getCorsOrigins();
+  const allowedIps = getCorsIps();
+
+  return (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check domain-based origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Check IP-based access (from Origin header or X-Forwarded-For)
+    if (allowedIps.length > 0) {
+      // In production, also check X-Forwarded-For from proxies
+      // For now, just check if the origin hostname matches an allowed IP
+      try {
+        const originUrl = new URL(origin);
+        const hostname = originUrl.hostname;
+        if (allowedIps.includes(hostname)) {
+          return callback(null, true);
+        }
+      } catch {
+        // Invalid URL, continue to rejection
+      }
+    }
+
+    callback(new Error('CORS not allowed'));
+  };
+};
+
 const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -31,6 +86,12 @@ const config = {
   logDir: process.env.LOG_DIR || '',
   forumApiUrl: process.env.FORUM_API_URL || 'http://localhost:5000/api/v1',
   databaseUrl: process.env.DATABASE_URL || '',
+  cors: {
+    origin: createCorsOriginCallback(),
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  },
   cron: {
     schedule: process.env.CRON_SCHEDULE || '*/30 * * * *',
     batchSize: parseInt(process.env.BATCH_SIZE || '1', 10),
