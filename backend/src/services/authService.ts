@@ -16,25 +16,19 @@ function hashToken(token: string): string {
 
 const SALT_ROUNDS = 12;
 
-export interface AuthUser {
+export interface AuthUserDTO {
   id: number;
-  email: string;
   username: string;
   display_name: string | null;
   avatar_preview_url: string | null;
   avatar_standard_url: string | null;
-  bio: string | null;
-  date_of_birth: Date | null;
-  gender: string | null;
   role: string;
-  reputation: number;
-  is_verified: boolean;
-  is_active: boolean;
-  created_at: Date;
 }
 
+export type AuthUser = AuthUserDTO;
+
 export interface AuthResponse {
-  user: AuthUser;
+  user: AuthUserDTO;
   tokens: TokenPair;
 }
 
@@ -83,26 +77,18 @@ export async function register(data: RegisterInput & { registrationToken?: strin
     },
     select: {
       id: true,
-      email: true,
       username: true,
       display_name: true,
       avatar_preview_url: true,
       avatar_standard_url: true,
-      bio: true,
-      date_of_birth: true,
-      gender: true,
       role: true,
-      reputation: true,
-      is_verified: true,
-      is_active: true,
-      created_at: true,
     },
   });
 
   // Generate tokens
   const tokenPayload: TokenPayload = {
     userId: user.id,
-    email: user.email,
+    email: data.email,
     role: user.role,
   };
   const tokens = generateTokenPair(tokenPayload);
@@ -203,21 +189,13 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     },
   });
 
-  const authUser: AuthUser = {
+  const authUser: AuthUserDTO = {
     id: user.id,
-    email: user.email,
     username: user.username,
     display_name: user.display_name,
     avatar_preview_url: user.avatar_preview_url,
     avatar_standard_url: user.avatar_standard_url,
-    bio: user.bio,
-    date_of_birth: user.date_of_birth,
-    gender: user.gender,
     role: user.role,
-    reputation: user.reputation,
-    is_verified: user.is_verified,
-    is_active: user.is_active,
-    created_at: user.created_at,
   };
 
   return { user: authUser, tokens };
@@ -301,24 +279,16 @@ export async function logoutAll(userId: number): Promise<void> {
 /**
  * Get current user by ID
  */
-export async function getCurrentUser(userId: number): Promise<AuthUser> {
+export async function getCurrentUser(userId: number): Promise<AuthUserDTO> {
   const user = await prisma.users.findUnique({
     where: { id: userId },
     select: {
       id: true,
-      email: true,
       username: true,
       display_name: true,
       avatar_preview_url: true,
       avatar_standard_url: true,
-      bio: true,
-      date_of_birth: true,
-      gender: true,
       role: true,
-      reputation: true,
-      is_verified: true,
-      is_active: true,
-      created_at: true,
     },
   });
 
@@ -326,7 +296,7 @@ export async function getCurrentUser(userId: number): Promise<AuthUser> {
     throw new NotFoundError('User not found');
   }
 
-  return user as AuthUser;
+  return user;
 }
 
 /**

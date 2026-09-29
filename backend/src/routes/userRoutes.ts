@@ -7,6 +7,9 @@ import { uploadSingle } from '../middlewares/uploadMiddleware.js';
 
 const router = Router();
 
+// Profile Settings - returns full detailed profile for authenticated user
+router.get('/me/profile', authMiddleware, userController.getMyProfile as RequestHandler);
+
 // Route by username MUST come before :id to avoid conflict
 router.get('/username/:username', optionalAuthMiddleware, userController.getUserByUsername as RequestHandler);
 

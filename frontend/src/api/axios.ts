@@ -16,6 +16,7 @@ const API_BASE_URL = getApiUrl();
 // Legacy storage keys for cleanup
 const LEGACY_ACCESS_TOKEN_KEY = 'forum_access_token';
 const LEGACY_REFRESH_TOKEN_KEY = 'forum_refresh_token';
+const LEGACY_USER_KEYS = ['forum_auth_user', 'forum_user', 'user'];
 
 // In-memory token storage (RAM only, protected against XSS reading localStorage)
 let inMemoryAccessToken: string | null = null;
@@ -33,13 +34,15 @@ export const setTokens = (accessToken: string, _refreshToken?: string): void => 
   setAccessToken(accessToken);
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+  LEGACY_USER_KEYS.forEach(key => localStorage.removeItem(key));
 };
 
 export const clearTokens = (): void => {
   inMemoryAccessToken = null;
-  // Clean up any legacy tokens left in localStorage
+  // Clean up any legacy tokens and cached user data left in localStorage
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+  LEGACY_USER_KEYS.forEach(key => localStorage.removeItem(key));
 };
 
 // Create Axios instance with HttpOnly cookie support

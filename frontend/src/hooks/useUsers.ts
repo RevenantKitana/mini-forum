@@ -55,6 +55,19 @@ export function useUserComments(userId: number, page = 1, limit = 10, enabled = 
 }
 
 /**
+ * Hook to get current user's full detailed profile (including PII for Settings)
+ */
+export function useMyProfile(enabled = true) {
+  const { isAuthenticated } = useAuth();
+  return useQuery({
+    queryKey: ['myProfile'],
+    queryFn: () => userService.getMyProfile(),
+    enabled: enabled && isAuthenticated,
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
  * Hook to update profile (current user)
  */
 export function useUpdateProfile() {
@@ -68,6 +81,7 @@ export function useUpdateProfile() {
     },
     onSuccess: () => {
       if (user) {
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
         queryClient.invalidateQueries({ queryKey: ['user', user.id] });
         queryClient.invalidateQueries({ queryKey: ['user', 'username', user.username] });
       }
@@ -122,6 +136,7 @@ export function useUpdateAvatar() {
     },
     onSuccess: () => {
       if (user) {
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
         queryClient.invalidateQueries({ queryKey: ['user', user.id] });
         queryClient.invalidateQueries({ queryKey: ['user', 'username', user.username] });
       }

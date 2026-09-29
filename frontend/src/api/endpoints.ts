@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `/users/${id}`,
     BY_USERNAME: (username: string) => `/users/username/${username}`,
     PROFILE: '/users/profile',
+    ME_PROFILE: '/users/me/profile',
     AVATAR_UPLOAD: (id: string | number) => `/users/${id}/avatar/upload`,
   },
   

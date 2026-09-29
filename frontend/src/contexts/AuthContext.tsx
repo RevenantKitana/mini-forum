@@ -9,18 +9,9 @@ export interface User {
   id: number;
   username: string;
   display_name: string | null;
-  email: string;
-  avatar?: string;
   avatar_preview_url?: string | null;
   avatar_standard_url?: string | null;
   role: string;
-  bio?: string | null;
-  date_of_birth?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
-  reputation: number;
-  is_verified?: boolean;
-  is_active?: boolean;
-  created_at: string;
 }
 
 interface AuthContextType {
@@ -30,7 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, displayName?: string, registrationToken?: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<User>) => Promise<void>;
+  updateProfile: (data: Partial<userService.UpdateProfileData>) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -45,17 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     id: apiUser.id,
     username: apiUser.username,
     display_name: apiUser.display_name,
-    email: apiUser.email,
     avatar_preview_url: apiUser.avatar_preview_url,
     avatar_standard_url: apiUser.avatar_standard_url,
-    bio: apiUser.bio,
-    date_of_birth: apiUser.date_of_birth,
-    gender: apiUser.gender,
     role: apiUser.role,
-    reputation: apiUser.reputation,
-    is_verified: apiUser.is_verified,
-    is_active: apiUser.is_active,
-    created_at: apiUser.created_at,
   });
 
   // Silent Refresh on App Init

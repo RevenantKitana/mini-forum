@@ -6,6 +6,20 @@ import { UpdateProfileInput, ChangeUsernameInput, ChangePasswordInput, userConte
 import { AuthRequest } from '../middlewares/authMiddleware.js';
 
 /**
+ * GET /api/v1/users/me/profile
+ * Get authenticated user's full detailed profile (including PII: email, date_of_birth, gender) for Settings
+ */
+export async function getMyProfile(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.userId;
+    const user = await userService.getUserById(userId, userId);
+    return sendSuccess(res, user, 'User profile retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * GET /api/v1/users/:id
  * Get user profile by ID
  */

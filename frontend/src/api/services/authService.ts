@@ -4,19 +4,11 @@ import { API_ENDPOINTS } from '../endpoints';
 // Types
 export interface AuthUser {
   id: number;
-  email: string;
   username: string;
   display_name: string | null;
   avatar_preview_url: string | null;
   avatar_standard_url: string | null;
-  bio: string | null;
-  date_of_birth: string | null;
-  gender: 'male' | 'female' | 'other' | null;
   role: string;
-  reputation: number;
-  is_verified: boolean;
-  is_active: boolean;
-  created_at: string;
 }
 
 export interface LoginRequest {

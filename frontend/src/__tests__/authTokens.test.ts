@@ -50,3 +50,43 @@ describe('Phase 1 Auth Security: In-Memory Token & Cookie Configuration', () => 
     expect(apiClient.defaults.withCredentials).toBe(true);
   });
 });
+
+describe('Phase 2 Auth Security: Data Privacy & No User PII in LocalStorage', () => {
+  beforeEach(() => {
+    clearTokens();
+    localStorage.clear();
+  });
+
+  it('should purge any legacy forum_auth_user or user objects from localStorage on clearTokens', () => {
+    localStorage.setItem('forum_auth_user', JSON.stringify({ id: 1, email: 'admin@example.com', role: 'ADMIN' }));
+    localStorage.setItem('forum_user', JSON.stringify({ id: 1, email: 'admin@example.com' }));
+    localStorage.setItem('user', JSON.stringify({ id: 1, email: 'admin@example.com' }));
+
+    clearTokens();
+
+    expect(localStorage.getItem('forum_auth_user')).toBeNull();
+    expect(localStorage.getItem('forum_user')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+    expect(localStorage.getItem('forum_access_token')).toBeNull();
+    expect(localStorage.getItem('forum_refresh_token')).toBeNull();
+  });
+
+  it('should purge any legacy forum_auth_user on setTokens as well', () => {
+    localStorage.setItem('forum_auth_user', JSON.stringify({ id: 1, role: 'ADMIN' }));
+
+    setTokens('valid-access-token');
+
+    expect(localStorage.getItem('forum_auth_user')).toBeNull();
+    expect(getAccessToken()).toBe('valid-access-token');
+  });
+
+  it('should ensure localStorage contains zero PII or auth credentials', () => {
+    // Calling clearTokens ensures standard safe state
+    clearTokens();
+
+    const sensitiveKeys = ['forum_access_token', 'forum_refresh_token', 'forum_auth_user', 'forum_user', 'user'];
+    sensitiveKeys.forEach(key => {
+      expect(localStorage.getItem(key)).toBeNull();
+    });
+  });
+});

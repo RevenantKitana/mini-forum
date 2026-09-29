@@ -9,9 +9,9 @@ gantt
     section Giai đoạn 1 (Core Fix)
     Phase 1: Chuyển Token sang HttpOnly Cookie + In-Memory RAM :done, p1, 2026-10-01, 2d
     section Giai đoạn 2 (Data Privacy)
-    Phase 2: Dọn dẹp PII & Loại bỏ Cache user ở localStorage   :active, p2, after p1, 1d
+    Phase 2: Dọn dẹp PII & Loại bỏ Cache user ở localStorage   :done, p2, after p1, 1d
     section Giai đoạn 3 (Token Security)
-    Phase 3: Triển khai Refresh Token Rotation & Reuse Detection: p3, after p2, 2d
+    Phase 3: Triển khai Refresh Token Rotation & Reuse Detection: active, p3, after p2, 2d
     section Giai đoạn 4 (Hardening)
     Phase 4: Gia cố CSP & Rà soát XSS Sanitization            : p4, after p3, 2d
 ```

@@ -82,6 +82,16 @@ interface PaginatedApiResponse<T> {
 }
 
 /**
+ * Get current authenticated user's full profile (including PII for Settings)
+ */
+export async function getMyProfile(): Promise<UserProfile> {
+  const response = await apiClient.get<ApiResponse<UserProfile>>(
+    API_ENDPOINTS.USERS.ME_PROFILE
+  );
+  return response.data.data;
+}
+
+/**
  * Get user profile by ID
  */
 export async function getUserById(id: number): Promise<UserProfile> {

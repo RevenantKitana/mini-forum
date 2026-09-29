@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUpdateProfile, useChangePassword } from '@/hooks/useUsers';
+import { useUpdateProfile, useChangePassword, useMyProfile } from '@/hooks/useUsers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
@@ -9,6 +9,7 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, User, Lock, AlertCircle, ImageIcon, Calendar, CheckCircle2, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
@@ -31,14 +32,26 @@ export function EditProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, refreshUser } = useAuth();
+  const { data: myProfile, isLoading: isProfileLoading } = useMyProfile(!!user);
 
   // Profile form state
   const [displayName, setDisplayName] = useState(user?.display_name || '');
-  const [bio, setBio] = useState(user?.bio || '');
-  const [dateOfBirth, setDateOfBirth] = useState(
-    user?.date_of_birth ? new Date(user.date_of_birth).toISOString().split('T')[0] : ''
-  );
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>(user?.gender || '');
+  const [bio, setBio] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  useEffect(() => {
+    if (myProfile && !isFormInitialized) {
+      setDisplayName(myProfile.display_name || '');
+      setBio(myProfile.bio || '');
+      setDateOfBirth(
+        myProfile.date_of_birth ? new Date(myProfile.date_of_birth).toISOString().split('T')[0] : ''
+      );
+      setGender((myProfile.gender as 'male' | 'female' | 'other') || '');
+      setIsFormInitialized(true);
+    }
+  }, [myProfile, isFormInitialized]);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -182,9 +195,20 @@ export function EditProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleProfileSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="username">Tên người dùng</Label>
+          {isProfileLoading && !isFormInitialized ? (
+            <div className="space-y-4 py-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleProfileSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="username">Tên người dùng</Label>
               <Input
                 id="username"
                 value={user.username}
@@ -259,6 +283,7 @@ export function EditProfilePage() {
               {updateProfileMutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>
           </form>
+          )}
         </CardContent>
       </Card>
 
