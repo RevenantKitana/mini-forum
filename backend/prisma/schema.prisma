@@ -175,15 +175,18 @@ model post_blocks {
 }
 
 model refresh_tokens {
-  id         Int      @id @default(autoincrement())
-  token      String   @unique
-  user_id    Int
-  expires_at DateTime
-  created_at DateTime @default(now())
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  token       String   @unique
+  user_id     Int
+  family_id   String   @default(uuid())
+  is_revoked  Boolean  @default(false)
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([user_id])
+  @@index([family_id])
 }
 
 model reports {

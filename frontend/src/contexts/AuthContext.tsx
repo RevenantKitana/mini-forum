@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateProfile = async (data: Partial<User>) => {
+  const updateProfile = async (data: Partial<userService.UpdateProfileData>) => {
     if (!user) {
       throw new Error('No user logged in');
     }

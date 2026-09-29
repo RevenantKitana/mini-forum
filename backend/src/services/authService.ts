@@ -98,6 +98,8 @@ export async function register(data: RegisterInput & { registrationToken?: strin
     data: {
       token: hashToken(tokens.refreshToken),
       user_id: user.id,
+      family_id: crypto.randomUUID(),
+      is_revoked: false,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
   });
@@ -175,16 +177,21 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
   };
   const tokens = generateTokenPair(tokenPayload);
 
-  // Delete old refresh tokens for this user to prevent unique constraint violations
+  // Clean up any expired refresh tokens for this user
   await prisma.refresh_tokens.deleteMany({
-    where: { user_id: user.id },
+    where: {
+      user_id: user.id,
+      expires_at: { lt: new Date() },
+    },
   });
 
-  // Store hashed refresh token (SHA-256) to protect against DB compromise
+  // Store hashed refresh token (SHA-256) with a new token family for this login session
   await prisma.refresh_tokens.create({
     data: {
       token: hashToken(tokens.refreshToken),
       user_id: user.id,
+      family_id: crypto.randomUUID(),
+      is_revoked: false,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
   });
@@ -202,21 +209,21 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
 }
 
 /**
- * Refresh access token
+ * Refresh access token with Refresh Token Rotation (RTR) & Reuse Detection
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenPair> {
-  // Verify the refresh token
+  // Verify the refresh token JWT signature & expiration
   const payload = verifyRefreshToken(refreshToken);
   if (!payload) {
     throw new UnauthorizedError('Invalid refresh token');
   }
 
-  // Check if hashed refresh token exists in database
-  const storedToken = await prisma.refresh_tokens.findFirst({
+  const tokenHash = hashToken(refreshToken);
+
+  // Check if token exists in database
+  const storedToken = await prisma.refresh_tokens.findUnique({
     where: {
-      token: hashToken(refreshToken),
-      user_id: payload.userId,
-      expires_at: { gt: new Date() },
+      token: tokenHash,
     },
   });
 
@@ -224,19 +231,34 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
     throw new UnauthorizedError('Refresh token not found or expired');
   }
 
+  // REUSE DETECTION: If token is already marked as revoked, a replay attack is detected!
+  if (storedToken.is_revoked) {
+    // Revoke/delete ALL refresh tokens belonging to this user immediately
+    await prisma.refresh_tokens.deleteMany({
+      where: { user_id: storedToken.user_id },
+    });
+    throw new UnauthorizedError('Cảnh báo bảo mật: Phát hiện sử dụng lại Refresh Token đã bị thu hồi. Toàn bộ phiên đăng nhập đã bị vô hiệu hóa.');
+  }
+
+  // Check if token has expired
+  if (storedToken.expires_at < new Date()) {
+    await prisma.refresh_tokens.delete({
+      where: { id: storedToken.id },
+    });
+    throw new UnauthorizedError('Refresh token expired');
+  }
+
   // Get user
   const user = await prisma.users.findUnique({
-    where: { id: payload.userId },
+    where: { id: storedToken.user_id },
   });
 
   if (!user || !user.is_active) {
+    await prisma.refresh_tokens.deleteMany({
+      where: { user_id: storedToken.user_id },
+    });
     throw new UnauthorizedError('User not found or deactivated');
   }
-
-  // Delete old refresh token
-  await prisma.refresh_tokens.delete({
-    where: { id: storedToken.id },
-  });
 
   // Generate new tokens
   const tokenPayload: TokenPayload = {
@@ -246,25 +268,48 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
   };
   const tokens = generateTokenPair(tokenPayload);
 
-  // Store hashed new refresh token
-  await prisma.refresh_tokens.create({
-    data: {
-      token: hashToken(tokens.refreshToken),
-      user_id: user.id,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    },
-  });
+  // Atomic Token Rotation:
+  // 1. Mark current token as revoked
+  // 2. Create new refresh token with the SAME family_id
+  await prisma.$transaction([
+    prisma.refresh_tokens.update({
+      where: { id: storedToken.id },
+      data: { is_revoked: true },
+    }),
+    prisma.refresh_tokens.create({
+      data: {
+        token: hashToken(tokens.refreshToken),
+        user_id: user.id,
+        family_id: storedToken.family_id,
+        is_revoked: false,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    }),
+  ]);
 
   return tokens;
 }
 
 /**
- * Logout user (invalidate refresh token)
+ * Logout user (invalidate refresh token / session family)
  */
 export async function logout(refreshToken: string): Promise<void> {
-  await prisma.refresh_tokens.deleteMany({
-    where: { token: hashToken(refreshToken) },
+  const tokenHash = hashToken(refreshToken);
+  const storedToken = await prisma.refresh_tokens.findUnique({
+    where: { token: tokenHash },
   });
+
+  if (storedToken) {
+    // Invalidate the entire token family for this session
+    await prisma.refresh_tokens.deleteMany({
+      where: { family_id: storedToken.family_id },
+    });
+  } else {
+    // Fallback: delete token directly if found
+    await prisma.refresh_tokens.deleteMany({
+      where: { token: tokenHash },
+    });
+  }
 }
 
 /**

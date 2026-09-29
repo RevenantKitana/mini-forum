@@ -133,6 +133,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     };
     sendSuccess(res, responsePayload, 'Token refreshed successfully');
   } catch (error) {
+    clearRefreshCookie(res);
     next(error);
   }
 }
