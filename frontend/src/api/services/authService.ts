@@ -1,4 +1,4 @@
-import apiClient, { setTokens, clearTokens } from '../axios';
+import apiClient, { setAccessToken, setTokens, clearTokens } from '../axios';
 import { API_ENDPOINTS } from '../endpoints';
 
 // Types
@@ -34,10 +34,7 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   user: AuthUser;
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  accessToken: string;
 }
 
 export interface ApiResponse<T> {
@@ -61,8 +58,8 @@ export async function register(data: RegisterRequest): Promise<AuthUser> {
     }
   );
   
-  const { user, tokens } = response.data.data;
-  setTokens(tokens.accessToken, tokens.refreshToken);
+  const { user, accessToken } = response.data.data;
+  setAccessToken(accessToken);
   
   return user;
 }
@@ -76,8 +73,8 @@ export async function login(data: LoginRequest): Promise<AuthUser> {
     data
   );
   
-  const { user, tokens } = response.data.data;
-  setTokens(tokens.accessToken, tokens.refreshToken);
+  const { user, accessToken } = response.data.data;
+  setAccessToken(accessToken);
   
   return user;
 }
@@ -106,11 +103,13 @@ export async function getCurrentUser(): Promise<AuthUser> {
 /**
  * Refresh access token
  */
-export async function refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-  const response = await apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
+export async function refreshToken(token?: string): Promise<{ accessToken: string }> {
+  const response = await apiClient.post<ApiResponse<{ accessToken: string }>>(
     API_ENDPOINTS.AUTH.REFRESH,
-    { refreshToken }
+    token ? { refreshToken: token } : {}
   );
+  const { accessToken } = response.data.data;
+  setAccessToken(accessToken);
   return response.data.data;
 }
 

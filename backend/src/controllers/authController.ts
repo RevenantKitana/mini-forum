@@ -84,8 +84,12 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const data = req.body as RegisterInput & { registrationToken?: string };
     const result = await authService.register(data);
     logger.info('auth.register', { event: 'register', email: data.email, requestId: req.requestId });
-    setRefreshCookie(res, (result as any).tokens.refreshToken);
-    sendCreated(res, result, 'Registration successful');
+    setRefreshCookie(res, result.tokens.refreshToken);
+    const responsePayload = {
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+    };
+    sendCreated(res, responsePayload, 'Registration successful');
   } catch (error) {
     next(error);
   }
@@ -99,9 +103,13 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   try {
     const data = req.body as LoginInput;
     const result = await authService.login(data);
-    logger.info('auth.login', { event: 'login', identifier: data.identifier, userId: (result as any).user?.id, requestId: req.requestId });
-    setRefreshCookie(res, (result as any).tokens.refreshToken);
-    sendSuccess(res, result, 'Login successful');
+    logger.info('auth.login', { event: 'login', identifier: data.identifier, userId: result.user?.id, requestId: req.requestId });
+    setRefreshCookie(res, result.tokens.refreshToken);
+    const responsePayload = {
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+    };
+    sendSuccess(res, responsePayload, 'Login successful');
   } catch (error) {
     logger.warn('auth.login_failed', { event: 'login_failed', identifier: (req.body as LoginInput)?.identifier, requestId: req.requestId });
     next(error);
@@ -120,7 +128,10 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     }
     const tokens = await authService.refreshAccessToken(refreshToken);
     setRefreshCookie(res, tokens.refreshToken);
-    sendSuccess(res, tokens, 'Token refreshed successfully');
+    const responsePayload = {
+      accessToken: tokens.accessToken,
+    };
+    sendSuccess(res, responsePayload, 'Token refreshed successfully');
   } catch (error) {
     next(error);
   }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useQueryClient } from '@tanstack/react-query';
 import * as authApi from '@/api/services/authService';
 import * as userService from '@/api/services/userService';
-import { getAccessToken, clearTokens } from '@/api/axios';
+import { getAccessToken, setAccessToken, clearTokens } from '@/api/axios';
 import { trackConversion } from '@/utils/analytics';
 
 export interface User {
@@ -36,8 +36,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'forum_auth_user';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,42 +58,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     created_at: apiUser.created_at,
   });
 
-  // Load user on mount
+  // Silent Refresh on App Init
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = getAccessToken();
-        if (token) {
-          try {
-            const apiUser = await authApi.getCurrentUser();
-            const userData = transformUser(apiUser);
-            setUser(userData);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-          } catch (apiError: any) {
-            // If 401 (Unauthorized), silently clear tokens - this is expected for expired/invalid tokens
-            if (apiError?.response?.status === 401) {
-              clearTokens();
-              localStorage.removeItem(STORAGE_KEY);
-              // Don't log error - this is expected behavior
-            } else if (apiError?.response?.status === 429) {
-              // If 429 (rate limited), try to recover from localStorage
-              console.warn('Rate limited during auth init, using cached user data');
-              const cached = localStorage.getItem(STORAGE_KEY);
-              if (cached) {
-                setUser(JSON.parse(cached));
-              } else {
-                clearTokens();
-              }
-            } else {
-              // Other errors - clear auth and log
-              throw apiError;
-            }
-          }
+        // 1. Silent Refresh using HttpOnly Cookie to get fresh Access Token in RAM
+        const refreshData = await authApi.refreshToken();
+        if (refreshData?.accessToken) {
+          setAccessToken(refreshData.accessToken);
+          // 2. Fetch current user profile into RAM
+          const apiUser = await authApi.getCurrentUser();
+          const userData = transformUser(apiUser);
+          setUser(userData);
+        } else {
+          clearTokens();
+          setUser(null);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        // Normal failure when unauthenticated (guest or expired session)
         clearTokens();
-        localStorage.removeItem(STORAGE_KEY);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -103,15 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
   }, []);
-
-  // Save user to localStorage when it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [user]);
 
   const login = async (identifier: string, password: string) => {
     const apiUser = await authApi.login({ identifier, password });

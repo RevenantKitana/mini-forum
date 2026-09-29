@@ -13,36 +13,43 @@ const getApiUrl = (): string => {
 
 const API_BASE_URL = getApiUrl();
 
-// Token storage keys
-const ACCESS_TOKEN_KEY = 'forum_access_token';
-const REFRESH_TOKEN_KEY = 'forum_refresh_token';
+// Legacy storage keys for cleanup
+const LEGACY_ACCESS_TOKEN_KEY = 'forum_access_token';
+const LEGACY_REFRESH_TOKEN_KEY = 'forum_refresh_token';
 
-// Create Axios instance
-const apiClient: AxiosInstance = axios.create({
+// In-memory token storage (RAM only, protected against XSS reading localStorage)
+let inMemoryAccessToken: string | null = null;
+
+export const setAccessToken = (token: string | null): void => {
+  inMemoryAccessToken = token;
+};
+
+export const getAccessToken = (): string | null => {
+  return inMemoryAccessToken;
+};
+
+// Backward-compatible helper that updates in-memory token and cleans legacy localStorage keys
+export const setTokens = (accessToken: string, _refreshToken?: string): void => {
+  setAccessToken(accessToken);
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+};
+
+export const clearTokens = (): void => {
+  inMemoryAccessToken = null;
+  // Clean up any legacy tokens left in localStorage
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+};
+
+// Create Axios instance with HttpOnly cookie support
+export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
+  withCredentials: true, // Crucial: enables automatic transmission of HttpOnly cookies
 });
 
-// Token management functions
-export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-}
-
-export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-
-// Flag to prevent multiple refresh requests
+// Flag to prevent multiple concurrent refresh requests
 let isRefreshing = false;
 let failedQueue: { resolve: (value: unknown) => void; reject: (error: unknown) => void }[] = [];
 
@@ -57,7 +64,7 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
   failedQueue = [];
 };
 
-// Request interceptor - attach access token
+// Request interceptor - attach access token from in-memory RAM
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
@@ -75,18 +82,31 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
 
     // Handle 429 (Too Many Requests) - implement exponential backoff
     if (error.response?.status === 429 && !originalRequest._retry) {
       originalRequest._retry = true;
       // Wait 2 seconds before retrying rate-limited requests
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return apiClient(originalRequest);
     }
 
-    // Check if error is 401 and not a retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Identify auth endpoints to avoid infinite refresh loops
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/refresh') ||
+      originalRequest.url?.includes('/auth/send-otp') ||
+      originalRequest.url?.includes('/auth/verify-otp') ||
+      originalRequest.url?.includes('/auth/reset-password');
+
+    // Check if error is 401 and request has not already been retried
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -106,35 +126,30 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = getRefreshToken();
-
-      if (!refreshToken) {
-        clearTokens();
-        const currentPath = window.location.pathname + window.location.search + window.location.hash;
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-        return Promise.reject(error);
-      }
-
       try {
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        // Call refresh endpoint - HttpOnly cookie is attached automatically via withCredentials
+        const response = await axios.post<{ data: { accessToken: string } }>(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-        setTokens(accessToken, newRefreshToken);
+        const newAccessToken = response.data?.data?.accessToken;
+        if (!newAccessToken) {
+          throw new Error('Refresh response did not contain access token');
+        }
 
-        processQueue(null, accessToken);
+        setAccessToken(newAccessToken);
+        processQueue(null, newAccessToken);
 
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
         clearTokens();
-        const currentPath = window.location.pathname + window.location.search + window.location.hash;
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
