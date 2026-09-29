@@ -20,13 +20,21 @@ const app: Express = express();
 app.set('trust proxy', 1);
 
 // Security middleware
+const connectOrigins = Array.isArray(config.cors.origin)
+  ? config.cors.origin
+  : [config.cors.origin];
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
+      scriptSrc: ["'self'"], // Không dùng 'unsafe-inline' cho script
+      styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind/CSS in JS có thể cần inline style
+      imgSrc: ["'self'", 'data:', 'https://ik.imagekit.io', 'https:'],
+      connectSrc: ["'self'", ...connectOrigins],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,

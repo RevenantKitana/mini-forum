@@ -7,6 +7,7 @@ import { PostStatus } from '@prisma/client';
 import { getBlockedUserIds } from './blockService.js';
 import { deleteAllPostMedia } from './postMediaService.js';
 import { validateBlocks } from './blockValidationService.js';
+import { sanitizeHtml, sanitizeText, sanitizeBlocks } from '../utils/sanitizer.js';
 
 /**
  * Generate unique slug
@@ -567,30 +568,38 @@ export async function createPost(data: CreatePostInput, author_id: number, userR
 
   // Determine blocks to create — always use block layout.
   // If client sends explicit blocks, use those; otherwise auto-wrap content into a TEXT block.
-  const blocksToCreate =
+  const rawBlocks =
     data.blocks && data.blocks.length > 0
       ? data.blocks
       : [{ type: 'TEXT' as const, content: data.content || '', sort_order: 1 }];
 
-  validateBlocks(blocksToCreate);
+  validateBlocks(rawBlocks);
+
+  // Sanitize blocks (strips XSS from TEXT blocks)
+  const blocksToCreate = sanitizeBlocks(rawBlocks);
+
+  // Sanitize title and content
+  const cleanTitle = sanitizeText(data.title) || data.title;
+  const cleanContent = data.content ? sanitizeHtml(data.content) : '';
 
   // Generate unique slug
-  const slug = await generateUniqueSlug(data.title);
+  const slug = await generateUniqueSlug(cleanTitle);
 
   // Generate excerpt from first TEXT block
   const firstTextBlock = blocksToCreate.find((b) => b.type === 'TEXT');
-  const contentForExcerpt = firstTextBlock?.content || data.content || '';
+  const contentForExcerpt = firstTextBlock?.content || cleanContent || '';
   const excerpt = generateExcerpt(contentForExcerpt);
 
   // Prepare tag creation data (to reuse for both code paths)
   const tagCreateData = data.tags.length > 0
     ? await Promise.all(
         data.tags.map(async (tagName) => {
-          const tagSlug = generateSlug(tagName);
+          const cleanTagName = sanitizeText(tagName) || tagName;
+          const tagSlug = generateSlug(cleanTagName);
           const tag = await prisma.tags.upsert({
             where: { slug: tagSlug },
             update: { usage_count: { increment: 1 } },
-            create: { name: tagName, slug: tagSlug, usage_count: 1 },
+            create: { name: cleanTagName, slug: tagSlug, usage_count: 1 },
           });
           return { tag_id: tag.id };
         })
@@ -600,9 +609,9 @@ export async function createPost(data: CreatePostInput, author_id: number, userR
   // Create post with blocks (always block layout)
   const post = await prisma.posts.create({
     data: {
-      title: data.title,
+      title: cleanTitle,
       slug,
-      content: data.content || '',
+      content: cleanContent,
       excerpt,
       author_id,
       category_id: data.category_id,
@@ -654,8 +663,9 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
   const updateData: Record<string, any> = {};
 
   if (data.title) {
-    updateData.title = data.title;
-    updateData.slug = await generateUniqueSlug(data.title);
+    const cleanTitle = sanitizeText(data.title) || data.title;
+    updateData.title = cleanTitle;
+    updateData.slug = await generateUniqueSlug(cleanTitle);
   }
 
   // Validate blocks if provided
@@ -665,13 +675,14 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
   }
 
   if (data.content !== undefined) {
-    updateData.content = data.content;
+    const cleanContent = sanitizeHtml(data.content);
+    updateData.content = cleanContent;
     // Update excerpt from first text block if provided, otherwise use content
     if (hasBlocks && data.blocks) {
       const firstTextBlock = data.blocks.find((b) => b.type === 'TEXT');
-      updateData.excerpt = generateExcerpt(firstTextBlock?.content || '');
+      updateData.excerpt = generateExcerpt(firstTextBlock?.content ? sanitizeHtml(firstTextBlock.content) : '');
     } else {
-      updateData.excerpt = generateExcerpt(data.content);
+      updateData.excerpt = generateExcerpt(cleanContent);
     }
   }
 
@@ -720,11 +731,12 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
     // Create new tags
     if (data.tags.length > 0) {
       for (const tagName of data.tags) {
-        const tagSlug = generateSlug(tagName);
+        const cleanTagName = sanitizeText(tagName) || tagName;
+        const tagSlug = generateSlug(cleanTagName);
         const tag = await prisma.tags.upsert({
           where: { slug: tagSlug },
           update: { usage_count: { increment: 1 } },
-          create: { name: tagName, slug: tagSlug, usage_count: 1 },
+          create: { name: cleanTagName, slug: tagSlug, usage_count: 1 },
         });
         await prisma.post_tags.create({
           data: { post_id: id, tag_id: tag.id },
@@ -740,7 +752,8 @@ export async function updatePost(id: number, data: UpdatePostInput, userId: numb
 
     // Create new blocks
     if (data.blocks.length > 0) {
-      for (const block of data.blocks) {
+      const sanitizedBlocks = sanitizeBlocks(data.blocks);
+      for (const block of sanitizedBlocks) {
         const created = await prisma.post_blocks.create({
           data: {
             post_id: id,

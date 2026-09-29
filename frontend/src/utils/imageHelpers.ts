@@ -13,7 +13,7 @@ export interface PostMedia {
   id: number;
   preview_url: string;
   standard_url: string;
-  sort_order: number;
+  sort_order?: number;
 }
 
 /**

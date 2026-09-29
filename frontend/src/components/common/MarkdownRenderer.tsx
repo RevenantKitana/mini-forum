@@ -1,9 +1,54 @@
 import { useMemo } from 'react';
+import DOMPurify from 'dompurify';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
+
+/**
+ * Standard allowed HTML tags for rendered Markdown
+ */
+const ALLOWED_TAGS = [
+  'b',
+  'i',
+  'em',
+  'strong',
+  'a',
+  'p',
+  'code',
+  'pre',
+  'ul',
+  'ol',
+  'li',
+  'blockquote',
+  'img',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'hr',
+  'del',
+  'br',
+  'span',
+  'div',
+];
+
+/**
+ * Standard allowed HTML attributes
+ */
+const ALLOWED_ATTR = [
+  'href',
+  'src',
+  'alt',
+  'title',
+  'target',
+  'rel',
+  'class',
+  'loading',
+];
 
 /**
  * Decode HTML entities recursively to handle double-encoding
@@ -24,7 +69,7 @@ function decodeHtmlEntities(text: string): string {
       .replace(/&#39;/g, "'")
       .replace(/&apos;/g, "'")
       .replace(/&#x27;/g, "'")
-      .replace(/&#x22;/g, '"');
+      .replace(/&#22;/g, '"');
   }
   
   return decoded;
@@ -41,14 +86,8 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
     // Decode HTML entities first (handles double-encoding)
     let html = decodeHtmlEntities(content);
 
-    // Escape HTML to prevent XSS (only escape dangerous characters)
-    html = html
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
     // Code blocks (```) - handle before inline code
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, _lang, code) => {
       return `<pre class="bg-muted p-3 rounded-md overflow-x-auto my-2"><code class="text-sm">${code.trim()}</code></pre>`;
     });
 
@@ -71,10 +110,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
     // Strikethrough (~~text~~)
     html = html.replace(/~~([^~]+)~~/g, '<del class="line-through">$1</del>');
 
-    // Links [text](url)
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>');
-
-    // Images ![alt](url) - responsive with lazy loading, avatar detection
+    // Images ![alt](url) - responsive with lazy loading, avatar detection (MUST be before links)
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
       const isAvatar = /avatar|profile|user/i.test(alt);
       if (isAvatar) {
@@ -83,8 +119,11 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
       return `<img src="${src}" alt="${alt}" class="max-w-full h-auto rounded-md my-2" loading="lazy" />`;
     });
 
+    // Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>');
+
     // Blockquotes (> text)
-    html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-4 border-muted-foreground/30 pl-4 my-1.5 text-muted-foreground italic">$1</blockquote>');
+    html = html.replace(/^(?:&gt;|>)\s*(.+)$/gm, '<blockquote class="border-l-4 border-muted-foreground/30 pl-4 my-1.5 text-muted-foreground italic">$1</blockquote>');
 
     // Unordered lists (- item or * item)
     html = html.replace(/^[\-\*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
@@ -113,7 +152,12 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
       })
       .join('');
 
-    return html;
+    // DOMPurify sanitization to guarantee 100% XSS-free HTML
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR,
+      ALLOW_DATA_ATTR: false,
+    });
   }, [content]);
 
   return (
@@ -123,3 +167,4 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
     />
   );
 }
+

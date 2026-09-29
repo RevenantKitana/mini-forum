@@ -65,6 +65,8 @@ function createMockPost(overrides?: Partial<Post>): Post {
     status: 'PUBLISHED',
     is_pinned: false,
     is_locked: false,
+    use_block_layout: true,
+    blocks: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     author: mockAuthor,

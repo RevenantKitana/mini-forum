@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/app/components/ui/button';
 import {
   Dialog,
@@ -187,7 +188,7 @@ function MarkdownGuideContent() {
                       </code>
                       <div 
                         className="text-xs px-1.5 py-0.5"
-                        dangerouslySetInnerHTML={{ __html: example.result }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(example.result) }}
                       />
                     </div>
                     <CopyButton text={example.syntax} />

@@ -32,7 +32,7 @@ export interface PostMedia {
   id: number;
   preview_url: string;
   standard_url: string;
-  sort_order: number;
+  sort_order?: number;
   block_id?: number | null;
 }
 
@@ -85,6 +85,7 @@ export interface CreatePostData {
   category_id: number;
   tags?: string[];
   status?: 'DRAFT' | 'PUBLISHED';
+  use_block_layout?: boolean;
   blocks?: PostBlockInput[];
 }
 

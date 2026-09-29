@@ -57,7 +57,7 @@ interface DraftData {
 
 const postSchema = z.object({
   title: z.string().min(10, 'Tiêu đề tối thiểu 10 ký tự').max(200, 'Tiêu đề tối đa 200 ký tự'),
-  content: z.string().max(10000, 'Nội dung tối đa 10000 ký tự').default(''),
+  content: z.string().max(10000, 'Nội dung tối đa 10000 ký tự'),
   categoryId: z.string().min(1, 'Vui lòng chọn danh mục'),
 });
 

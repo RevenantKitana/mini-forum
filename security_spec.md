@@ -13,7 +13,7 @@ gantt
     section Giai đoạn 3 (Token Security)
     Phase 3: Triển khai Refresh Token Rotation & Reuse Detection: done, p3, after p2, 2d
     section Giai đoạn 4 (Hardening)
-    Phase 4: Gia cố CSP & Rà soát XSS Sanitization            : active, p4, after p3, 2d
+    Phase 4: Gia cố CSP & Rà soát XSS Sanitization            : done, p4, after p3, 2d
 ```
 
 ---

@@ -3,6 +3,7 @@ import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors.
 import { UpdateProfileInput, ChangeUsernameInput, ChangePasswordInput } from '../validations/userValidation.js';
 import bcrypt from 'bcrypt';
 import { isUserBlocked } from './blockService.js';
+import { sanitizeHtml, sanitizeText } from '../utils/sanitizer.js';
 
 const USERNAME_CHANGE_COOLDOWN_DAYS = 30;
 
@@ -101,10 +102,10 @@ export async function updateProfile(userId: number, data: UpdateProfileInput) {
   const updateData: Record<string, any> = {};
 
   if (data.display_name !== undefined) {
-    updateData.display_name = data.display_name;
+    updateData.display_name = sanitizeText(data.display_name);
   }
   if (data.bio !== undefined) {
-    updateData.bio = data.bio;
+    updateData.bio = data.bio ? sanitizeHtml(data.bio) : '';
   }
   if (data.date_of_birth !== undefined) {
     updateData.date_of_birth = data.date_of_birth ? new Date(data.date_of_birth) : null;
