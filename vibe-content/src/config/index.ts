@@ -32,9 +32,13 @@ const getCorsOrigins = () => {
     return envOrigins.split(',').map(origin => origin.trim());
   }
   // Default fallback
-  return process.env.NODE_ENV === 'development'
-    ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000']
-    : ['https://k.mio.io.vn'];
+  return [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:3000',
+    'https://k.mio.io.vn',
+  ];
 };
 
 const getCorsIps = () => {
@@ -51,21 +55,34 @@ const createCorsOriginCallback = () => {
   const allowedIps = getCorsIps();
 
   return (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps, server-to-server, or curl requests)
     if (!origin) {
       return callback(null, true);
     }
 
-    // Check domain-based origins
+    // Wildcard support
+    if (allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+
+    // Check exact domain-based origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // Allow localhost / 127.0.0.1 on any port during development
-    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-        return callback(null, true);
-      }
+    // Allow localhost / 127.0.0.1 on any port
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel deployments (*.vercel.app)
+    if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow *.mio.io.vn subdomains
+    if (/^https:\/\/[a-zA-Z0-9_.-]+\.mio\.io\.vn$/.test(origin)) {
+      return callback(null, true);
     }
 
     // Check IP-based access (from Origin header)
@@ -81,7 +98,7 @@ const createCorsOriginCallback = () => {
       }
     }
 
-    callback(new Error('CORS not allowed'));
+    callback(null, false);
   };
 };
 
@@ -91,6 +108,11 @@ export const createIpBasedCorsMiddleware = () => {
   
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (allowedIps.length === 0) {
+      return next();
+    }
+
+    // Always allow OPTIONS preflight requests to pass through to CORS handler
+    if (req.method === 'OPTIONS') {
       return next();
     }
 

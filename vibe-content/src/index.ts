@@ -30,6 +30,7 @@ app.get('/health', async (_req, res) => {
 // Apply IP-based CORS middleware before main cors middleware
 app.use(createIpBasedCorsMiddleware());
 app.use(cors(config.cors));
+app.options('*', cors(config.cors));
 
 const generator = new ContentGeneratorService();
 const startedAt = new Date();
