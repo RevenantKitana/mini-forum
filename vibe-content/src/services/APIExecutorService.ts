@@ -90,14 +90,22 @@ export class APIExecutorService {
         const res = await this.client.post('/auth/refresh', {
           refreshToken: cached.refreshToken,
         });
-        const tokens = res.data.data?.tokens || res.data.tokens;
-        if (tokens?.accessToken) {
+        const data = res.data.data || res.data;
+        const accessToken = data.accessToken || data.tokens?.accessToken;
+        if (accessToken) {
+          let newRefreshToken = data.refreshToken || data.tokens?.refreshToken || cached.refreshToken;
+          const setCookie = res.headers?.['set-cookie'];
+          if (Array.isArray(setCookie)) {
+            const match = setCookie.find((c: string) => c.startsWith('refresh_token='))?.split(';')[0]?.replace('refresh_token=', '');
+            if (match) newRefreshToken = match;
+          }
+
           this.tokenCache.set(userId, {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken || cached.refreshToken,
+            accessToken,
+            refreshToken: newRefreshToken,
             expiresAt: Date.now() + 14 * 60 * 1000, // assume 15min, use 14
           });
-          return tokens.accessToken;
+          return accessToken;
         }
       } catch {
         // Refresh failed, fall through to login
@@ -111,18 +119,25 @@ export class APIExecutorService {
     });
 
     const data = res.data.data || res.data;
-    const tokens = data.tokens;
-    if (!tokens?.accessToken) {
+    const accessToken = data.accessToken || data.tokens?.accessToken;
+    if (!accessToken) {
       throw new Error(`Login failed for ${email}: no access token in response`);
     }
 
+    let refreshToken = data.refreshToken || data.tokens?.refreshToken || '';
+    const setCookie = res.headers?.['set-cookie'];
+    if (Array.isArray(setCookie)) {
+      const match = setCookie.find((c: string) => c.startsWith('refresh_token='))?.split(';')[0]?.replace('refresh_token=', '');
+      if (match) refreshToken = match;
+    }
+
     this.tokenCache.set(userId, {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      accessToken,
+      refreshToken,
       expiresAt: Date.now() + 14 * 60 * 1000,
     });
 
-    return tokens.accessToken;
+    return accessToken;
   }
 
   async createPost(

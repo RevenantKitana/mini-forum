@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
+    "test": "tsx --test src/__tests__/*.test.ts",
     "lint": "tsc --noEmit",
     "build": "tsc --outDir dist",
     "start:prod": "node dist/src/index.js",

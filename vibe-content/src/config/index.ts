@@ -61,6 +61,13 @@ const createCorsOriginCallback = () => {
       return callback(null, true);
     }
 
+    // Allow localhost / 127.0.0.1 on any port during development
+    if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+    }
+
     // Check IP-based access (from Origin header)
     if (allowedIps.length > 0) {
       try {
