@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MarkdownGuide } from '@/components/common/MarkdownGuide';
 import { useFeaturedPosts, usePost } from '@/hooks/usePosts';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { Skeleton } from '@/app/components/ui/skeleton';
@@ -15,7 +14,7 @@ import {
 } from '@/app/components/ui/dialog';
 import { Button } from '@/app/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/ui/tooltip';
-import { Pin, Eye, MessageSquare, ArrowUpRight, ChevronRight, TrendingUp, ExternalLink } from 'lucide-react';
+import { Pin, Eye, MessageSquare, ArrowUpRight, ChevronRight, TrendingUp, ExternalLink, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { decodeHtmlEntities } from '@/lib/utils';
@@ -30,45 +29,45 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
   const handleMouseLeave = () => setPreviewImageUrl(null);
 
   const content = (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-3">
       {showOrder !== undefined ? (
-        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
+        <span className="flex-shrink-0 w-6 h-6 rounded-md bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mt-0.5">
           {showOrder}
         </span>
       ) : post.is_pinned && post.pin_type === 'GLOBAL' ? (
-        <Pin className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" aria-label="Ghim toàn cục" />
+        <Pin className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" aria-label="Ghim toàn cục" />
       ) : null}
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+        <h4 className="text-[15px] sm:text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
           {decodeHtmlEntities(post.title)}
         </h4>
-        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 mt-1.5 text-xs sm:text-sm text-muted-foreground flex-wrap">
           {post.category && (
-            <Badge variant="secondary" size="xs">
+            <Badge variant="secondary" size="xs" className="font-semibold text-xs">
               {post.category.name}
             </Badge>
           )}
-          <span className="flex items-center gap-0.5">
-            <Eye className="h-3 w-3" />
+          <span className="flex items-center gap-1">
+            <Eye className="h-3.5 w-3.5" />
             {post.view_count}
           </span>
-          <span className="flex items-center gap-0.5">
-            <MessageSquare className="h-3 w-3" />
+          <span className="flex items-center gap-1">
+            <MessageSquare className="h-3.5 w-3.5" />
             {post.comment_count}
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground mt-1">
+        <div className="text-xs sm:text-sm text-muted-foreground/80 mt-1">
           {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
         </div>
       </div>
-      <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
     </div>
   );
 
   // If onClick is provided (for pinned posts), use a button instead of a link
   const item = onClick ? (
     <button
-      className="block w-full text-left p-3 hover:bg-muted/50 transition-all duration-200 group hover:translate-x-0.5"
+      className="block w-full text-left p-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group hover:translate-x-0.5"
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -78,7 +77,7 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
   ) : (
     <Link
       to={`/posts/${post.id}`}
-      className="block p-3 hover:bg-muted/50 transition-all duration-200 group hover:translate-x-0.5"
+      className="block p-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group hover:translate-x-0.5"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -98,7 +97,7 @@ function FeaturedPostItem({ post, showOrder, onClick }: { post: any; showOrder?:
           <img
             src={previewImageUrl}
             alt="Post image preview"
-            className="max-h-48 max-w-xs rounded object-contain"
+            className="max-h-48 max-w-xs rounded-lg object-contain"
           />
         </TooltipContent>
       )}
@@ -151,9 +150,9 @@ function PinnedPostContentDialog({ postId, open, onOpenChange }: { postId: numbe
         </DialogHeader>
         {isLoading ? (
           <div className="space-y-4 py-4">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-6 w-3/4 rounded-xl" />
+            <Skeleton className="h-4 w-1/2 rounded-lg" />
+            <Skeleton className="h-32 w-full rounded-xl" />
           </div>
         ) : post ? (
           <>
@@ -162,9 +161,9 @@ function PinnedPostContentDialog({ postId, open, onOpenChange }: { postId: numbe
                 <MarkdownRenderer content={post.content || ''} />
               </div>
             </ScrollArea>
-            <div className="flex justify-end pt-2 border-t">
+            <div className="flex justify-end pt-3 border-t border-border/40">
               <Link to={`/posts/${post.id}`} onClick={() => onOpenChange(false)}>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
                   <ExternalLink className="h-3.5 w-3.5" />
                   Xem bài viết đầy đủ
                 </Button>
@@ -182,7 +181,7 @@ function PinnedPostContentDialog({ postId, open, onOpenChange }: { postId: numbe
 }
 
 export function RightSidebar() {
-  const { data: featuredPosts, isLoading } = useFeaturedPosts(5);
+  const { data: featuredPosts, isLoading } = useFeaturedPosts(6);
   const { data: allFeaturedPosts } = useFeaturedPosts(20);
   const [showAllModal, setShowAllModal] = useState(false);
   // State cho dialog hiển thị nội dung bài viết ghim
@@ -202,66 +201,58 @@ export function RightSidebar() {
   return (
     <>
       <aside className="h-full overflow-y-auto scrollbar-gutter-stable animate-enter-right">
-        {/* p-3: reduced from p-responsive (Phase 4 - 2026-03-06) */}
-        <div className="flex flex-col h-full p-3">
+        <div className="flex flex-col h-full p-4 space-y-5">
           {/* Pinned/Featured Posts - Main content */}
-          <div className="flex-1">
-            <div className="rounded-lg border bg-muted/30 overflow-hidden">
-              <div className="px-3 py-2 border-b bg-primary/5">
-                <h3 className="font-semibold flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                  <Pin className="h-4 w-4 text-primary flex-shrink-0 animate-float" />
-                  <span className="truncate">Bài viết nổi bật</span>
-                </h3>
-              </div>
-              
-              <div className="divide-y">
-                {isLoading ? (
-                  // Loading skeleton
-                  [...Array(3)].map((_, i) => (
-                    <div key={i} className="p-3 space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-3 w-2/3" />
-                    </div>
-                  ))
-                ) : featuredPosts && featuredPosts.length > 0 ? (
-                  featuredPosts.map((post, index) => (
-                    <div
-                      key={post.id}
-                      className="animate-stagger"
-                      style={{ '--stagger-index': index } as React.CSSProperties}
-                    >
-                      <FeaturedPostItem
-                        post={post}
-                        onClick={post.is_pinned && post.pin_type === 'GLOBAL'
-                          ? (e: React.MouseEvent) => { e.preventDefault(); handlePinnedPostClick(post.id); }
-                          : undefined
-                        }
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    Chưa có bài viết nổi bật
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="font-bold flex items-center gap-2 text-xs sm:text-sm uppercase tracking-wider text-muted-foreground">
+                <Pin className="h-4.5 w-4.5 text-primary flex-shrink-0" />
+                <span className="truncate">Bài viết nổi bật</span>
+              </h3>
+            </div>
+            
+            <div className="space-y-1">
+              {isLoading ? (
+                // Loading skeleton
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="p-3 space-y-2 rounded-xl bg-muted/20">
+                    <Skeleton className="h-5 w-full rounded-lg" />
+                    <Skeleton className="h-4 w-2/3 rounded-md" />
                   </div>
-                )}
-              </div>
-
-              {/* View all button */}
-              {featuredPosts && featuredPosts.length > 0 && (
-                <button
-                  onClick={() => setShowAllModal(true)}
-                  className="w-full px-3 py-2 text-xs text-primary hover:bg-primary/5 transition-all duration-200 flex items-center justify-center gap-1 border-t font-medium btn-press group"
-                >
-                  Xem tất cả bài viết nổi bật
-                  <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                </button>
+                ))
+              ) : featuredPosts && featuredPosts.length > 0 ? (
+                featuredPosts.map((post, index) => (
+                  <div
+                    key={post.id}
+                    className="animate-stagger"
+                    style={{ '--stagger-index': index } as React.CSSProperties}
+                  >
+                    <FeaturedPostItem
+                      post={post}
+                      onClick={post.is_pinned && post.pin_type === 'GLOBAL'
+                        ? (e: React.MouseEvent) => { e.preventDefault(); handlePinnedPostClick(post.id); }
+                        : undefined
+                      }
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Chưa có bài viết nổi bật
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Markdown Guide - At the bottom */}
-          <div className="mt-auto pt-3">
-            <MarkdownGuide variant="compact" />
+            {/* View all button */}
+            {featuredPosts && featuredPosts.length > 0 && (
+              <button
+                onClick={() => setShowAllModal(true)}
+                className="w-full px-4 py-3 text-sm sm:text-[15px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 font-semibold btn-press group"
+              >
+                Xem tất cả ({allFeaturedPosts?.length || featuredPosts.length})
+                <ChevronRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -286,7 +277,7 @@ export function RightSidebar() {
                   <Pin className="h-3 w-3 text-primary" />
                   Bài viết được ghim ({pinnedPosts.length})
                 </h4>
-                <div className="rounded-lg border divide-y overflow-hidden">
+                <div className="space-y-1">
                   {pinnedPosts.map((post, index) => (
                     <div key={post.id}>
                       <FeaturedPostItem
@@ -311,7 +302,7 @@ export function RightSidebar() {
                   <TrendingUp className="h-3 w-3 text-orange-500" />
                   Bài viết thịnh hành ({trendingPosts.length})
                 </h4>
-                <div className="rounded-lg border divide-y overflow-hidden">
+                <div className="space-y-1">
                   {trendingPosts.map((post) => (
                     <div key={post.id} onClick={() => setShowAllModal(false)}>
                       <FeaturedPostItem post={post} />

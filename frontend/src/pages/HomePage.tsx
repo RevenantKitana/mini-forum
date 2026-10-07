@@ -218,34 +218,36 @@ export function HomePage() {
 
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
-      {/* Sticky Header Section - full width, positioned at container top */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur py-2 sm:py-1 px-3 md:px-4 border-b\">
+      {/* Sticky Header Section - full width */}
+      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md py-3.5 px-4 sm:px-8 border-b border-border/30">
         {/* Header - Dynamic based on selected category */}
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-2 sm:gap-4">
+        <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2 sm:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-responsive-sm">
+            <div className="flex items-center gap-3">
               {headerContent.icon ? (
-                <span className="text-responsive-2x1">{headerContent.icon}</span>
+                <span className="text-3xl">{headerContent.icon}</span>
               ) : categorySlug ? (
-                <Folder className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                <Folder className="h-7 w-7 text-primary flex-shrink-0" />
               ) : (
-                <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float flex-shrink-0" />
+                <MessageSquare className="h-7 w-7 text-primary animate-float flex-shrink-0" />
               )}
-              <h1 className="font-bold max-w-[45%] sm:max-w-[30%] truncate text-responsive-2xl">
+              <h1 className="font-extrabold text-2xl sm:text-3xl text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
                 {headerContent.title}
-                {categorySlug && selectedCategory && (<span className="ml-1">({selectedCategory.post_count})</span>)}
+                {categorySlug && selectedCategory && (<span className="ml-2 text-base font-normal text-muted-foreground">({selectedCategory.post_count})</span>)}
               </h1>
-              <p className="flex-1 min-w-0 line-clamp-2 text-muted-foreground text-responsive-sm border-l border-border pl-1 sm:pl-2">
-                {headerContent.description}
-              </p>
+              {headerContent.description && (
+                <p className="hidden md:block flex-1 min-w-0 line-clamp-1 text-muted-foreground text-sm sm:text-base border-l border-border/40 pl-3.5">
+                  {headerContent.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Sort buttons with toggle functionality - fixed width */}
-          <div className="flex items-center gap-2 bg-muted rounded-lg">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Sort buttons with toggle functionality - Borderless */}
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
               const isActive = isSortActive(baseSort);
               const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
@@ -258,14 +260,14 @@ export function HomePage() {
                   size="sm"
                   onClick={() => handleSortClick(baseSort)}
                   className={cn(
-                    "gap-1 sm:gap-1.5 btn-press transition-all duration-200 px-2 sm:px-3 sm:min-w-[100px]",
-                    isActive && "animate-tab-slide"
+                    "gap-1.5 btn-press transition-all duration-200 px-4 h-10 text-sm sm:text-base font-semibold rounded-xl",
+                    isActive && "animate-tab-slide shadow-xs"
                   )}
                 >
                   {SORT_CONFIG[baseSort].icon}
-                  <span className="text-xs">{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  <span>{config?.label || SORT_CONFIG[baseSort].label}</span>
                   {isActive && (
-                    <ArrowUpDown className="h-3 w-3 ml-0.5 opacity-70 flex-shrink-0" />
+                    <ArrowUpDown className="h-4 w-4 ml-0.5 opacity-70 flex-shrink-0" />
                   )}
                 </Button>
               );
@@ -275,10 +277,10 @@ export function HomePage() {
           {/* Date Range Filter */}
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
-                <CalendarDays className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="gap-2 h-10 px-4 text-sm sm:text-base font-semibold rounded-xl bg-muted/60 hover:bg-muted text-foreground">
+                <CalendarDays className="h-4.5 w-4.5" />
                 {hasDateFilter ? (
-                  <span className="text-xs">
+                  <span className="text-sm">
                     {dateFromParam && format(new Date(dateFromParam), 'dd/MM/yy', { locale: vi })}
                     {' - '}
                     {dateToParam && format(new Date(dateToParam), 'dd/MM/yy', { locale: vi })}
@@ -297,7 +299,7 @@ export function HomePage() {
                       key={preset.label}
                       variant="outline"
                       size="sm"
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press text-xs sm:text-sm font-medium rounded-lg px-2.5 py-1"
                       onClick={() => {
                         const range = preset.getValue();
                         setDateRange(range);
@@ -325,13 +327,13 @@ export function HomePage() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    className="btn-interactive"
+                    className="btn-interactive h-10 text-sm sm:text-base font-semibold rounded-xl"
                     onClick={() => applyDateFilter(dateRange.from, dateRange.to)}
                     disabled={!dateRange.from}
                   >
                     Áp dụng
                   </Button>
-                  <Button size="sm" variant="outline" className="btn-press" onClick={clearDateFilter}>
+                  <Button size="sm" variant="ghost" className="btn-press h-10 text-sm sm:text-base font-semibold rounded-xl" onClick={clearDateFilter}>
                     Xóa bộ lọc
                   </Button>
                 </div>
@@ -342,12 +344,12 @@ export function HomePage() {
 
           {/* Active date filter badge */}
           {hasDateFilter && (
-            <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in">
-              <CalendarDays className="h-3 w-3" />
+            <Badge variant="secondary" size="sm" className="gap-1.5 animate-pop-in py-2 px-3.5 text-xs sm:text-sm font-medium rounded-xl">
+              <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline">Đang lọc theo thời gian</span>
               <span className="sm:hidden">Thời gian</span>
               <X 
-                className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors duration-200" 
+                className="h-4 w-4 cursor-pointer hover:text-destructive transition-colors duration-200" 
                 onClick={clearDateFilter}
               />
             </Badge>
@@ -362,44 +364,47 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Scrollable Posts List */}
-      <div className="flex-1 overflow-y-auto pt-3 px-3 md:px-4">
-        {/* Mobile Category Bar */}
-        <MobileCategoryBar
-          categories={visibleCategories}
-          activeCategory={categorySlug ?? null}
-          onSelect={handleMobileCategorySelect}
-        />
-        {/* Show restricted content message if user cannot view category */}
-        {!canViewCategory && selectedCategory ? (
-          <RestrictedContent
-            title={`Nội dung "${selectedCategory.name}" bị giới hạn`}
-            requiredPermission={selectedCategory.view_permission as 'MEMBER' | 'MODERATOR' | 'ADMIN'}
-            type="category"
+      {/* Scrollable Posts List - Center Aligned for optimal whitespace reading */}
+      <div className="flex-1 overflow-y-auto pt-4 px-4 sm:px-6 md:px-8 pb-10">
+        <div className="max-w-5xl xl:max-w-6xl mx-auto w-full">
+          {/* Mobile Category Bar */}
+          <MobileCategoryBar
+            categories={visibleCategories}
+            activeCategory={categorySlug ?? null}
+            onSelect={handleMobileCategorySelect}
           />
-        ) : isLoading ? (
-          <PostListSkeleton count={5} />
-        ) : data?.data && data.data.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
-              {data.data.map((post, index) => (
-                <div 
-                  key={post.id} 
-                  className="animate-stagger"
-                  style={{ '--stagger-index': index } as React.CSSProperties}
-                >
-                  <PostCard post={post} />
-                </div>
-              ))}
+          {/* Show restricted content message if user cannot view category */}
+          {!canViewCategory && selectedCategory ? (
+            <RestrictedContent
+              title={`Nội dung "${selectedCategory.name}" bị giới hạn`}
+              requiredPermission={selectedCategory.view_permission as 'MEMBER' | 'MODERATOR' | 'ADMIN'}
+              type="category"
+            />
+          ) : isLoading ? (
+            <div className="w-full">
+              <PostListSkeleton count={5} />
             </div>
+          ) : data?.data && data.data.length > 0 ? (
+            <div className="w-full">
+              <div className="space-y-4">
+                {data.data.map((post, index) => (
+                  <div 
+                    key={post.id} 
+                    className="animate-stagger"
+                    style={{ '--stagger-index': index } as React.CSSProperties}
+                  >
+                    <PostCard post={post} />
+                  </div>
+                ))}
+              </div>
 
             {/* Pagination */}
             {data.pagination && data.pagination.totalPages > 1 && (
-              <div className="flex justify-center gap-1 sm:gap-1.5 mt-4 sm:mt-6 pb-4 flex-wrap items-center">
+              <div className="flex justify-center gap-1.5 sm:gap-2 mt-6 sm:mt-8 pb-6 flex-wrap items-center">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="btn-press"
+                  className="btn-press h-9 px-3 text-sm"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1}
                 >
@@ -418,14 +423,14 @@ export function HomePage() {
                           key={pageNum}
                           variant={page === pageNum ? 'default' : 'outline'}
                           size="sm"
-                          className="btn-press h-8 w-8 p-0"
+                          className="btn-press h-9 w-9 p-0 text-sm"
                           onClick={() => handlePageChange(pageNum)}
                         >
                           {pageNum}
                         </Button>
                       );
                     } else if (pageNum === page - 2 || pageNum === page + 2) {
-                      return <span key={pageNum} className="text-muted-foreground text-sm">...</span>;
+                      return <span key={pageNum} className="text-muted-foreground text-sm px-1">...</span>;
                     }
                     return null;
                   })}
@@ -433,7 +438,7 @@ export function HomePage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="btn-press"
+                  className="btn-press h-9 px-3 text-sm"
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === data.pagination.totalPages}
                 >
@@ -441,7 +446,7 @@ export function HomePage() {
                 </Button>
               </div>
             )}
-          </>
+          </div>
         ) : (
           <div className="text-center py-12 animate-fade-in-up">
             <p className="text-muted-foreground">Không có bài viết nào</p>
@@ -453,6 +458,7 @@ export function HomePage() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Mobile FAB - create post, only for authenticated users */}

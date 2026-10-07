@@ -129,15 +129,15 @@ export function VoteButtons({
   }, [isAuthenticated, isAuthor, currentVote, upvotes, downvotes, targetType, targetId, votePostMutation, voteCommentMutation]);
 
   const sizeClasses = {
-    sm: 'h-6 w-6',
+    sm: 'h-7 w-7',
     md: 'h-8 w-8',
     lg: 'h-10 w-10',
   };
 
   const iconSizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+    sm: 'h-3.5 w-3.5',
+    md: 'h-4 w-4',
+    lg: 'h-5 w-5',
   };
 
   const score = upvotes - downvotes;
@@ -185,7 +185,7 @@ export function VoteButtons({
             aria-pressed={active}
             className={cn(
               sizeClasses[size],
-              'btn-press transition-all duration-200',
+              'btn-press transition-all duration-200 rounded-full',
               active && activeClass,
               isAuthor && 'opacity-50 cursor-not-allowed'
             )}
@@ -216,7 +216,7 @@ export function VoteButtons({
         role="group"
         aria-label="Vote"
         className={cn(
-          'flex items-center gap-4',
+          'inline-flex items-center gap-0.5 rounded-full bg-muted/60 dark:bg-muted/40 px-1 py-0.5 border border-border/60 text-xs',
           orientation === 'vertical' ? 'flex-col' : 'flex-row',
           className
         )}
@@ -235,6 +235,22 @@ export function VoteButtons({
           side="top"
         />
 
+        <span
+          className={cn(
+            'px-1 font-semibold text-xs sm:text-sm tabular-nums select-none',
+            currentVote === 'up'
+              ? 'text-green-600 dark:text-green-400'
+              : currentVote === 'down'
+              ? 'text-red-600 dark:text-red-400'
+              : score > 0
+              ? 'text-green-600 dark:text-green-400'
+              : score < 0
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-muted-foreground'
+          )}
+        >
+          {score}
+        </span>
 
         <ActionButton
           voteType="down"

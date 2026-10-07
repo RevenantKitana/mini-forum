@@ -90,76 +90,75 @@ export function BlockedUsersPage() {
   const blockedUsers = normalizeBlockedUsers(data?.data || []);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-      <div className="flex items-center gap-3">
+    <div className="p-4 sm:p-6 md:p-8 max-w-4xl xl:max-w-5xl mx-auto w-full space-y-6 animate-fade-in-up">
+      <div className="flex items-center gap-4">
         <Link to="/settings/profile">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted btn-press">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Người dùng đã chặn</h1>
-          <p className="text-sm text-muted-foreground">Quản lý danh sách người dùng bạn đã chặn</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Người dùng đã chặn</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-0.5">Quản lý danh sách tài khoản bạn đã chặn tương tác</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserX className="h-5 w-5" />
+      <Card className="rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
+        <CardHeader className="p-6 sm:p-8 pb-4 sm:pb-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+            <UserX className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Danh sách chặn ({blockedUsers.length})
           </CardTitle>
-          <CardDescription>
-            Người dùng bị chặn sẽ không thể xem profile của bạn và bạn sẽ không thấy nội dung của họ.
+          <CardDescription className="text-sm sm:text-base text-muted-foreground mt-1">
+            Người dùng bị chặn sẽ không thể xem trang cá nhân của bạn và các nội dung của họ sẽ bị ẩn khỏi bảng tin của bạn.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 sm:p-8 pt-2 sm:pt-2">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div>
-                      <Skeleton className="h-4 w-32 mb-1" />
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-muted/20">
+                  <div className="flex items-center gap-3.5">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-36" />
                       <Skeleton className="h-3 w-24" />
                     </div>
                   </div>
-                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-10 w-24 rounded-xl" />
                 </div>
               ))}
             </div>
           ) : blockedUsers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <UserX className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Bạn chưa chặn người dùng nào.</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <UserX className="h-14 w-14 mx-auto mb-3 opacity-30" />
+              <p className="text-sm sm:text-base font-medium">Bạn chưa chặn người dùng nào.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {blockedUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-muted/20 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-background">
                       <AvatarImage
                         src={getAvatarUrl(user, 'preview') || undefined}
                         alt={user.display_name || user.username}
                       />
-                      <AvatarFallback>
+                      <AvatarFallback className="font-bold text-base">
                         {(user.display_name || user.username)[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <Link
                         to={`/users/${user.username}`}
-                        className="font-medium hover:underline truncate block"
+                        className="font-bold text-base sm:text-lg hover:underline truncate block"
                       >
                         {user.display_name || user.username}
                       </Link>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
                         @{user.username} • Đã chặn{' '}
                         {formatDistanceToNow(new Date(user.blockedAt), {
                           addSuffix: true,
@@ -170,8 +169,7 @@ export function BlockedUsersPage() {
                   </div>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto flex-shrink-0"
+                    className="h-10 px-5 text-sm font-semibold rounded-xl w-full sm:w-auto flex-shrink-0 border-0 bg-muted/50 hover:bg-muted btn-press"
                     onClick={() => {
                       if (confirm(`Bạn có chắc muốn bỏ chặn @${user.username}?`)) {
                         unblockMutation.mutate(user.id);

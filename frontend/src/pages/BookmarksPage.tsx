@@ -26,12 +26,12 @@ export function BookmarksPage() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6 animate-fade-in-up">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <BookmarkIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl xl:max-w-6xl mx-auto w-full space-y-6 animate-fade-in-up">
+      <div className="flex items-center gap-3">
+        <BookmarkIcon className="h-7 w-7 sm:h-9 sm:w-9 text-primary animate-float" />
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Bài viết đã lưu</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Những bài viết bạn đã đánh dấu để đọc sau</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">Bài viết đã lưu</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Những bài viết bạn đã đánh dấu để đọc sau</p>
         </div>
       </div>
 
@@ -39,7 +39,7 @@ export function BookmarksPage() {
         <PostListSkeleton count={3} />
       ) : bookmarks && bookmarks.length > 0 ? (
         <>
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-4">
             {bookmarks.map((bookmark) => (
               <PostCard key={bookmark.id} post={bookmark as any} />
             ))}
@@ -47,39 +47,41 @@ export function BookmarksPage() {
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4 sm:mt-6 flex-wrap">
+            <div className="flex justify-center gap-2 mt-6 sm:mt-8 flex-wrap items-center">
               <Button
                 variant="outline"
                 size="sm"
+                className="btn-press h-10 px-4 text-sm font-semibold rounded-xl"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
               >
-                Trước
+                ← Trước
               </Button>
-              <span className="flex items-center px-4 text-sm text-muted-foreground">
+              <span className="flex items-center px-4 text-sm sm:text-base text-muted-foreground font-medium">
                 Trang {page} / {pagination.totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
+                className="btn-press h-10 px-4 text-sm font-semibold rounded-xl"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= pagination.totalPages}
               >
-                Sau
+                Sau →
               </Button>
             </div>
           )}
         </>
       ) : (
-        <Card>
-          <CardContent className="pt-12 pb-12 text-center">
-            <BookmarkIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Chưa có bài viết nào được lưu</h3>
-            <p className="text-muted-foreground mb-4">
+        <Card className="rounded-2xl border-0 bg-card shadow-sm">
+          <CardContent className="py-16 text-center">
+            <BookmarkIcon className="h-14 w-14 mx-auto mb-4 text-muted-foreground/60" />
+            <h3 className="text-xl font-bold mb-2">Chưa có bài viết nào được lưu</h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6">
               Lưu những bài viết bạn muốn đọc sau bằng cách nhấn vào biểu tượng bookmark
             </p>
             <Link to="/">
-              <Button>Khám phá bài viết</Button>
+              <Button className="btn-interactive h-10 px-5 text-sm sm:text-base font-semibold rounded-xl">Khám phá bài viết</Button>
             </Link>
           </CardContent>
         </Card>

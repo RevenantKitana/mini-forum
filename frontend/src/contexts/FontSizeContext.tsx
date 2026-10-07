@@ -10,11 +10,11 @@ interface FontSizeContextType {
 const FontSizeContext = createContext<FontSizeContextType | undefined>(undefined);
 
 const SCALE_VALUES: Record<FontSizeScale, number> = {
-  xs: 0.7,   // Very Small
-  sm: 0.85,  // Small
-  md: 1,     // Medium
-  lg: 1.15,  // Large
-  xl: 1.3,   // Very Large
+  xs: 0.88,  // Compact
+  sm: 0.94,  // Moderately small
+  md: 1.0,   // Standard balanced (100%)
+  lg: 1.08,  // Spacious
+  xl: 1.18,  // Accessibility large
 };
 
 const SCALE_LABELS: Record<FontSizeScale, string> = {

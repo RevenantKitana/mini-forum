@@ -194,30 +194,30 @@ export function PinnedPostsModal() {
         )}
         
         {/* Footer: navigation + view full post */}
-        <div className="flex items-center justify-between pt-2 border-t">
+        <div className="flex items-center justify-between pt-3 border-t border-border/40">
           {/* Pagination controls (only if multiple pinned posts) */}
           {pinnedPosts.length > 1 ? (
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
-                className="h-7 w-7"
+                className="h-8 w-8 rounded-xl"
                 disabled={!hasPrev}
                 onClick={() => setCurrentIndex(i => i - 1)}
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-xs text-muted-foreground min-w-[4rem] text-center">
+              <span className="text-xs text-muted-foreground min-w-[4rem] text-center font-mono font-medium">
                 {currentIndex + 1} / {pinnedPosts.length}
               </span>
               <Button
                 variant="outline"
                 size="icon"
-                className="h-7 w-7"
+                className="h-8 w-8 rounded-xl"
                 disabled={!hasNext}
                 onClick={() => setCurrentIndex(i => i + 1)}
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           ) : (
@@ -228,13 +228,14 @@ export function PinnedPostsModal() {
             <Button
               variant="ghost"
               size="sm"
+              className="rounded-xl"
               onClick={() => setOpen(false)}
             >
               Đóng
             </Button>
             {currentPost && (
               <Link to={`/posts/${currentPost.id}`} onClick={() => setOpen(false)}>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
                   <ExternalLink className="h-3.5 w-3.5" />
                   Xem đầy đủ
                 </Button>

@@ -108,16 +108,16 @@ export function NotificationsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Đăng nhập để xem thông báo</h2>
-            <p className="text-muted-foreground mb-4">
-              Bạn cần đăng nhập để xem các thông báo của mình.
+      <div className="p-4 sm:p-6 md:p-8 max-w-5xl xl:max-w-6xl mx-auto w-full space-y-6">
+        <Card className="rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
+          <CardContent className="py-12 px-6 text-center">
+            <Bell className="h-14 w-14 mx-auto mb-4 text-muted-foreground/60 animate-bounce" />
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Đăng nhập để xem thông báo</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-md mx-auto">
+              Bạn cần đăng nhập để xem và tương tác với các thông báo của mình.
             </p>
             <Link to="/login">
-              <Button>Đăng nhập</Button>
+              <Button className="h-11 px-6 text-sm sm:text-base font-semibold rounded-xl">Đăng nhập ngay</Button>
             </Link>
           </CardContent>
         </Card>
@@ -126,30 +126,39 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl xl:max-w-6xl mx-auto w-full space-y-6 animate-fade-in-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-primary animate-float" />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+            <Bell className="h-6 w-6 animate-float" />
+          </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Thông báo</h1>
-            {unreadCount > 0 && (
-              <p className="text-sm text-muted-foreground">
-                {unreadCount} thông báo chưa đọc
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Thông báo</h1>
+            {unreadCount > 0 ? (
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+                Bạn có <span className="font-bold text-primary">{unreadCount}</span> thông báo chưa đọc
+              </p>
+            ) : (
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+                Tất cả thông báo đã được đọc
               </p>
             )}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="btn-press flex-1 sm:flex-none" onClick={() => refetch()}>
+        <div className="flex gap-2.5 flex-wrap">
+          <Button
+            variant="outline"
+            className="h-10 px-4 text-sm font-semibold rounded-xl btn-press flex-1 sm:flex-none border-0 bg-muted/40 hover:bg-muted/70"
+            onClick={() => refetch()}
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Làm mới
           </Button>
           {unreadCount > 0 && (
             <Button
               variant="outline"
-              size="sm"
-              className="btn-press flex-1 sm:flex-none"
+              className="h-10 px-4 text-sm font-semibold rounded-xl btn-press flex-1 sm:flex-none border-0 bg-primary/10 text-primary hover:bg-primary/20"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsReadMutation.isPending}
             >
@@ -161,33 +170,31 @@ export function NotificationsPage() {
         </div>
       </div>
 
-
-
       {/* Notifications List */}
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
+            <Card key={i} className="rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
+              <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <Skeleton className="h-5 w-5 rounded mt-1 flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
+                  <Skeleton className="h-6 w-6 rounded-lg mt-1 flex-shrink-0" />
+                  <div className="flex-1 space-y-2.5">
                     <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-28" />
                   </div>
-                  <Skeleton className="h-8 w-8 rounded flex-shrink-0" />
+                  <Skeleton className="h-9 w-9 rounded-xl flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : notifications.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center animate-fade-in-up">
-            <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">Không có thông báo</h3>
-            <p className="text-muted-foreground">
-              Bạn chưa có thông báo nào.
+        <Card className="rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)]">
+          <CardContent className="py-16 text-center animate-fade-in-up">
+            <Bell className="h-14 w-14 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <h3 className="text-lg sm:text-xl font-bold mb-1.5">Không có thông báo</h3>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Bạn chưa có thông báo mới nào vào lúc này.
             </p>
           </CardContent>
         </Card>
@@ -199,24 +206,24 @@ export function NotificationsPage() {
             const NotificationContent = (
               <Card
                 className={cn(
-                  'transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer',
-                  !notification.is_read && !isFading && 'bg-primary/5 border-primary/20',
+                  'rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] cursor-pointer',
+                  !notification.is_read && !isFading && 'bg-primary/5 ring-1 ring-primary/20',
                   isFading && 'opacity-50 scale-95 pointer-events-none'
                 )}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className="flex-shrink-0 mt-1">
+                    <div className="flex-shrink-0 mt-0.5 p-2 rounded-xl bg-muted/60">
                       {getNotificationIcon(notification.type)}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className={cn('text-sm', !notification.is_read && 'font-medium')}>
+                      <p className={cn('text-sm sm:text-base leading-relaxed', !notification.is_read ? 'font-semibold text-foreground' : 'text-foreground/90')}>
                         {notification.content}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
                         {formatDistanceToNow(new Date(notification.created_at), {
                           addSuffix: true,
                           locale: vi,
@@ -227,12 +234,12 @@ export function NotificationsPage() {
                     {/* Status & Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {!notification.is_read && (
-                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" title="Chưa đọc" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" title="Chưa đọc" />
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 btn-press"
+                        className="h-9 w-9 rounded-xl btn-press text-muted-foreground hover:text-foreground hover:bg-muted"
                         onClick={(e: React.MouseEvent) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -246,7 +253,7 @@ export function NotificationsPage() {
                         <Check className="h-4 w-4" />
                       </Button>
                       {link && (
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/60" />
                       )}
                     </div>
                   </div>
@@ -290,23 +297,21 @@ export function NotificationsPage() {
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Button
             variant="outline"
-            size="sm"
-            className="btn-press"
+            className="h-10 px-4 text-sm font-semibold rounded-xl border-0 bg-muted/40 hover:bg-muted/70 btn-press"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
             Trang trước
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm sm:text-base font-medium text-muted-foreground px-2">
             Trang {page} / {pagination.totalPages}
           </span>
           <Button
             variant="outline"
-            size="sm"
-            className="btn-press"
+            className="h-10 px-4 text-sm font-semibold rounded-xl border-0 bg-muted/40 hover:bg-muted/70 btn-press"
             onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
             disabled={page === pagination.totalPages}
           >

@@ -13,8 +13,6 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Separator } from '@/app/components/ui/separator';
 import { VoteButtons } from '@/components/common/VoteButtons';
-import { CategoryColorIcon } from '@/components/common/CategoryColorIcon';
-import { VoteScore } from '@/components/common/VoteScore';
 import { BookmarkButton } from '@/components/common/BookmarkButton';
 import { ROLE_CONFIG, AUTHOR_ROLE_MAP } from '@/constants/roles';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
@@ -254,110 +252,110 @@ export function PostDetailPage() {
   const authorAvatar = getAvatarUrl(post?.author, 'preview');
 
   return (
-    <div className="animate-fade-in-up">
+    <div className="max-w-5xl xl:max-w-6xl mx-auto py-4 px-4 sm:px-6 md:px-8 space-y-6 animate-fade-in-up">
       {/* Post Card */}
-      <Card className="animate-fade-in-scale">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-3 text-center">
-                {/* Status Badges (Pinned/Locked) */}
-                {post.is_pinned && (
-                  <Badge variant="default">
-                    <Pin className="h-3 w-3 mr-1" />
-                    Pinned
-                  </Badge>
-                )}
-                {post.is_locked && (
-                  <Badge variant="secondary">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Locked
-                  </Badge>
-                )}
-                
-                {/* Category & Title */}
-                {post.category && (
-                  <Link to={`/?category=${post.category.slug}`} className="inline-flex items-center">
-                    <Badge variant="outline" size="sm" className="font-bold sm:size-default">
-                      {post.category.name}
-                    </Badge>
-                  </Link>
-                )}
-                {/* Category color indicator (postcard-like icon) */}
-                {post.category?.color && (
-                  <span className="inline-flex items-center">
-                    <CategoryColorIcon
-                      color={post.category.color}
-                      name={post.category.name}
+      <Card className="rounded-2xl border-0 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)] p-6 sm:p-8 space-y-5">
+        <CardHeader className="p-0 pb-2">
+          {/* Breadcrumb & Category */}
+          <div className="flex items-center justify-between gap-2.5 mb-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link to="/" className="hover:text-foreground transition-colors font-medium">Trang chủ</Link>
+              <span>/</span>
+              {post.category && (
+                <Link
+                  to={`/?category=${post.category.slug}`}
+                  className="font-bold text-xs sm:text-sm text-foreground uppercase tracking-wider hover:text-primary transition-colors inline-flex items-center gap-1.5"
+                >
+                  {post.category.color && (
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: post.category.color }}
                     />
-                  </span>
-                )}
-                <span className="text-muted-foreground/50 hidden sm:inline">»</span>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold w-full sm:w-auto text-center">
-                  {decodeHtmlEntities(post.title)}
-                </h1>
-              </div>
-              {post.author && (
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
-                  <Link
-                    to={`/users/${post.author.username}`}
-                    className="flex items-center gap-2 hover:text-foreground transition-colors"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAuthorAvatarModalOpen(true); }}
-                      className="rounded-full ring-1 ring-transparent hover:ring-primary transition-all duration-200 flex-shrink-0"
-                      aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                        <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                    </button>
-                    <span className="font-medium flex items-center gap-2">
-                      {authorDisplayName}
-                      {/* Role badge */}
-                      {post.author?.role && (() => {
-                        const roleKey = (AUTHOR_ROLE_MAP as any)[post.author.role as keyof typeof AUTHOR_ROLE_MAP];
-                        const cfg = (ROLE_CONFIG as any)[roleKey];
-                        if (!cfg) return null;
-                        const Icon = cfg.icon as any;
-                        return (
-                          <Badge role={roleKey} variant="outline" size="xs" className="flex items-center gap-1">
-                            <Icon className="h-3 w-3" />
-                            {cfg.label}
-                          </Badge>
-                        );
-                      })()}
-                    </span>
-                    <span className="text-muted-foreground/70">@{post.author.username}</span>
-                  </Link>
-                  <span>•</span>
-                  <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span>{post.view_count} views</span>
-                  </div>
-                </div>
+                  )}
+                  <span>{post.category.name}</span>
+                </Link>
               )}
             </div>
 
+            <div className="flex items-center gap-2">
+              {post.is_pinned && (
+                <Badge variant="default" size="xs" className="rounded-md font-semibold px-2 py-0.5">
+                  <Pin className="h-3.5 w-3.5 mr-1" />
+                  Ghim
+                </Badge>
+              )}
+              {post.is_locked && (
+                <Badge variant="secondary" size="xs" className="rounded-md font-semibold px-2 py-0.5">
+                  <Lock className="h-3.5 w-3.5 mr-1" />
+                  Đã khóa
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Post Title */}
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-snug tracking-tight text-foreground flex-1">
+              {decodeHtmlEntities(post.title)}
+            </h1>
+
             {canEdit && (
-              <div className="flex gap-2 flex-shrink-0">
-                <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)} className="btn-press hover:animate-wiggle">
-                  <Edit className="h-4 w-4" />
+              <div className="flex gap-1.5 flex-shrink-0">
+                <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)} className="btn-press h-9 px-3 text-xs sm:text-sm font-semibold rounded-xl">
+                  <Edit className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Sửa</span>
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDeletePost} className="btn-press hover:text-destructive">
+                <Button variant="outline" size="sm" onClick={handleDeletePost} className="btn-press hover:text-destructive h-9 px-3 text-xs sm:text-sm font-semibold rounded-xl">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
-        </CardHeader> 
 
-        <CardContent>
+          {/* Author & Meta Row */}
+          {post.author && (
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground pt-4 border-t border-border/40">
+              <Link
+                to={`/users/${post.author.username}`}
+                className="flex items-center gap-2.5 hover:text-foreground transition-colors group/author"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAuthorAvatarModalOpen(true); }}
+                  className="rounded-full flex-shrink-0"
+                  aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+                >
+                  <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-1 ring-border/50 transition-transform group-hover/author:scale-105">
+                    <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
+                    <AvatarFallback className="text-xs font-semibold">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+                <span className="font-semibold text-sm sm:text-base text-foreground">
+                  {authorDisplayName}
+                </span>
+                {post.author?.role && (() => {
+                  const roleKey = (AUTHOR_ROLE_MAP as any)[post.author.role as keyof typeof AUTHOR_ROLE_MAP];
+                  const cfg = (ROLE_CONFIG as any)[roleKey];
+                  if (!cfg || roleKey === 'MEMBER') return null;
+                  return (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                      {cfg.label}
+                    </span>
+                  );
+                })()}
+              </Link>
+              <span>•</span>
+              <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>{post.view_count} lượt xem</span>
+              </div>
+            </div>
+          )}
+        </CardHeader>
 
+        <CardContent className="p-0 space-y-4">
           {/* Block layout content */}
           {post.blocks && post.blocks.length > 0 ? (
             <BlockRenderer blocks={post.blocks} />
@@ -375,22 +373,22 @@ export function PostDetailPage() {
           })()}
 
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 pt-2">
               {post.tags.map((tag) => (
                 <Link key={tag.id} to={`/?tag=${tag.slug}`}>
-                  <Badge variant="secondary" size="sm">{tag.name}</Badge>
+                  <Badge variant="secondary" size="sm" className="text-xs sm:text-sm px-3.5 py-1.5 rounded-xl font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
+                    #{tag.name}
+                  </Badge>
                 </Link>
               ))}
             </div>
           )}
         </CardContent>
 
-        <CardFooter className="border-t pt-2">
-          {/* Mobile (<640px): 2 rows — vote+stats on top, actions below
-              sm+(640px): single row, actions pushed to right */}
-          <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center">
+        <CardFooter className="border-t border-border/40 pt-4 p-0">
+          <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* Row 1: Vote + Stats */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap">
               <VoteButtons
                 targetId={post.id}
                 targetType="post"
@@ -400,22 +398,16 @@ export function PostDetailPage() {
                 size="md"
                 orientation="horizontal"
               />
-              <VoteScore
-                score={voteScore}
-                upvoteCount={post.upvote_count}
-                downvoteCount={post.downvote_count}
-              />
-              <Separator orientation="vertical" className="h-6 mx-1" />
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium">
                 <MessageSquare className="h-4 w-4" />
                 <span>{post.comment_count} bình luận</span>
               </div>
             </div>
 
             {/* Row 2 (mobile) / Right side (sm+): Actions */}
-            <div className="flex items-center gap-1 sm:ml-auto">
+            <div className="flex items-center gap-2 sm:ml-auto">
               <BookmarkButton postId={post.id} size="sm" showText showConfirmOnRemove />
-              <Button variant="ghost" size="sm" className="btn-press" onClick={() => {
+              <Button variant="ghost" size="sm" className="btn-press h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-xl" onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 toast.success('Link copied to clipboard');
               }}>
@@ -430,7 +422,7 @@ export function PostDetailPage() {
                     setReportTarget({ type: 'post', id: post.id });
                     setReportModalOpen(true);
                   }}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive btn-press h-10 px-3.5 text-xs sm:text-sm font-semibold rounded-xl"
                 >
                   <Flag className="h-4 w-4" />
                   <span className="hidden min-[480px]:inline ml-1.5">Báo cáo</span>
@@ -521,64 +513,68 @@ export function PostDetailPage() {
 
           // Has permission - show comment form
           return (
-            <Card className="gap-1">
-              <CardContent className="pt-3 pb-0">
-                <form id="comment-form" onSubmit={handleSubmit(onSubmitComment)} className="space-y-0">
-                  <div className="relative">
-                    <Textarea
-                      {...register('content')}
-                      ref={(e) => {
-                        register('content').ref(e);
-                        (commentTextareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
-                      }}
-                      placeholder="Viết bình luận của bạn..."
-                      rows={2}
-                      className="pr-10 input-focus-animate"
+            <Card className="rounded-2xl border-0 bg-card shadow-xs p-5 space-y-3">
+              <form id="comment-form" onSubmit={handleSubmit(onSubmitComment)} className="space-y-3">
+                <div className="relative">
+                  <Textarea
+                    {...register('content')}
+                    ref={(e) => {
+                      register('content').ref(e);
+                      (commentTextareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = e;
+                    }}
+                    placeholder="Viết bình luận của bạn..."
+                    rows={3}
+                    className="pr-12 text-sm sm:text-base rounded-xl bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-ring/30 p-3.5 input-focus-animate resize-y min-h-[90px]"
+                  />
+                  <div className="absolute right-3 bottom-3">
+                    <EmojiPicker 
+                      onEmojiSelect={handleInsertEmoji}
+                      side="top"
+                      align="end"
                     />
-                    <div className="absolute right-2 bottom-2">
-                      <EmojiPicker 
-                        onEmojiSelect={handleInsertEmoji}
-                        side="top"
-                        align="end"
-                      />
-                    </div>
                   </div>
-                  {errors.content && (
-                    <p className="text-sm text-destructive animate-error-shake">{errors.content.message}</p>
-                  )}
-                </form>
-              </CardContent>
-              <CardFooter className="pb-1 pt-1">
-                <Button form="comment-form" type="submit" className="btn-interactive" disabled={createCommentMutation.isPending}>
-                  {createCommentMutation.isPending ? 'Đang đăng...' : 'Đăng bình luận'}
-                </Button>
-              </CardFooter>
+                </div>
+                {errors.content && (
+                  <p className="text-sm text-destructive animate-error-shake font-medium">{errors.content.message}</p>
+                )}
+                <div className="flex justify-end pt-1">
+                  <Button form="comment-form" type="submit" className="btn-interactive h-10 px-5 text-sm sm:text-base font-semibold rounded-xl" disabled={createCommentMutation.isPending}>
+                    {createCommentMutation.isPending ? 'Đang đăng...' : 'Đăng bình luận'}
+                  </Button>
+                </div>
+              </form>
             </Card>
           );
         })()}
-        <div className="pt-1 pb-2 px-2 text-sm border-b flex items-center justify-between">
+        
+        <div className="pt-4 pb-2 px-1 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold">Bình luận</h3>
+            <span className="text-sm text-muted-foreground font-mono font-medium">({post.comment_count})</span>
+          </div>
+
           {/* Comment Sort Dropdown */}
           {post.comment_count > 0 && (
             <Select value={commentSort} onValueChange={(v) => setCommentSort(v as typeof commentSort)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[170px] h-9 text-xs sm:text-sm font-semibold rounded-xl bg-muted/50 border-0">
                 <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="popular">
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <TrendingUp className="h-4 w-4 text-orange-500" />
                     <span>Quan tâm nhất</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="latest">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <Clock className="h-4 w-4 text-blue-500" />
                     <span>Mới nhất</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="oldest">
-                  <div className="flex items-center gap-1">
-                    <History className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <History className="h-4 w-4 text-muted-foreground" />
                     <span>Cũ nhất</span>
                   </div>
                 </SelectItem>
@@ -586,11 +582,12 @@ export function PostDetailPage() {
             </Select>
           )}
         </div>
+
         {/* Comments List */}
         {commentsLoading ? (
-          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
         ) : comments && comments.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {comments.map((comment, index) => {
               // Calculate canComment for each comment/reply context
               const canCommentInCategory = checkPermissionLevel(
@@ -601,7 +598,7 @@ export function PostDetailPage() {
               return (
               <div
                 key={comment.id}
-                className="pt-0 mt-0 animate-stagger"
+                className="animate-stagger"
                 style={{ '--stagger-index': index } as React.CSSProperties}
               >
               <CommentItem
@@ -650,8 +647,8 @@ export function PostDetailPage() {
             })}
           </div>
         ) : (
-          <Card>
-            <CardContent className="pt-5 text-center text-muted-foreground">
+          <Card className="rounded-2xl border-0 bg-card shadow-xs">
+            <CardContent className="py-12 text-center text-sm sm:text-base text-muted-foreground">
               Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
             </CardContent>
           </Card>
@@ -862,63 +859,60 @@ function CommentItem({
   }, [isReply, replyToId, isRepliesExpanded, hasReplies, replies]);
 
   return (
-    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-4 mt-1' : ''}>
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-3 sm:ml-6 mt-2' : ''}>
       <Card
         className={
           isReply
-            ? 'border border-border/60 bg-muted/45 shadow-none'
-            : 'border border-border/70 shadow-sm'
+            ? 'rounded-2xl border-0 bg-muted/30 shadow-none p-4 sm:p-5 transition-all hover:bg-muted/50'
+            : 'rounded-2xl border-0 bg-card shadow-xs p-5 sm:p-6 transition-all hover:shadow-md'
         }
       >
-        <CardContent className={isReply ? 'pt-1 !pb-0 space-y-0' : 'pt-1.8 !pb-1 space-y-0'}>
+        <div className="space-y-2.5">
           {/* Quoted Comment - Clickable to scroll */}
           {comment.quotedComment && (
             <div 
-              className={isReply
-                ? 'mb-1 p-1 bg-muted/55 rounded border-l-2 border-primary/45 cursor-pointer hover:bg-muted/65 transition-colors'
-                : 'mb-1 p-1 bg-muted rounded-lg border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors'}
+              className="mb-2 p-3 bg-muted/60 rounded-xl border-l-4 border-primary cursor-pointer hover:bg-muted/80 transition-colors"
               onClick={handleQuotedCommentClick}
               title="Click để xem bình luận gốc"
             >
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="block max-w-[50%] whitespace-nowrap">Trả lời @{comment.quotedComment.author?.username || 'Unknown'}</span>
+                    <span className="font-semibold text-foreground truncate max-w-[50%]">Trả lời @{comment.quotedComment.author?.username || 'Unknown'}</span>
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">
                     {comment.quotedComment.author?.username || 'Unknown'}
                   </TooltipContent>
                 </Tooltip>
-                <span className="text-primary">↩</span>
+                <span className="text-primary font-bold">↩</span>
 
-                <div className="text-sm text-muted-foreground line-clamp-1">
+                <div className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                   <MarkdownRenderer content={comment.quotedComment.content} />
                 </div>
               </div>
-
             </div>
           )}
           
-          <div className={isReply ? 'flex gap-2' : 'flex gap-2 sm:gap-4'}>
-            <div className={isReply ? 'flex-1 min-w-0 mb-1 mt-0' : 'flex-1 min-w-0 mb-1.5 mt-1.5'}>
+          <div className="flex gap-3 sm:gap-4 items-start">
+            <div className="flex-1 min-w-0">
               {comment.author && (
-                <div className={isReply ? 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-1' : 'flex flex-wrap items-center gap-x-2 gap-y-1 mb-2'}>
-                  <Link to={`/users/${comment.author.username}`} className="flex items-center gap-2 hover:text-foreground transition-colors">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-2">
+                  <Link to={`/users/${comment.author.username}`} className="flex items-center gap-2 hover:text-foreground transition-colors group/author">
                     <button
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsAvatarModalOpen(true); }}
-                      className="rounded-full ring-1 ring-transparent hover:ring-primary transition-all duration-200 flex-shrink-0"
+                      className="rounded-full ring-1 ring-border/40 hover:ring-primary transition-all duration-200 flex-shrink-0"
                       aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
                     >
-                      <Avatar className={isReply ? 'h-5 w-5' : 'h-6 w-6'}>
+                      <Avatar className={isReply ? 'h-6 w-6 sm:h-7 sm:w-7' : 'h-7 w-7 sm:h-8 sm:w-8'}>
                         <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                        <AvatarFallback>{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="text-xs font-semibold">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
                       </Avatar>
                     </button>
                   </Link>
 
-                  <div className="flex items-center gap-2">
-                    <Link to={`/users/${comment.author.username}`} className="inline-flex items-center font-medium hover:text-foreground transition-colors">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link to={`/users/${comment.author.username}`} className="inline-flex items-center font-semibold text-sm sm:text-base text-foreground hover:text-primary transition-colors">
                       {authorDisplayName}
                     </Link>
 
@@ -929,38 +923,40 @@ function CommentItem({
                       if (!cfg) return null;
                       const Icon = cfg.icon as any;
                       return (
-                        <Badge role={roleKey} variant="outline" size="xs" className="flex items-center gap-1">
+                        <Badge role={roleKey} variant="outline" size="xs" className="flex items-center gap-1 rounded-md text-[10px]">
                           <Icon className="h-3 w-3" />
                           {cfg.label}
                         </Badge>
                       );
                     })()}
 
-                    <span className="text-muted-foreground/70 text-xs">@{comment.author.username}</span>
+                    <span className="text-muted-foreground/70 text-xs sm:text-sm font-medium">@{comment.author.username}</span>
                   </div>
 
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                  <span className="text-muted-foreground/40 font-bold">•</span>
+
+                  <span className="text-xs sm:text-sm text-muted-foreground flex-shrink-0">
                     {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                   </span>
                   {comment.is_edited && (
-                    <span className="text-xs text-muted-foreground flex-shrink-0">(đã chỉnh sửa)</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0 italic">(đã sửa)</span>
                   )}
                 </div>
               )}
 
               {isEditing ? (
-                <div className="space-y-2 animate-slide-expand">
+                <div className="space-y-3 animate-slide-expand pt-1">
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={4}
-                    className="w-full input-focus-animate"
+                    className="w-full text-sm sm:text-base rounded-xl bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-ring/30 p-3.5 input-focus-animate"
                     placeholder="Chỉnh sửa bình luận..."
                   />
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button 
                       size="sm" 
-                      className="btn-interactive"
+                      className="btn-interactive h-9 px-4 text-xs sm:text-sm font-semibold rounded-xl"
                       onClick={handleSaveEdit}
                       disabled={updateCommentMutation.isPending}
                     >
@@ -970,7 +966,7 @@ function CommentItem({
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="btn-press"
+                      className="btn-press h-9 px-4 text-xs sm:text-sm font-semibold rounded-xl"
                       onClick={handleCancelEdit}
                       disabled={updateCommentMutation.isPending}
                     >
@@ -980,13 +976,15 @@ function CommentItem({
                   </div>
                 </div>
               ) : (
-                <MarkdownRenderer content={comment.content} className={isReply ? 'text-[0.92rem] leading-relaxed' : 'text-[0.95rem] leading-relaxed'} />
+                <div className="text-sm sm:text-base leading-relaxed text-foreground/90 pt-0.5">
+                  <MarkdownRenderer content={comment.content} />
+                </div>
               )}
 
               {!isEditing && (
-                <div className={isReply ? 'mt-2' : 'mt-3'}>
-                  <div className={isReply ? 'flex items-center justify-between gap-2 flex-wrap' : 'flex items-center justify-between gap-2'}>
-                    <div className="flex items-center gap-2">
+                <div className="mt-3 pt-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2.5">
                       <VoteButtons
                         targetId={comment.id}
                         targetType="comment"
@@ -996,13 +994,8 @@ function CommentItem({
                         size="sm"
                         orientation="horizontal"
                       />
-                      <VoteScore
-                        score={voteScore}
-                        upvoteCount={comment.upvote_count}
-                        downvoteCount={comment.downvote_count}
-                      />
                       {!isReply && totalCommentCount > 0 && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground font-medium">
                           <span className="inline-flex items-center gap-1" title="Reply count">
                             <Reply className="h-3.5 w-3.5" />
                             <span>{totalReplyCount}</span>
@@ -1015,13 +1008,13 @@ function CommentItem({
                       )}
                     </div>
 
-                    <div className={isReply ? 'flex items-center gap-0.5 flex-wrap' : 'flex items-center gap-1'}>
+                    <div className="flex items-center gap-1">
                       {!isReply && canToggleReplies && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="btn-press text-muted-foreground"
+                          className="btn-press text-xs sm:text-sm text-muted-foreground hover:text-foreground font-semibold rounded-xl h-8 sm:h-9 px-3"
                           onClick={() => setIsRepliesExpanded((prev) => !prev)}
                         >
                           {isRepliesExpanded ? (
@@ -1032,7 +1025,7 @@ function CommentItem({
                           ) : (
                             <>
                               <ChevronDown className="h-4 w-4 mr-1" />
-                              Xem thêm phản hồi
+                              Xem thêm phản hồi ({hiddenRepliesCount})
                             </>
                           )}
                         </Button>
@@ -1041,7 +1034,7 @@ function CommentItem({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-foreground' : 'btn-press'}
+                          className="btn-press text-xs sm:text-sm font-semibold rounded-xl h-8 sm:h-9 px-3 text-muted-foreground hover:text-foreground"
                           onClick={() => onReply(comment)}
                         >
                           Trả lời
@@ -1051,11 +1044,11 @@ function CommentItem({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-foreground' : 'btn-press'}
+                          className="btn-press text-xs sm:text-sm font-semibold rounded-xl h-8 sm:h-9 px-3 text-muted-foreground hover:text-foreground"
                           onClick={() => setIsEditing(true)}
                           title={!isModOrAdmin && canEditTimeLimit ? `Còn ${getRemainingEditTime()} để chỉnh sửa` : undefined}
                         >
-                          <Edit className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
+                          <Edit className="h-3.5 w-3.5 mr-1" />
                           Sửa
                         </Button>
                       )}
@@ -1063,11 +1056,11 @@ function CommentItem({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className={isReply ? 'btn-press h-7 px-2 text-xs text-muted-foreground hover:text-destructive' : 'btn-press'}
+                          className="btn-press text-xs sm:text-sm font-semibold rounded-xl h-8 sm:h-9 px-3 text-muted-foreground hover:text-destructive"
                           onClick={handleDelete}
                           disabled={deleteCommentMutation.isPending}
                         >
-                          <Trash2 className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />
                           Xóa
                         </Button>
                       )}
@@ -1076,9 +1069,9 @@ function CommentItem({
                           variant="ghost" 
                           size="sm" 
                           onClick={() => onReport(comment.id)}
-                          className={isReply ? 'text-muted-foreground hover:text-destructive btn-press h-7 px-2 text-xs' : 'text-muted-foreground hover:text-destructive btn-press'}
+                          className={isReply ? 'text-muted-foreground hover:text-destructive btn-press h-8 px-2.5 text-xs rounded-xl' : 'text-muted-foreground hover:text-destructive btn-press h-8 sm:h-9 px-3 text-xs sm:text-sm font-semibold rounded-xl'}
                         >
-                          <Flag className={isReply ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} />
+                          <Flag className="h-3.5 w-3.5 mr-1" />
                           Báo cáo
                         </Button>
                       )}
@@ -1089,15 +1082,15 @@ function CommentItem({
 
               {/* Inline Reply Form */}
               {isReplyingToThis && (
-                <div className="mt-2 p-2 bg-muted/50 rounded-lg border animate-slide-expand">
+                <div className="mt-3 p-3.5 bg-muted/40 rounded-2xl border-0 animate-slide-expand space-y-3">
                   {quotedComment && (
-                    <div className="p-1 mb-1 bg-background rounded-lg border-l-4 border-primary">
+                    <div className="p-2.5 bg-background rounded-xl border-l-4 border-primary">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-muted-foreground">
-                          Trích dẫn từ <span className="font-medium">@{quotedComment.author?.username || 'Unknown'}</span>
+                          Trích dẫn từ <span className="font-semibold text-foreground">@{quotedComment.author?.username || 'Unknown'}</span>
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                         {quotedComment.content}
                       </p>
                     </div>
@@ -1108,9 +1101,9 @@ function CommentItem({
                       onChange={(e) => setReplyContent(e.target.value)}
                       placeholder="Viết trả lời của bạn..."
                       rows={3}
-                      className="mb-3 pr-10"
+                      className="pr-12 text-sm sm:text-base rounded-xl bg-background border-0 focus-visible:ring-1 focus-visible:ring-ring/30 p-3 input-focus-animate"
                     />
-                    <div className="absolute right-2 bottom-5">
+                    <div className="absolute right-3 bottom-3">
                       <EmojiPicker 
                         onEmojiSelect={(emoji) => setReplyContent(replyContent + emoji)}
                         side="top"
@@ -1118,10 +1111,10 @@ function CommentItem({
                       />
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-end">
                     <Button 
                       size="sm" 
-                      className="btn-interactive"
+                      className="btn-interactive h-9 px-4 text-xs sm:text-sm font-semibold rounded-xl"
                       onClick={onSubmitReply}
                       disabled={isSubmittingReply}
                     >
@@ -1130,7 +1123,7 @@ function CommentItem({
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="btn-press"
+                      className="btn-press h-9 px-4 text-xs sm:text-sm font-semibold rounded-xl"
                       onClick={onCancelReply}
                     >
                       Hủy
@@ -1140,7 +1133,7 @@ function CommentItem({
               )}
             </div>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {/* Level 1 Replies - Only render if this is a root comment (not a reply) */}
