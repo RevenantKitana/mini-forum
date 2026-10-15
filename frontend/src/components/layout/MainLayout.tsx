@@ -92,7 +92,7 @@ export function MainLayout() {
         
         {/* Main content - scrolls independently */}
         <main id="main-content" className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background scroll-smooth scrollbar-gutter-stable">
-          <div className="flex-1 overflow-y-auto">
+          <div id="main-scroll-container" className="flex-1 overflow-y-auto">
             <Outlet />
           </div>
         </main>

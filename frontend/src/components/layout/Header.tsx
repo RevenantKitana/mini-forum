@@ -51,15 +51,15 @@ export function Header() {
   return (
     <header role="banner" className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur-md">
       <a href="#main-content" className="skip-to-main">Chuyển đến nội dung chính</a>
-      {/* h-14 on mobile, h-16 on sm+ | px-4 mobile (16px), px-responsive on sm+ */}
-      <div className="w-full flex h-14 sm:h-16 items-center px-4 sm:px-6 md:px-8 gap-2 sm:gap-4">
+      {/* h-12 on mobile (48px), h-16 on sm+ | px-3 mobile, px-responsive on sm+ */}
+      <div className="w-full flex h-12 sm:h-16 items-center px-3 sm:px-6 md:px-8 gap-2 sm:gap-4">
         {/* Mobile hamburger menu */}
         <MobileNav />
 
         {/* Logo - Left side */}
-        <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-all duration-200 flex-shrink-0 group">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
-            <MessageSquare className="h-5 w-5" />
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-all duration-200 flex-shrink-0 group">
+          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
+            <MessageSquare className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
           </div>
           <span className="font-extrabold text-lg sm:text-xl hidden sm:block tracking-tight">Forum</span>
         </Link>

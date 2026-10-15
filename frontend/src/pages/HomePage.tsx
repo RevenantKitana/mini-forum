@@ -205,7 +205,12 @@ export function HomePage() {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('page', newPage.toString());
     setSearchParams(newParams);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollContainer = document.getElementById('main-scroll-container');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Check if a base sort is currently active (either normal or reversed)
@@ -217,37 +222,49 @@ export function HomePage() {
   const hasDateFilter = dateFromParam || dateToParam;
 
   return (
-    <div className="flex flex-col h-full animate-fade-in-up">
-      {/* Sticky Header Section - full width */}
-      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md py-2.5 sm:py-3.5 px-3 sm:px-8 border-b border-border/30">
-        {/* Header - Dynamic based on selected category */}
-        <div className="flex items-center justify-between mb-2.5 sm:mb-3.5 flex-wrap gap-2 sm:gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {headerContent.icon ? (
-                <span className="text-2xl sm:text-3xl">{headerContent.icon}</span>
-              ) : categorySlug ? (
-                <Folder className="h-5 w-5 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
-              ) : (
-                <MessageSquare className="h-5 w-5 sm:h-7 sm:w-7 text-primary animate-float flex-shrink-0" />
-              )}
+    <div className="w-full pb-20 sm:pb-12 animate-fade-in">
+      {/* 1. Page Title & Category Info Header - Normal flow, scrolls away naturally */}
+      <div className="pt-3.5 sm:pt-6 pb-2 px-3 sm:px-8 max-w-5xl xl:max-w-6xl mx-auto w-full">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            {headerContent.icon ? (
+              <span className="text-2xl sm:text-3xl shrink-0">{headerContent.icon}</span>
+            ) : categorySlug ? (
+              <Folder className="h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0" />
+            ) : (
+              <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-primary animate-float shrink-0" />
+            )}
+            <div className="min-w-0">
               <h1 className="font-extrabold text-xl sm:text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
                 {headerContent.title}
-                {categorySlug && selectedCategory && (<span className="ml-2 text-sm sm:text-base font-normal text-muted-foreground">({selectedCategory.post_count})</span>)}
+                {categorySlug && selectedCategory && (
+                  <span className="ml-2 text-sm sm:text-base font-normal text-muted-foreground">({selectedCategory.post_count})</span>
+                )}
               </h1>
               {headerContent.description && (
-                <p className="hidden md:block flex-1 min-w-0 line-clamp-1 text-muted-foreground text-sm sm:text-base border-l border-border/40 pl-3.5">
+                <p className="line-clamp-1 text-muted-foreground text-xs sm:text-sm mt-0.5">
                   {headerContent.description}
                 </p>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-          {/* Sort buttons with toggle functionality - Borderless */}
-          <div className="flex items-center gap-1 bg-muted/60 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl w-full sm:w-auto">
+      {/* 2. Mobile Category Bar - In flow under title */}
+      <div className="px-3 sm:px-8 max-w-5xl xl:max-w-6xl mx-auto w-full">
+        <MobileCategoryBar
+          categories={visibleCategories}
+          activeCategory={categorySlug ?? null}
+          onSelect={handleMobileCategorySelect}
+        />
+      </div>
+
+      {/* 3. Sticky Filter & Sort Controls Bar - Ultra-compact single line (~40px) */}
+      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border/30 py-1.5 sm:py-2 px-3 sm:px-8 shadow-2xs">
+        <div className="max-w-5xl xl:max-w-6xl mx-auto w-full flex items-center justify-between gap-1.5 sm:gap-3">
+          {/* Left: Sort buttons with toggle */}
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/60 p-0.5 rounded-xl">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
               const isActive = isSortActive(baseSort);
               const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
@@ -260,22 +277,22 @@ export function HomePage() {
                   size="sm"
                   onClick={() => handleSortClick(baseSort)}
                   className={cn(
-                    "flex-1 sm:flex-initial gap-1 sm:gap-1.5 btn-press transition-all duration-200 px-2 sm:px-4 h-8.5 sm:h-10 text-xs sm:text-sm md:text-base font-semibold rounded-lg sm:rounded-xl",
+                    "gap-1 btn-press transition-all duration-200 px-2 sm:px-3.5 h-7.5 sm:h-8.5 text-xs sm:text-sm font-semibold rounded-lg",
                     isActive && "animate-tab-slide shadow-xs"
                   )}
                 >
                   <span className="shrink-0">{SORT_CONFIG[baseSort].icon}</span>
-                  <span className="truncate">{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  <span>{config?.label || SORT_CONFIG[baseSort].label}</span>
                   {isActive && (
-                    <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-0.5 opacity-70 shrink-0" />
+                    <ArrowUpDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-0.5 opacity-70 shrink-0" />
                   )}
                 </Button>
               );
             })}
           </div>
 
-          {/* Filters row: Date Filter + Tag Filter */}
-          <div className="flex items-center gap-1.5 sm:gap-2 sm:ml-auto flex-wrap sm:flex-nowrap">
+          {/* Right: Date Range Filter & Tag Filter in single line */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {/* Date Range Filter */}
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
@@ -283,22 +300,43 @@ export function HomePage() {
                   variant="ghost" 
                   size="sm" 
                   className={cn(
-                    "gap-1.5 h-8.5 sm:h-10 px-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl bg-muted/60 hover:bg-muted text-foreground transition-colors shrink-0",
-                    hasDateFilter && "bg-primary/10 text-primary border border-primary/20"
+                    "gap-1 sm:gap-1.5 h-7.5 sm:h-8.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold rounded-lg bg-muted/60 hover:bg-muted text-foreground transition-colors shrink-0",
+                    hasDateFilter && "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/15"
                   )}
                 >
-                  <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                  {hasDateFilter ? (
-                    <span className="text-xs sm:text-sm font-medium">
-                      {dateFromParam && format(new Date(dateFromParam), 'dd/MM', { locale: vi })}
-                      {dateToParam && ` - ${format(new Date(dateToParam), 'dd/MM', { locale: vi })}`}
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">
+                    {hasDateFilter ? (
+                      <>
+                        {dateFromParam && format(new Date(dateFromParam), 'dd/MM', { locale: vi })}
+                        {dateToParam && ` - ${format(new Date(dateToParam), 'dd/MM', { locale: vi })}`}
+                      </>
+                    ) : (
+                      'Thời gian'
+                    )}
+                  </span>
+                  {hasDateFilter && (
+                    <span className="sm:hidden text-xs">
+                      {dateFromParam ? format(new Date(dateFromParam), 'dd/MM', { locale: vi }) : 'Ngày'}
                     </span>
-                  ) : (
-                    <span className="text-xs sm:text-sm">Thời gian</span>
+                  )}
+                  {hasDateFilter && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="ml-0.5 p-0.5 rounded-full hover:bg-primary/20 cursor-pointer inline-flex items-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearDateFilter();
+                      }}
+                      title="Xóa lọc ngày"
+                    >
+                      <X className="h-3 w-3" />
+                    </span>
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-4" align="start">
+              <PopoverContent className="w-auto p-4" align="end">
                 <div className="space-y-4">
                   {/* Quick presets */}
                   <div className="flex flex-wrap gap-2">
@@ -349,18 +387,6 @@ export function HomePage() {
               </PopoverContent>
             </Popover>
 
-            {/* Active date filter badge */}
-            {hasDateFilter && (
-              <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in py-1 px-2.5 text-[11px] sm:text-xs font-medium rounded-lg shrink-0">
-                <CalendarDays className="h-3 w-3 shrink-0" />
-                <span>Thời gian</span>
-                <X 
-                  className="h-3.5 w-3.5 cursor-pointer hover:text-destructive transition-colors duration-200 shrink-0" 
-                  onClick={clearDateFilter}
-                />
-              </Badge>
-            )}
-
             {/* Tag Filter */}
             <TagFilterBar
               appliedTags={appliedTags}
@@ -371,15 +397,8 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Scrollable Posts List - Center Aligned for optimal whitespace reading */}
-      <div className="flex-1 overflow-y-auto pt-3 sm:pt-4 px-3 sm:px-6 md:px-8 pb-24 sm:pb-10">
-        <div className="max-w-5xl xl:max-w-6xl mx-auto w-full">
-          {/* Mobile Category Bar */}
-          <MobileCategoryBar
-            categories={visibleCategories}
-            activeCategory={categorySlug ?? null}
-            onSelect={handleMobileCategorySelect}
-          />
+      {/* 4. Posts List - Center Aligned for optimal whitespace reading */}
+      <div className="pt-3 sm:pt-4 px-3 sm:px-6 md:px-8 max-w-5xl xl:max-w-6xl mx-auto w-full">
           {/* Show restricted content message if user cannot view category */}
           {!canViewCategory && selectedCategory ? (
             <RestrictedContent
@@ -465,7 +484,6 @@ export function HomePage() {
             )}
           </div>
         )}
-        </div>
       </div>
 
       {/* Mobile FAB - create post, only for authenticated users */}
