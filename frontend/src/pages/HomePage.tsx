@@ -261,10 +261,10 @@ export function HomePage() {
       </div>
 
       {/* 3. Sticky Filter & Sort Controls Bar - Ultra-compact single line (~40px) */}
-      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border/30 py-1.5 sm:py-2 px-3 sm:px-8 shadow-2xs">
-        <div className="max-w-5xl xl:max-w-6xl mx-auto w-full flex items-center justify-between gap-1.5 sm:gap-3">
+      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border/30 py-1.5 sm:py-2 px-3 sm:px-8 shadow-2xs overflow-x-auto scrollbar-hide">
+        <div className="max-w-5xl xl:max-w-6xl mx-auto w-full flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
           {/* Left: Sort buttons with toggle */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/60 p-0.5 rounded-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/60 p-0.5 rounded-xl shrink-0">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
               const isActive = isSortActive(baseSort);
               const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
@@ -276,13 +276,16 @@ export function HomePage() {
                   variant={isActive ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => handleSortClick(baseSort)}
+                  title={config?.label || SORT_CONFIG[baseSort].label}
                   className={cn(
-                    "gap-1 btn-press transition-all duration-200 px-2 sm:px-3.5 h-7.5 sm:h-8.5 text-xs sm:text-sm font-semibold rounded-lg",
-                    isActive && "animate-tab-slide shadow-xs"
+                    "gap-1 btn-press transition-all duration-200 px-2 sm:px-3.5 h-7.5 sm:h-8.5 text-xs sm:text-sm font-semibold rounded-lg shrink-0",
+                    isActive && "animate-tab-slide shadow-xs px-2.5 sm:px-3.5"
                   )}
                 >
                   <span className="shrink-0">{SORT_CONFIG[baseSort].icon}</span>
-                  <span>{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  <span className={cn(isActive ? "inline" : "hidden sm:inline")}>
+                    {config?.label || SORT_CONFIG[baseSort].label}
+                  </span>
                   {isActive && (
                     <ArrowUpDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-0.5 opacity-70 shrink-0" />
                   )}
@@ -485,24 +488,6 @@ export function HomePage() {
           </div>
         )}
       </div>
-
-      {/* Mobile FAB - create post, only for authenticated users */}
-      {isAuthenticated && (
-        <div className="sm:hidden fixed bottom-5 right-4 z-40">
-          <PostFormDialog
-            mode="create"
-            trigger={
-              <Button
-                size="icon"
-                className="h-12 w-12 rounded-full shadow-lg btn-press bg-primary text-primary-foreground hover:scale-105 transition-transform flex items-center justify-center"
-                aria-label="Tạo bài viết mới"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            }
-          />
-        </div>
-      )}
     </div>
   );
 }

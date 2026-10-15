@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { RightSidebar } from './RightSidebar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { PinnedPostsModal } from '@/components/common/PinnedPostsModal';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -92,7 +93,7 @@ export function MainLayout() {
         
         {/* Main content - scrolls independently */}
         <main id="main-content" className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background scroll-smooth scrollbar-gutter-stable">
-          <div id="main-scroll-container" className="flex-1 overflow-y-auto">
+          <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden">
             <Outlet />
           </div>
         </main>
@@ -105,6 +106,7 @@ export function MainLayout() {
         )}
       </div>
       <PinnedPostsModal />
+      <MobileBottomNav />
     </div>
   );
 }
