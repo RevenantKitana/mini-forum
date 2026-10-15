@@ -10,7 +10,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+    max: 20, // Tuned pool limit: 20 concurrent connections for 1 OCPU
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
   const client = new PrismaClient({
     adapter,
     log: [
