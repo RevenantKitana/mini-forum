@@ -344,10 +344,12 @@ export function PostDetailPage() {
                   );
                 })()}
               </Link>
-              <span>•</span>
-              <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
-              <span>•</span>
-              <div className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1.5 shrink-0">
+                <span className="text-muted-foreground/40 font-bold">•</span>
+                <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+              </span>
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                <span className="text-muted-foreground/40 font-bold">•</span>
                 <Eye className="h-4 w-4" />
                 <span>{post.view_count} lượt xem</span>
               </div>

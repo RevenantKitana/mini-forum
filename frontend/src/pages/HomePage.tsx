@@ -219,21 +219,21 @@ export function HomePage() {
   return (
     <div className="flex flex-col h-full animate-fade-in-up">
       {/* Sticky Header Section - full width */}
-      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md py-3.5 px-4 sm:px-8 border-b border-border/30">
+      <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md py-2.5 sm:py-3.5 px-3 sm:px-8 border-b border-border/30">
         {/* Header - Dynamic based on selected category */}
-        <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2 sm:gap-4">
+        <div className="flex items-center justify-between mb-2.5 sm:mb-3.5 flex-wrap gap-2 sm:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {headerContent.icon ? (
-                <span className="text-3xl">{headerContent.icon}</span>
+                <span className="text-2xl sm:text-3xl">{headerContent.icon}</span>
               ) : categorySlug ? (
-                <Folder className="h-7 w-7 text-primary flex-shrink-0" />
+                <Folder className="h-5 w-5 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
               ) : (
-                <MessageSquare className="h-7 w-7 text-primary animate-float flex-shrink-0" />
+                <MessageSquare className="h-5 w-5 sm:h-7 sm:w-7 text-primary animate-float flex-shrink-0" />
               )}
-              <h1 className="font-extrabold text-2xl sm:text-3xl text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
+              <h1 className="font-extrabold text-xl sm:text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100 tracking-tight truncate">
                 {headerContent.title}
-                {categorySlug && selectedCategory && (<span className="ml-2 text-base font-normal text-muted-foreground">({selectedCategory.post_count})</span>)}
+                {categorySlug && selectedCategory && (<span className="ml-2 text-sm sm:text-base font-normal text-muted-foreground">({selectedCategory.post_count})</span>)}
               </h1>
               {headerContent.description && (
                 <p className="hidden md:block flex-1 min-w-0 line-clamp-1 text-muted-foreground text-sm sm:text-base border-l border-border/40 pl-3.5">
@@ -245,9 +245,9 @@ export function HomePage() {
         </div>
 
         {/* Sort Tabs with Toggle + Date Filter */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* Sort buttons with toggle functionality - Borderless */}
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl">
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl w-full sm:w-auto">
             {(['popular', 'latest', 'trending'] as const).map((baseSort) => {
               const isActive = isSortActive(baseSort);
               const isReversed = SORT_CONFIG[sortParam]?.isReverse && isSortActive(baseSort);
@@ -260,112 +260,119 @@ export function HomePage() {
                   size="sm"
                   onClick={() => handleSortClick(baseSort)}
                   className={cn(
-                    "gap-1.5 btn-press transition-all duration-200 px-4 h-10 text-sm sm:text-base font-semibold rounded-xl",
+                    "flex-1 sm:flex-initial gap-1 sm:gap-1.5 btn-press transition-all duration-200 px-2 sm:px-4 h-8.5 sm:h-10 text-xs sm:text-sm md:text-base font-semibold rounded-lg sm:rounded-xl",
                     isActive && "animate-tab-slide shadow-xs"
                   )}
                 >
-                  {SORT_CONFIG[baseSort].icon}
-                  <span>{config?.label || SORT_CONFIG[baseSort].label}</span>
+                  <span className="shrink-0">{SORT_CONFIG[baseSort].icon}</span>
+                  <span className="truncate">{config?.label || SORT_CONFIG[baseSort].label}</span>
                   {isActive && (
-                    <ArrowUpDown className="h-4 w-4 ml-0.5 opacity-70 flex-shrink-0" />
+                    <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-0.5 opacity-70 shrink-0" />
                   )}
                 </Button>
               );
             })}
           </div>
-          <div className="ml-auto flex items-center gap-2">
-          {/* Date Range Filter */}
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 h-10 px-4 text-sm sm:text-base font-semibold rounded-xl bg-muted/60 hover:bg-muted text-foreground">
-                <CalendarDays className="h-4.5 w-4.5" />
-                {hasDateFilter ? (
-                  <span className="text-sm">
-                    {dateFromParam && format(new Date(dateFromParam), 'dd/MM/yy', { locale: vi })}
-                    {' - '}
-                    {dateToParam && format(new Date(dateToParam), 'dd/MM/yy', { locale: vi })}
-                  </span>
-                ) : (
-                  <span className="hidden sm:inline">Khoảng thời gian</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" align="start">
-              <div className="space-y-4">
-                {/* Quick presets */}
-                <div className="flex flex-wrap gap-2">
-                  {DATE_PRESETS.map((preset) => (
-                    <Badge
-                      key={preset.label}
-                      variant="outline"
+
+          {/* Filters row: Date Filter + Tag Filter */}
+          <div className="flex items-center gap-1.5 sm:gap-2 sm:ml-auto flex-wrap sm:flex-nowrap">
+            {/* Date Range Filter */}
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "gap-1.5 h-8.5 sm:h-10 px-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl bg-muted/60 hover:bg-muted text-foreground transition-colors shrink-0",
+                    hasDateFilter && "bg-primary/10 text-primary border border-primary/20"
+                  )}
+                >
+                  <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                  {hasDateFilter ? (
+                    <span className="text-xs sm:text-sm font-medium">
+                      {dateFromParam && format(new Date(dateFromParam), 'dd/MM', { locale: vi })}
+                      {dateToParam && ` - ${format(new Date(dateToParam), 'dd/MM', { locale: vi })}`}
+                    </span>
+                  ) : (
+                    <span className="text-xs sm:text-sm">Thời gian</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="start">
+                <div className="space-y-4">
+                  {/* Quick presets */}
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_PRESETS.map((preset) => (
+                      <Badge
+                        key={preset.label}
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press text-xs sm:text-sm font-medium rounded-lg px-2.5 py-1"
+                        onClick={() => {
+                          const range = preset.getValue();
+                          setDateRange(range);
+                          applyDateFilter(range.from, range.to);
+                        }}
+                      >
+                        {preset.label}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {/* Calendar picker */}
+                  <Calendar
+                    mode="range"
+                    selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
+                    onSelect={(range) => {
+                      if (range) {
+                        setDateRange({ from: range.from, to: range.to });
+                      }
+                    }}
+                    locale={vi}
+                    numberOfMonths={1}
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
                       size="sm"
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 btn-press text-xs sm:text-sm font-medium rounded-lg px-2.5 py-1"
-                      onClick={() => {
-                        const range = preset.getValue();
-                        setDateRange(range);
-                        applyDateFilter(range.from, range.to);
-                      }}
+                      className="btn-interactive h-9 sm:h-10 text-xs sm:text-base font-semibold rounded-xl"
+                      onClick={() => applyDateFilter(dateRange.from, dateRange.to)}
+                      disabled={!dateRange.from}
                     >
-                      {preset.label}
-                    </Badge>
-                  ))}
+                      Áp dụng
+                    </Button>
+                    <Button size="sm" variant="ghost" className="btn-press h-9 sm:h-10 text-xs sm:text-base font-semibold rounded-xl" onClick={clearDateFilter}>
+                      Xóa bộ lọc
+                    </Button>
+                  </div>
                 </div>
-                
-                {/* Calendar picker */}
-                <Calendar
-                  mode="range"
-                  selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
-                  onSelect={(range) => {
-                    if (range) {
-                      setDateRange({ from: range.from, to: range.to });
-                    }
-                  }}
-                  locale={vi}
-                  numberOfMonths={1}
+              </PopoverContent>
+            </Popover>
+
+            {/* Active date filter badge */}
+            {hasDateFilter && (
+              <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in py-1 px-2.5 text-[11px] sm:text-xs font-medium rounded-lg shrink-0">
+                <CalendarDays className="h-3 w-3 shrink-0" />
+                <span>Thời gian</span>
+                <X 
+                  className="h-3.5 w-3.5 cursor-pointer hover:text-destructive transition-colors duration-200 shrink-0" 
+                  onClick={clearDateFilter}
                 />
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="btn-interactive h-10 text-sm sm:text-base font-semibold rounded-xl"
-                    onClick={() => applyDateFilter(dateRange.from, dateRange.to)}
-                    disabled={!dateRange.from}
-                  >
-                    Áp dụng
-                  </Button>
-                  <Button size="sm" variant="ghost" className="btn-press h-10 text-sm sm:text-base font-semibold rounded-xl" onClick={clearDateFilter}>
-                    Xóa bộ lọc
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </Badge>
+            )}
+
+            {/* Tag Filter */}
+            <TagFilterBar
+              appliedTags={appliedTags}
+              onApply={handleTagsApply}
+              onClear={handleTagsClear}
+            />
           </div>
-
-          {/* Active date filter badge */}
-          {hasDateFilter && (
-            <Badge variant="secondary" size="sm" className="gap-1.5 animate-pop-in py-2 px-3.5 text-xs sm:text-sm font-medium rounded-xl">
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">Đang lọc theo thời gian</span>
-              <span className="sm:hidden">Thời gian</span>
-              <X 
-                className="h-4 w-4 cursor-pointer hover:text-destructive transition-colors duration-200" 
-                onClick={clearDateFilter}
-              />
-            </Badge>
-          )}
-
-          {/* Tag Filter */}
-          <TagFilterBar
-            appliedTags={appliedTags}
-            onApply={handleTagsApply}
-            onClear={handleTagsClear}
-          />
         </div>
       </div>
 
       {/* Scrollable Posts List - Center Aligned for optimal whitespace reading */}
-      <div className="flex-1 overflow-y-auto pt-4 px-4 sm:px-6 md:px-8 pb-10">
+      <div className="flex-1 overflow-y-auto pt-3 sm:pt-4 px-3 sm:px-6 md:px-8 pb-24 sm:pb-10">
         <div className="max-w-5xl xl:max-w-6xl mx-auto w-full">
           {/* Mobile Category Bar */}
           <MobileCategoryBar
@@ -469,10 +476,10 @@ export function HomePage() {
             trigger={
               <Button
                 size="icon"
-                className="h-14 w-14 rounded-full shadow-lg btn-press"
+                className="h-12 w-12 rounded-full shadow-lg btn-press bg-primary text-primary-foreground hover:scale-105 transition-transform flex items-center justify-center"
                 aria-label="Tạo bài viết mới"
               >
-                <MessageSquare className="h-6 w-6" />
+                <MessageSquare className="h-5 w-5" />
               </Button>
             }
           />

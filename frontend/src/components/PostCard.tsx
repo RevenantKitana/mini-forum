@@ -74,72 +74,73 @@ export function PostCard({ post }: PostCardProps) {
   }, [post.excerpt, post.content]);
 
   return (
-    <Card className="group relative overflow-hidden bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_6px_18px_rgba(0,0,0,0.45)] transition-all duration-200 flex flex-col p-5 sm:p-7 space-y-4">
+    <Card className="group relative overflow-hidden bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_6px_18px_rgba(0,0,0,0.45)] transition-all duration-200 flex flex-col p-3.5 sm:p-6 space-y-3 sm:space-y-4">
       {/* Top Meta Line: Category • Author • Time • Pin/Lock */}
-      <div className="flex items-center justify-between gap-2.5 text-sm sm:text-base text-muted-foreground flex-wrap">
-        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+      <div className="flex items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
           {post.category && (
             <Link
               to={`/?category=${post.category.slug}`}
-              className="inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm uppercase tracking-wider text-foreground hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1.5 font-bold text-[11px] sm:text-xs uppercase tracking-wider text-foreground hover:text-primary transition-colors shrink-0"
             >
               {post.category.color && (
                 <span
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: post.category.color }}
                 />
               )}
-              <span>{post.category.name}</span>
+              <span className="truncate max-w-[120px] sm:max-w-none">{post.category.name}</span>
             </Link>
           )}
-
-          <span className="text-muted-foreground/40 font-bold">•</span>
 
           {post.author && (
-            <Link
-              to={`/users/${post.author.username}`}
-              className="inline-flex items-center gap-2 hover:text-foreground transition-colors group/author"
-            >
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsAvatarModalOpen(true); }}
-                className="flex-shrink-0 rounded-full"
-                aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+            <div className="inline-flex items-center gap-1.5 shrink-0">
+              <span className="text-muted-foreground/40 font-bold">•</span>
+              <Link
+                to={`/users/${post.author.username}`}
+                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors group/author"
               >
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover/author:scale-105 ring-1 ring-border/50">
-                  <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
-                  <AvatarFallback className="text-xs font-semibold">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </button>
-              <span className="font-semibold text-sm sm:text-base text-foreground truncate max-w-[160px] sm:max-w-[240px]">
-                {authorDisplayName}
-              </span>
-            </Link>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsAvatarModalOpen(true); }}
+                  className="shrink-0 rounded-full"
+                  aria-label={`Xem ảnh đại diện của ${authorDisplayName}`}
+                >
+                  <Avatar className="h-6 w-6 sm:h-7 sm:w-7 transition-transform group-hover/author:scale-105 ring-1 ring-border/50">
+                    <AvatarImage src={authorAvatar || undefined} alt={authorDisplayName} />
+                    <AvatarFallback className="text-[10px] font-semibold">{authorDisplayName[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+                <span className="font-semibold text-xs sm:text-sm text-foreground truncate max-w-[110px] sm:max-w-[200px]">
+                  {authorDisplayName}
+                </span>
+              </Link>
+              {getAuthorBadge()}
+            </div>
           )}
 
-          {getAuthorBadge()}
-
-          <span className="text-muted-foreground/40 font-bold">•</span>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-xs sm:text-sm text-muted-foreground cursor-default">
-                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
-              {format(new Date(post.created_at), 'dd/MM/yyyy HH:mm')}
-            </TooltipContent>
-          </Tooltip>
+          <div className="inline-flex items-center gap-1.5 shrink-0">
+            <span className="text-muted-foreground/40 font-bold">•</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[11px] sm:text-xs text-muted-foreground cursor-default whitespace-nowrap">
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: vi })}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {format(new Date(post.created_at), 'dd/MM/yyyy HH:mm')}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Pin & Lock indicators */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {post.is_pinned && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">
-                  <Pin className="h-3.5 w-3.5" />
+                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                  <Pin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span className="hidden sm:inline">Ghim</span>
                 </span>
               </TooltipTrigger>
@@ -168,15 +169,15 @@ export function PostCard({ post }: PostCardProps) {
           onClick={() => trackPostInteraction('click', post.id, { title: post.title })}
           className="block group/title"
         >
-          <h3 className="text-lg sm:text-xl font-bold leading-snug tracking-tight text-foreground group-hover/title:text-primary transition-colors">
+          <h3 className="text-base sm:text-lg md:text-xl font-bold leading-snug tracking-tight text-foreground group-hover/title:text-primary transition-colors">
             {decodedTitle}
           </h3>
         </Link>
       </div>
 
       {/* Excerpt Content */}
-      <div className="flex gap-3.5 items-start justify-between flex-1">
-        <p className="text-sm sm:text-[15px] leading-relaxed text-muted-foreground/90 line-clamp-3">
+      <div className="flex gap-3 items-start justify-between flex-1">
+        <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground/90 line-clamp-2 sm:line-clamp-3">
           {decodedExcerpt}
         </p>
 
@@ -188,10 +189,10 @@ export function PostCard({ post }: PostCardProps) {
                 onClick={() => setIsImageModalOpen(true)}
                 onMouseEnter={() => setShowImageTooltip(true)}
                 onMouseLeave={() => setShowImageTooltip(false)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted transition-colors cursor-pointer text-xs sm:text-sm font-medium"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-muted transition-colors cursor-pointer text-xs font-medium"
                 aria-label={`${post.mediaCount} image(s) in this post`}
               >
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-foreground font-semibold">{post.mediaCount}</span>
               </button>
             </TooltipTrigger>
@@ -205,7 +206,7 @@ export function PostCard({ post }: PostCardProps) {
                         key={img.id}
                         src={url}
                         alt=""
-                        className="block h-28 w-auto flex-shrink-0 rounded-lg object-cover"
+                        className="block h-28 w-auto shrink-0 rounded-lg object-cover"
                         loading="lazy"
                       />
                     ) : null;
@@ -219,27 +220,27 @@ export function PostCard({ post }: PostCardProps) {
 
       {/* Tags Row */}
       {post.tags && post.tags.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {post.tags.slice(0, 5).map((tag) => (
             <Link
               key={tag.id}
               to={`/?tag=${tag.slug}`}
-              className="text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              className="text-[11px] sm:text-xs font-medium px-2.5 py-1 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               #{tag.name}
             </Link>
           ))}
           {post.tags.length > 5 && (
-            <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+            <span className="text-[11px] sm:text-xs text-muted-foreground font-medium">
               +{post.tags.length - 5}
             </span>
           )}
         </div>
       )}
 
-      {/* Bottom Action Bar - Spacing-based separation */}
-      <div className="pt-2 flex items-center justify-between text-sm sm:text-base text-muted-foreground">
-        <div className="flex items-center gap-3 sm:gap-4">
+      {/* Bottom Action Bar */}
+      <div className="pt-1 sm:pt-2 flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 sm:gap-3">
           <VoteButtons
             targetId={post.id}
             targetType="post"
@@ -252,15 +253,15 @@ export function PostCard({ post }: PostCardProps) {
 
           <Link
             to={`/posts/${post.id}#comments`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl hover:bg-muted/70 hover:text-foreground transition-colors font-medium text-xs sm:text-sm"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg hover:bg-muted/70 hover:text-foreground transition-colors font-medium text-xs sm:text-sm"
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="tabular-nums font-semibold">{post.comment_count}</span>
             <span className="hidden sm:inline">thảo luận</span>
           </Link>
 
-          <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-muted-foreground font-medium text-xs sm:text-sm">
-            <Eye className="h-4 w-4" />
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-muted-foreground font-medium text-xs sm:text-sm">
+            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="tabular-nums font-semibold">{post.view_count}</span>
           </span>
         </div>

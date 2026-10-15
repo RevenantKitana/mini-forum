@@ -15,47 +15,60 @@ interface MobileCategoryBarProps {
 
 export function MobileCategoryBar({ categories, activeCategory, onSelect }: MobileCategoryBarProps) {
   return (
-    <div
-      className="md:hidden overflow-x-auto whitespace-nowrap pb-2 -mx-3 px-3 scrollbar-hide"
-      style={{ WebkitOverflowScrolling: 'touch' }}
-      role="tablist"
-      aria-label="Danh mục"
-    >
-      {/* "Tất cả" pill */}
-      <button
-        role="tab"
-        aria-selected={!activeCategory}
-        onClick={() => onSelect(null)}
-        className={cn(
-          "inline-flex items-center justify-center h-9 px-4 rounded-lg text-xs font-medium border transition-colors mr-1",
-          !activeCategory
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-background border-border text-foreground hover:bg-muted"
-        )}
+    <div className="md:hidden w-full relative mb-3">
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-1 pt-0.5 -mx-3 px-3 sm:-mx-4 sm:px-4 scrollbar-hide scroll-smooth"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+        role="tablist"
+        aria-label="Danh mục"
       >
-        Tất cả
-      </button>
-
-      {categories.map((cat, i) => (
+        {/* "Tất cả" pill */}
         <button
-          key={cat.id}
           role="tab"
-          aria-selected={activeCategory === cat.slug}
-          onClick={() => onSelect(cat.slug)}
+          aria-selected={!activeCategory}
+          onClick={() => onSelect(null)}
           className={cn(
-            "inline-flex items-center justify-center gap-1 h-9 px-4 rounded-lg text-xs font-medium border transition-colors",
-            i < categories.length - 1 ? "mr-1" : "",
-            activeCategory === cat.slug
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background border-border text-foreground hover:bg-muted"
+            "inline-flex items-center justify-center shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold border transition-all duration-200 shadow-2xs",
+            !activeCategory
+              ? "bg-primary text-primary-foreground border-primary shadow-xs"
+              : "bg-muted/50 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted"
           )}
         >
-          <span>{cat.name}</span>
-          {cat.post_count > 0 && (
-            <span className="text-[10px] opacity-60">({cat.post_count})</span>
-          )}
+          Tất cả
         </button>
-      ))}
+
+        {categories.map((cat) => {
+          const isSelected = activeCategory === cat.slug;
+          return (
+            <button
+              key={cat.id}
+              role="tab"
+              aria-selected={isSelected}
+              onClick={() => onSelect(cat.slug)}
+              className={cn(
+                "inline-flex items-center justify-center shrink-0 gap-1.5 h-8 px-3.5 rounded-full text-xs font-semibold border transition-all duration-200 shadow-2xs",
+                isSelected
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                  : "bg-muted/50 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <span>{cat.name}</span>
+              {cat.post_count > 0 && (
+                <span className={cn(
+                  "text-[10px] tabular-nums font-normal px-1 rounded-full",
+                  isSelected
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "text-muted-foreground/80 bg-background/60"
+                )}>
+                  {cat.post_count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        {/* Trailing spacer for smooth scrolling padding */}
+        <div className="w-3 shrink-0" aria-hidden="true" />
+      </div>
     </div>
   );
 }

@@ -58,13 +58,16 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
     <>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="gap-2 h-10 px-4 text-sm sm:text-base font-semibold rounded-xl bg-muted/60 hover:bg-muted text-foreground">
-            <TagIcon className="h-4.5 w-4.5" />
-            {hasActiveFilter ? (
-              <span className="text-sm">{appliedTags.length} tag</span>
-            ) : (
-              <span className="hidden sm:inline">Tags</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "gap-1.5 h-8.5 sm:h-10 px-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl bg-muted/60 hover:bg-muted text-foreground transition-colors shrink-0",
+              hasActiveFilter && "bg-primary/10 text-primary border border-primary/20"
             )}
+          >
+            <TagIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span>{hasActiveFilter ? `${appliedTags.length} tag` : 'Tags'}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[min(360px,calc(100vw-2rem))] p-4 rounded-2xl border border-border/40 shadow-xl" align="start">
@@ -148,11 +151,11 @@ export function TagFilterBar({ appliedTags, onApply, onClear }: TagFilterBarProp
 
       {/* Show active tag badges */}
       {hasActiveFilter && (
-        <Badge variant="secondary" size="sm" className="gap-1.5 animate-pop-in py-2 px-3.5 text-xs sm:text-sm font-medium rounded-xl">
-          <TagIcon className="h-4 w-4" />
-          {appliedTags.length} tag đang lọc
+        <Badge variant="secondary" size="sm" className="gap-1 animate-pop-in py-1 px-2.5 text-[11px] sm:text-xs font-medium rounded-lg shrink-0">
+          <TagIcon className="h-3 w-3 shrink-0" />
+          <span>{appliedTags.length} tag đang lọc</span>
           <X
-            className="h-4 w-4 cursor-pointer hover:text-destructive transition-colors duration-200"
+            className="h-3.5 w-3.5 cursor-pointer hover:text-destructive transition-colors duration-200 shrink-0"
             onClick={onClear}
           />
         </Badge>
