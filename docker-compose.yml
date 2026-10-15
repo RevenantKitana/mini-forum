@@ -1,0 +1,94 @@
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "20m"
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *default-logging
+    image: postgres:17-alpine
+    container_name: mini-forum-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-forum_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-forum_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-mini_forum}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forum_user} -d ${POSTGRES_DB:-mini_forum}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - forum-net
+
+  backend:
+    <<: *default-logging
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mini-forum-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+    ports:
+      # Expose to localhost only (Cloudflare tunnel or reverse proxy connects here)
+      - "127.0.0.1:5000:5000"
+    networks:
+      - forum-net
+
+  vibe-content:
+    <<: *default-logging
+    build:
+      context: ./vibe-content
+      dockerfile: Dockerfile
+    container_name: mini-forum-vibe
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+      FORUM_API_URL: http://backend:5000/api/v1
+    ports:
+      # Expose to localhost only
+      - "127.0.0.1:4000:4000"
+    networks:
+      - forum-net
+
+  # Optional Cloudflare Tunnel service
+  # Run with: docker compose --profile tunnel up -d
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: mini-forum-tunnel
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    networks:
+      - forum-net
+
+volumes:
+  postgres_data:
+    name: mini_forum_postgres_data
+
+networks:
+  forum-net:
+    name: mini_forum_network
+    driver: bridge
