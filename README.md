@@ -9,6 +9,7 @@
 mini-forum/
 ├── frontend/        # Giao diện người dùng (React + Vite)
 ├── admin-client/    # Trang quản trị (React + Vite)
+├── mobile/          # Ứng dụng di động (React Native + Expo iOS/Android)
 ├── backend/         # API Server (Express + Prisma + PostgreSQL)
 ├── vibe-content/    # Dịch vụ sinh nội dung AI (Gemini + multi-LLM)
 └── docs/            # Tài liệu dự án
@@ -19,6 +20,7 @@ mini-forum/
 | **Backend** | Express, Prisma, PostgreSQL | 5000 | REST API server, xác thực JWT, quản lý dữ liệu |
 | **Frontend** | React 18, Vite, TailwindCSS | 5173 | Giao diện diễn đàn cho người dùng |
 | **Admin Client** | React 18, Vite, Radix UI | 5174 | Bảng điều khiển quản trị viên |
+| **Mobile App** | React Native, Expo, React Navigation | 8081 | Ứng dụng di động iOS/Android (chạy qua Expo QR) |
 | **Vibe Content** | Express, Gemini AI, Cron | 4000 | Bot tự động sinh bài viết, bình luận, vote |
 
 ## Tính năng chính
