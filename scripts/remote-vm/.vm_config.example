@@ -1,22 +1,42 @@
 # ==============================================================================
-# Mini Forum - Remote VM Configuration Overrides (.vm_config)
-# Copy this file to scripts/remote-vm/.vm_config to override default settings.
-# This file is gitignored.
+# MINI FORUM - CẤU HÌNH KẾT NỐI VÀ DEPLOY MÁY CHỦ (.vm_config)
+# Sao chép file này thành: scripts/remote-vm/.vm_config để ghi đè thiết lập mặc định.
+# File .vm_config đã được cấu hình trong .gitignore.
 # ==============================================================================
 
-# IP Address of your Oracle Cloud VM
-VM_IP="134.185.83.12"
+# ------------------------------------------------------------------------------
+# 1. THÔNG TIN KẾT NỐI SSH TỚI MÁY CHỦ (VM)
+# ------------------------------------------------------------------------------
+# Địa chỉ IP của máy chủ VM (Oracle Cloud / VPS)
+VM_IP="168.107.81.70"
 
-# SSH Username (usually ubuntu for Ubuntu images)
+# Tên người dùng SSH (mặc định trên Ubuntu là "ubuntu")
 VM_USER="ubuntu"
 
-# Path to your private key file (.key or .pem)
-KEY_FILE="$REPO_ROOT/134.185.83.12.key"
+# Đường dẫn file SSH Private Key dùng để đăng nhập vào VM
+# Lưu ý: $REPO_ROOT đại diện cho thư mục gốc của dự án (mini-forum)
+KEY_FILE="$REPO_ROOT/168.107.81.70.key"
 
-# Remote directory where mini-forum will be deployed
+# Thư mục lưu mã nguồn dự án trên máy chủ
 REMOTE_APP_DIR="/home/ubuntu/mini-forum"
 
-# Compose file to use:
-# - docker-compose.yml       -> Standard profile (for high-RAM VM, e.g. ARM64 24GB)
-# - docker-compose.micro.yml -> Low-resource profile (for VM.Standard.E2.1.Micro 1GB RAM)
+
+# ------------------------------------------------------------------------------
+# 2. CHỌN CHẾ ĐỘ DEPLOY / CẤU HÌNH TÀI NGUYÊN (COMPOSE PROFILE)
+# ------------------------------------------------------------------------------
+# Bật 1 trong 2 lựa chọn bên dưới tùy thuộc vào dung lượng RAM của máy chủ:
+
+# >>> [LỰA CHỌN A] Máy cấu hình thấp (1GB RAM - AMD EPYC VM.Standard.E2.1.Micro)
+# - Build tuần tự từng container (Backend -> Vibe) để không làm nghẽn CPU 1/8 OCPU.
+# - PostgreSQL: shared_buffers=64MB, giới hạn cứng 200MB RAM.
+# - Backend: --max-old-space-size=256, giới hạn cứng 320MB RAM.
+# - Vibe-content: --max-old-space-size=180, giới hạn cứng 240MB RAM.
+# - Tổng RAM thực dùng chỉ ~250MB - 350MB, tuyệt đối chống crash/OOM.
 COMPOSE_FILE="docker-compose.micro.yml"
+
+# >>> [LỰA CHỌN B] Máy cấu hình cao (RAM >= 4GB, ví dụ Oracle ARM 4 core 24GB RAM)
+# - Build song song BuildKit siêu nhanh cho tất cả container cùng lúc.
+# - PostgreSQL: shared_buffers=1GB, cache 4GB, max_connections=100.
+# - Node.js: --max-old-space-size=1024, không siết giới hạn bộ nhớ.
+# Để chuyển sang chế độ này: Bỏ comment dòng bên dưới và đóng comment dòng LỰA CHỌN A ở trên:
+# COMPOSE_FILE="docker-compose.yml"
