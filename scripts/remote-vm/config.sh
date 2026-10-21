@@ -7,11 +7,17 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# VM Connection Info (can be overridden via environment variables)
+# Optional local override file (ignored by git if needed)
+if [ -f "$SCRIPT_DIR/.vm_config" ]; then
+  source "$SCRIPT_DIR/.vm_config"
+fi
+
+# VM Connection Info (can be overridden via environment variables or .vm_config)
 VM_IP="${VM_IP:-134.185.83.12}"
 VM_USER="${VM_USER:-ubuntu}"
 KEY_FILE="${KEY_FILE:-$REPO_ROOT/134.185.83.12.key}"
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/ubuntu/mini-forum}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 
 # Standard SSH & SCP command wrappers
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"

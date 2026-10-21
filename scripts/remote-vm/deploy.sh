@@ -7,6 +7,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/config.sh"
 
+# Check if --micro profile is requested
+if [ "$1" == "--micro" ] || [ "$COMPOSE_FILE" == "docker-compose.micro.yml" ]; then
+  exec "$SCRIPT_DIR/deploy_micro.sh" "$@"
+fi
+
 cd "$REPO_ROOT"
 
 print_info "=================================================="
@@ -30,7 +35,7 @@ fi
 EOF
 
 # Transfer files using tar pipe over SSH (skipping heavy folders)
-print_info "Streaming project files to VM (backend, vibe-content, docker-compose.yml)..."
+print_info "Streaming project files to VM (backend, vibe-content, compose configs)..."
 tar --exclude='node_modules' \
     --exclude='dist' \
     --exclude='.git' \
@@ -40,7 +45,7 @@ tar --exclude='node_modules' \
     --exclude='logs' \
     --exclude='*.log' \
     -czf - \
-    backend vibe-content docker-compose.yml .env.production.example | \
+    backend vibe-content docker-compose.yml docker-compose.micro.yml .env.production.example | \
     ssh -i "$KEY_FILE" $SSH_OPTS "${VM_USER}@${VM_IP}" "tar -xzf - -C $REMOTE_APP_DIR"
 
 # Sync .env if user has a root .env file

@@ -1,0 +1,22 @@
+# ==============================================================================
+# Mini Forum - Remote VM Configuration Overrides (.vm_config)
+# Copy this file to scripts/remote-vm/.vm_config to override default settings.
+# This file is gitignored.
+# ==============================================================================
+
+# IP Address of your Oracle Cloud VM
+VM_IP="134.185.83.12"
+
+# SSH Username (usually ubuntu for Ubuntu images)
+VM_USER="ubuntu"
+
+# Path to your private key file (.key or .pem)
+KEY_FILE="$REPO_ROOT/134.185.83.12.key"
+
+# Remote directory where mini-forum will be deployed
+REMOTE_APP_DIR="/home/ubuntu/mini-forum"
+
+# Compose file to use:
+# - docker-compose.yml       -> Standard profile (for high-RAM VM, e.g. ARM64 24GB)
+# - docker-compose.micro.yml -> Low-resource profile (for VM.Standard.E2.1.Micro 1GB RAM)
+COMPOSE_FILE="docker-compose.micro.yml"

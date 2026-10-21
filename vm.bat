@@ -30,15 +30,20 @@ if "%1"=="8" goto op_bootstrap
 if "%1"=="bootstrap" goto op_bootstrap
 if "%1"=="9" goto op_reset
 if "%1"=="reset" goto op_reset
+if /i "%1"=="m" goto op_deploy_micro
+if /i "%1"=="micro" goto op_deploy_micro
+if /i "%1"=="deploy-micro" goto op_deploy_micro
+if /i "%1"=="s" goto op_setup_micro
+if /i "%1"=="setup-micro" goto op_setup_micro
 
 :menu
 cls
 echo =====================================================================
 echo                 MINI FORUM - REMOTE VM CONTROL CENTER
-echo                 Server: ubuntu@134.185.83.12 (OCI ARM64)
+echo                 Server: ubuntu@134.185.83.12 (OCI)
 echo =====================================================================
 echo.
-echo   [1] Deploy / Update Code       - Sync code, build va reload containers
+echo   [1] Deploy / Update Code       - Sync code, build va reload (Standard)
 echo   [2] Check System Status        - Kiem tra CPU, RAM, Swap, Disk, Docker
 echo   [3] View Backend Logs          - Theo doi live logs Backend API
 echo   [4] View Vibe-Content Logs     - Theo doi live logs AI Bot va Cron
@@ -47,12 +52,18 @@ echo   [6] Restore Database to VM     - Nap ban dump local len PostgreSQL VM
 echo   [7] Quick SSH Console          - Mo truc tiep terminal SSH vao VM
 echo   [8] Master Bootstrap           - Chay tron ven tu Zero den Production
 echo   [9] Clean / Reset VM Docker    - Don dep cache, prune docker
-echo   [0] Exit                       - Thoat
 echo.
+echo   --- Cấu hình VM Cấu Hình Thấp (1GB RAM - VM.Standard.E2.1.Micro) ---
+echo   [M] Deploy Micro VM (1GB RAM)  - Build tuần tự + docker-compose.micro.yml
+echo   [S] Setup Micro VM             - Tạo 4GB Swap + tối ưu sysctl cho 1GB RAM
+echo.
+echo   [0] Exit                       - Thoat
 echo =====================================================================
-choice /C 1234567890 /N /M "  Nhap phim [0-9]: "
+choice /C 123456789MS0 /N /M "  Nhap phim [0-9 / M / S]: "
 
-if errorlevel 10 goto op_exit
+if errorlevel 12 goto op_exit
+if errorlevel 11 goto op_setup_micro
+if errorlevel 10 goto op_deploy_micro
 if errorlevel 9 goto op_reset
 if errorlevel 8 goto op_bootstrap
 if errorlevel 7 goto op_ssh
@@ -145,6 +156,23 @@ cls
 echo [INFO] Reset / Don dep Docker cache...
 echo.
 "%BASH_PATH%" scripts/remote-vm/reset_vm.sh
+echo.
+:op_deploy_micro
+cls
+echo [INFO] Dang deploy voi cau hinh Micro VM (1GB RAM)...
+echo.
+"%BASH_PATH%" scripts/remote-vm/deploy_micro.sh
+echo.
+pause
+goto menu
+
+:op_setup_micro
+cls
+echo =====================================================================
+echo  SETUP MICRO VM (1GB RAM): Tao 4GB Swap + Toi uu Linux Kernel
+echo =====================================================================
+echo.
+"%BASH_PATH%" scripts/remote-vm/setup_micro_vm.sh
 echo.
 pause
 goto menu

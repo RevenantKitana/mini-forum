@@ -1,0 +1,170 @@
+# ==============================================================================
+# Mini Forum - Micro VM Configuration (Low Resource: 1GB RAM, 1 vCPU)
+# Target: Oracle Cloud VM.Standard.E2.1.Micro (AMD EPYC 7551 2.0 GHz)
+# ==============================================================================
+
+x-logging: &micro-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "5m"
+      max-file: "2"
+
+services:
+  postgres:
+    <<: *micro-logging
+    image: postgres:17-alpine
+    container_name: mini-forum-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-forum_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-forum_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-mini_forum}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # ─── Ultra-low memory PostgreSQL parameters tuned for 1GB RAM VM ──────────
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=64MB"
+      - "-c"
+      - "effective_cache_size=256MB"
+      - "-c"
+      - "work_mem=4MB"
+      - "-c"
+      - "maintenance_work_mem=32MB"
+      - "-c"
+      - "min_wal_size=80MB"
+      - "-c"
+      - "max_wal_size=256MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=4MB"
+      - "-c"
+      - "default_statistics_target=50"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=2"
+      - "-c"
+      - "max_connections=35"
+    # Hard memory cap to prevent OOM killer on 1GB RAM
+    mem_limit: 200m
+    mem_reservation: 64m
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forum_user} -d ${POSTGRES_DB:-mini_forum}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - forum-net
+
+  backend:
+    <<: *micro-logging
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mini-forum-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      # Limit V8 heap so GC triggers aggressively before hitting host limit
+      NODE_OPTIONS: "--max-old-space-size=256"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+    # Memory cap for Backend container
+    mem_limit: 320m
+    mem_reservation: 120m
+    deploy:
+      resources:
+        limits:
+          cpus: '0.85'
+          memory: 320M
+        reservations:
+          memory: 120M
+    ports:
+      # Expose to localhost only (Cloudflare tunnel or reverse proxy connects here)
+      - "127.0.0.1:5000:5000"
+    networks:
+      - forum-net
+
+  vibe-content:
+    <<: *micro-logging
+    build:
+      context: ./vibe-content
+      dockerfile: Dockerfile
+    container_name: mini-forum-vibe
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Limit V8 heap for background bot & cron service
+      NODE_OPTIONS: "--max-old-space-size=180"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
+      FORUM_API_URL: http://backend:5000/api/v1
+    # Memory cap for Vibe-content container
+    mem_limit: 240m
+    mem_reservation: 80m
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 240M
+        reservations:
+          memory: 80M
+    ports:
+      # Expose to localhost only
+      - "127.0.0.1:4000:4000"
+    networks:
+      - forum-net
+
+  # Optional Cloudflare Tunnel service
+  # Run with: docker compose -f docker-compose.micro.yml --profile tunnel up -d
+  tunnel:
+    <<: *micro-logging
+    image: cloudflare/cloudflared:latest
+    container_name: mini-forum-tunnel
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    mem_limit: 64m
+    mem_reservation: 24m
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+        reservations:
+          memory: 24M
+    networks:
+      - forum-net
+
+volumes:
+  postgres_data:
+    name: mini_forum_postgres_data
+
+networks:
+  forum-net:
+    name: mini_forum_network
+    driver: bridge

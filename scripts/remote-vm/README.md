@@ -9,9 +9,11 @@ Bộ công cụ tự động hóa triển khai và vận hành hệ thống Mini
 | Tên Script | Mục đích sử dụng | Lệnh mẫu |
 | :--- | :--- | :--- |
 | **`bootstrap_all.sh`** | 🚀 **Master Zero-to-Production:** Chạy toàn bộ chu trình (Setup -> Deploy -> Restore DB -> Tunnel) | `./bootstrap_all.sh` |
-| **`setup_vm.sh`** | Khởi tạo VM từ đầu: Cài đặt Swap 2GB, Docker, Docker Compose, tạo thư mục | `./setup_vm.sh` |
+| **`setup_vm.sh`** | Khởi tạo VM tiêu chuẩn: Cài đặt Swap 2GB, Docker, Docker Compose | `./setup_vm.sh` |
+| **`setup_micro_vm.sh`** | ⚡ **Khởi tạo Micro VM (1GB RAM):** Tạo 4GB Swap, tối ưu sysctl kernel & Docker daemon | `./setup_micro_vm.sh` |
+| **`deploy.sh`** | Đồng bộ code, build và reload containers (tùy chọn `--micro`) | `./deploy.sh` hoặc `./deploy.sh --micro` |
+| **`deploy_micro.sh`** | ⚡ **Deploy Micro VM:** Build tuần tự tránh nghẽn CPU + chạy `docker-compose.micro.yml` | `./deploy_micro.sh` |
 | **`install_tunnel.sh`** | Cài đặt và kích hoạt Cloudflare Tunnel service qua token | `./install_tunnel.sh <TOKEN>` |
-| **`deploy.sh`** | Đồng bộ code mới nhất (Backend + Vibe-content), tự build và khởi chạy lại container | `./deploy.sh` |
 | **`restore_db.sh`** | Tải file `.dump` mới nhất lên VM và nạp vào PostgreSQL | `./restore_db.sh` |
 | **`backup_db.sh`** | Kích hoạt `pg_dump` trên VM và tự kéo file backup về `backend/backups/` | `./backup_db.sh` |
 | **`status.sh`** | Kiểm tra tài nguyên VM (RAM, Disk, CPU) và trạng thái các container | `./status.sh` |
@@ -71,3 +73,21 @@ Bộ công cụ tự động hóa triển khai và vận hành hệ thống Mini
 4. Trên Cloudflare Dashboard, cấu hình Public Hostname trỏ về:
    * **Service:** `HTTP`
    * **URL:** `backend:5000`
+
+---
+
+## ⚡ Triển khai trên VM Cấu Hình Thấp (1GB RAM - VM.Standard.E2.1.Micro)
+
+Đối với máy ảo **Oracle Cloud Always Free AMD EPYC (1GB RAM, 1/8 OCPU)**:
+
+1. **Khởi tạo và cấu hình Swap 4GB + Tối ưu Kernel:**
+   ```bash
+   ./scripts/remote-vm/setup_micro_vm.sh
+   # Hoặc mở vm.bat -> bấm phím [S]
+   ```
+2. **Deploy với profile Micro:**
+   ```bash
+   ./scripts/remote-vm/deploy_micro.sh
+   # Hoặc mở vm.bat -> bấm phím [M]
+   ```
+3. **Chi tiết thiết lập và cơ chế tối ưu:** Xem file [`docs/DEPLOY_MICRO_VM.md`](../../docs/DEPLOY_MICRO_VM.md).

@@ -9,6 +9,7 @@ build/
 
 # Environment files
 .env
+.env.production
 **/.env
 **/.env.local
 **/.env*.local
@@ -60,3 +61,5 @@ docker-compose.override.yml
 RBPWeb/
 *.dump
 *.key
+.vm_config
+scripts/remote-vm/.vm_config
