@@ -30,7 +30,7 @@ tar --exclude='node_modules' \
     --exclude='logs' \
     --exclude='*.log' \
     -czf - \
-    backend vibe-content docker-compose.micro.yml docker-compose.yml .env.production.example | \
+    backend vibe-content cli-proxy-config docker-compose.micro.yml docker-compose.yml .env.production.example | \
     ssh -i "$KEY_FILE" $SSH_OPTS "${VM_USER}@${VM_IP}" "tar -xzf - -C $REMOTE_APP_DIR"
 
 # Sync local .env if it exists
@@ -67,6 +67,9 @@ docker compose -f docker-compose.micro.yml build backend
 
 echo "[*] Step 2/3: Building Vibe-Content container sequentially..."
 docker compose -f docker-compose.micro.yml build vibe-content
+
+echo "[*] Pulling CLIProxyAPI image..."
+docker compose -f docker-compose.micro.yml pull cli-proxy-api
 
 echo "[*] Step 3/3: Starting containers with Micro configuration..."
 docker compose -f docker-compose.micro.yml up -d

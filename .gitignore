@@ -14,7 +14,7 @@ build/
 **/.env.local
 **/.env*.local
 !**/.env.example
-
+**/config.yaml
 # IDE
 .vscode/
 .idea/
@@ -58,8 +58,11 @@ docker-compose.override.yml
 # yarn.lock
 
 #Others
+CLIProxyAPI-main/
 RBPWeb/
 *.dump
 *.key
 .vm_config
 scripts/remote-vm/.vm_config
+cli-proxy-config/config.yaml
+config.yaml

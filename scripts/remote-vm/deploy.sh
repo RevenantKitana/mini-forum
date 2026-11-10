@@ -45,7 +45,7 @@ tar --exclude='node_modules' \
     --exclude='logs' \
     --exclude='*.log' \
     -czf - \
-    backend vibe-content docker-compose.yml docker-compose.micro.yml .env.production.example | \
+    backend vibe-content cli-proxy-config docker-compose.yml docker-compose.micro.yml .env.production.example | \
     ssh -i "$KEY_FILE" $SSH_OPTS "${VM_USER}@${VM_IP}" "tar -xzf - -C $REMOTE_APP_DIR"
 
 # Sync .env if user has a root .env file

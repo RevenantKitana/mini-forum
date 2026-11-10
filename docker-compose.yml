@@ -93,9 +93,27 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-forum_user}:${POSTGRES_PASSWORD:-forum_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-mini_forum}
       FORUM_API_URL: http://backend:5000/api/v1
+      CLIPROXY_URL: ${CLIPROXY_URL:-http://cli-proxy-api:8317/v1}
+      CLIPROXY_API_KEY: ${CLIPROXY_API_KEY:-vibe-cliproxy-secret-2026}
     ports:
       # Expose to localhost only
       - "127.0.0.1:4000:4000"
+    networks:
+      - forum-net
+
+  cli-proxy-api:
+    <<: *default-logging
+    image: eceasy/cli-proxy-api:latest
+    container_name: mini-forum-cliproxy
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./cli-proxy-config/config.yaml:/CLIProxyAPI/config.yaml:ro
+      - ./cli-proxy-config/auths:/root/.cli-proxy-api
+    ports:
+      # Expose to localhost only
+      - "127.0.0.1:8317:8317"
     networks:
       - forum-net
 

@@ -15,6 +15,7 @@ import {
 import { GeminiProvider } from './GeminiProvider.js';
 import { GroqProvider } from './GroqProvider.js';
 import { OpenRouterProvider } from './OpenRouterProvider.js';
+import { CLIProxyProvider } from './CLIProxyProvider.js';
 import { CircuitBreaker } from '../../utils/circuitBreaker.js';
 import config from '../../config/index.js';
 import logger from '../../utils/logger.js';
@@ -73,6 +74,9 @@ export class LLMProviderManager {
 
     for (const entry of LLM_STACK) {
       switch (entry.providerType) {
+        case 'cliproxy':
+          this.providers.push(new CLIProxyProvider(entry.id, entry.model));
+          break;
         case 'gemini':
           this.providers.push(new GeminiProvider());
           break;
@@ -303,6 +307,7 @@ export class LLMProviderManager {
   }
 
   private defaultHasApiKey(providerId: string): boolean {
+    if (providerId.startsWith('cliproxy')) return !!config.llm.cliProxyUrl;
     if (providerId.startsWith('gemini')) return !!config.llm.geminiApiKey;
     if (providerId.startsWith('groq')) return !!config.llm.groqApiKey;
     if (providerId.startsWith('openrouter')) return !!config.llm.openRouterApiKey;

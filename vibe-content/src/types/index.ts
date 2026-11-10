@@ -183,7 +183,7 @@ export interface ActionStatsSnapshot {
 export interface ProviderStackItem {
   priority: number;
   id: string;
-  providerType?: 'gemini' | 'groq' | 'nvidia' | 'openrouter';
+  providerType?: 'gemini' | 'groq' | 'nvidia' | 'openrouter' | 'cliproxy';
   model?: string;
   available: boolean;
   reason?: ProviderUnavailableReason;

@@ -1,0 +1,34 @@
+# ==============================================================================
+# CLIProxyAPI Configuration for Mini Forum Vibe Content
+# ==============================================================================
+config-version: 8
+
+server:
+  host: "0.0.0.0"
+  port: 8317
+
+access:
+  # Internal API key used by vibe-content to authenticate with CLIProxyAPI
+  api-keys:
+    - "vibe-cliproxy-secret-2026"
+
+routing:
+  strategy: "round-robin"
+  retry:
+    request-retry: 3
+    max-retry-credentials: 0
+    max-retry-interval: 10
+
+# Upstream API key pools (Multi-account load balancing)
+# Add your Gemini / Groq / OpenAI keys below
+api-keys:
+  gemini:
+    - name: gemini-pool
+      base-url: "https://generativelanguage.googleapis.com"
+      models:
+        - name: "gemini-2.5-flash"
+          alias: "gemini-2.5-flash"
+      keys:
+        - api-key: "YOUR_GEMINI_API_KEY_1"
+        # - api-key: "YOUR_GEMINI_API_KEY_2"
+
