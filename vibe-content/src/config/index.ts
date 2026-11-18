@@ -27,18 +27,24 @@ if (missingEnvVars.length > 0) {
 
 // Parse CORS allowed origins and IPs from environment
 const getCorsOrigins = () => {
-  const envOrigins = process.env.CORS_ORIGINS || '';
-  if (envOrigins.trim()) {
-    return envOrigins.split(',').map(origin => origin.trim());
-  }
-  // Default fallback
-  return [
+  const defaults = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:3000',
     'https://k.mio.io.vn',
+    'https://forum.mio.io.vn',
+    'https://admin.forum.mio.io.vn',
+    'https://nvqk.id.vn',
+    'https://www.nvqk.id.vn',
+    'https://cv.nvqk.id.vn',
   ];
+  const envOrigins = process.env.CORS_ORIGINS || '';
+  if (envOrigins.trim()) {
+    const parsed = envOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
+    return Array.from(new Set([...defaults, ...parsed]));
+  }
+  return defaults;
 };
 
 const getCorsIps = () => {
@@ -72,6 +78,16 @@ const createCorsOriginCallback = () => {
 
     // Allow localhost / 127.0.0.1 on any port
     if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow *.nvqk.id.vn (and apex nvqk.id.vn)
+    if (/^https:\/\/(?:[a-zA-Z0-9_.-]+\.)?nvqk\.id\.vn$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow *.qkhah6829.id.vn (and apex qkhah6829.id.vn) for backward compatibility
+    if (/^https:\/\/(?:[a-zA-Z0-9_.-]+\.)?qkhah6829\.id\.vn$/.test(origin)) {
       return callback(null, true);
     }
 
@@ -113,6 +129,11 @@ export const createIpBasedCorsMiddleware = () => {
 
     // Always allow OPTIONS preflight requests to pass through to CORS handler
     if (req.method === 'OPTIONS') {
+      return next();
+    }
+
+    // Always allow public health checks and trigger endpoints
+    if (req.path === '/health' || req.path.startsWith('/trigger')) {
       return next();
     }
 
